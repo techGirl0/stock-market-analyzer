@@ -90,5 +90,8 @@ The following resources provide project documentation, source code, and contact 
 | ✉️ | [Contact the Team](mailto:wolfstreetsignal@gmail.com) | Team contact email address |
 
 
+### 1.5 Overview
+
+Section 2 provides an overview of the stock market analysis application, including its vision, use case diagram, and technology stack. Section 3 specifies the functional and non-functional requirements of the system, covering aspects such as functionality, usability, reliability, performance, and design constraints. Finally, Section 4 contains supporting information related to the requirements and development of the system.
 
 
