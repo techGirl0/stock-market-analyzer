@@ -29,4 +29,15 @@
 - [4. Supporting Information](#4-supporting-information)
 
 
+## 1. Introduction
+
+### 1.1 Purpose
+
+The purpose of this Software Requirements Specification (SRS) is to define the functional and non-functional requirements of the Stock Market Analyzer project, developed by the WolfStreet Signal team.
+
+This document describes the intended functionality, system constraints, and expected behavior of the application. It establishes a common understanding of the project requirements and serves as a reference for the design, implementation, testing, and evaluation of the system.
+
+The intended audience includes the project team members, course instructors, reviewers, and other stakeholders involved in the development and assessment of the project.
+
+
 
