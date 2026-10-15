@@ -79,5 +79,17 @@ The final scope and availability of individual features depend on the requiremen
 
 
 
+### 1.4 References
+
+The following resources provide project documentation, source code, and contact information.
+
+| Icon | Resource | Description |
+|---|---|---|
+| 📁 | [Project Repository](https://github.com/techGirl0/stock-market-analyzer) | Source code and project documentation |
+| 📝 | [Project Blog](https://wolfstreeetsignalblog.wordpress.com/) | Project updates and development progress |
+| ✉️ | [Contact the Team](mailto:wolfstreetsignal@gmail.com) | Team contact email address |
+| 📄 | [SRS Template](https://github.com/nilskre/CommonPlayground/blob/pm/docs/SoftwareRequirementsSpecification.md) | Template used as a reference for the structure of this document |
+
+
 
 
