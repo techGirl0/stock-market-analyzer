@@ -95,3 +95,46 @@ The following resources provide project documentation, source code, and contact 
 Section 2 provides an overview of the stock market analysis application, including its vision, use case diagram, and technology stack. Section 3 specifies the functional and non-functional requirements of the system, covering aspects such as functionality, usability, reliability, performance, and design constraints. Finally, Section 4 contains supporting information related to the requirements and development of the system.
 
 
+## 2. Overall Description
+
+### 2.1 Vision
+WolfStreet Signal, serves as a knowledgeable resource for retail investors and fintech learners. Our AI is designed with specific protocols: it does not engage in complex mathematical calculations, make speculative predictions about stock performances, or offer personalized investment advice. Instead, it allows users to make informed decisions by analyzing hard data, enabling them to investigate probabilistic forecasts and risk profiles with a focus on market insights.
+### 2.2 Use Case Diagram
+
+![OUCD](/documentation/UseCaseDiagram.png)
+
+- Green: Planned till end of december
+- Yellow: Planned till end of june
+
+### 2.3 Technology Stack
+The technology we use is:
+
+Backend:
+-Python with FastAPI
+
+Frontend:
+-Next.Js
+-React
+-TypeScript
+
+AI/machine Learning:
+-Python with NLP and Forcasting
+
+IDE:
+-IntelliJ and Visual Studio Code
+
+Project Management:
+-Jira
+-GitHub
+
+
+Deployment:
+-Docker
+
+Testing:
+-Cucumber
+-Espresso
+-JUnit
+-Codacy
+-CodeMR
+-RestAssured
