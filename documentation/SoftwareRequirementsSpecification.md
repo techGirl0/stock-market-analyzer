@@ -29,15 +29,36 @@
 - [4. Supporting Information](#4-supporting-information)
 
 
+
 ## 1. Introduction
 
 ### 1.1 Purpose
 
-The purpose of this Software Requirements Specification (SRS) is to define the functional and non-functional requirements of the Stock Market Analyzer project, developed by the WolfStreet Signal team.
+This Software Requirements Specification (SRS) defines the functional and non-functional requirements of the stock market analysis application.
 
-This document describes the intended functionality, system constraints, and expected behavior of the application. It establishes a common understanding of the project requirements and serves as a reference for the design, implementation, testing, and evaluation of the system.
+The document specifies the intended system functionality, constraints, and expected behavior. It establishes a common basis for system design, implementation, testing, and evaluation and supports verification that the implemented system meets the defined requirements.
 
-The intended audience includes the project team members, course instructors, reviewers, and other stakeholders involved in the development and assessment of the project.
+The intended audience includes developers, project stakeholders, course instructors, and reviewers involved in the development and evaluation of the application.
+
+
+### 1.2 Scope
+
+The stock market analysis application is designed to support the analysis and exploration of financial market information. It aims to provide users with relevant market data, financial news, and analytical insights through a centralized platform.
+
+The planned system functionality includes:
+
+- Searching for stocks using ticker symbols.
+- Displaying current and historical stock market data.
+- Presenting financial news related to selected stocks or companies.
+- Analyzing financial news sentiment using natural language processing.
+- Presenting risk indicators and relevant market insights.
+- Providing forecasts or potential market scenarios while communicating uncertainty.
+
+The system focuses on presenting and analyzing financial information. It is not intended to execute financial transactions or provide personalized investment recommendations. Analytical results and forecasts may contain uncertainty and do not guarantee future market performance.
+
+The final scope and availability of individual features depend on the requirements agreed upon by the project team and the implementation constraints of the project.
+
+
 
 
 
