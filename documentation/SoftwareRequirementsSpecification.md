@@ -60,5 +60,24 @@ The final scope and availability of individual features depend on the requiremen
 
 
 
+### 1.3 Definitions, Acronyms and Abbreviations
+
+| Term | Definition |
+|---|---|
+| SRS | Software Requirements Specification; a document that specifies the functional and non-functional requirements of a software system. |
+| API | Application Programming Interface; an interface that enables communication between software components or external services. |
+| AI | Artificial Intelligence; techniques used to perform tasks that typically require human intelligence. |
+| NLP | Natural Language Processing; techniques used to process and analyze human language. |
+| Stock Ticker | A symbol used to identify a publicly traded stock or other financial instrument. |
+| Market Data | Financial data relating to market activity, including stock prices, trading volumes, and historical price information. |
+| Sentiment Analysis | The analysis of text to identify sentiment, such as positive, negative, or neutral sentiment in financial news. |
+| Risk Analysis | The assessment and presentation of indicators that help describe financial risk and uncertainty. |
+| Forecast | An estimate of possible future outcomes based on data, models, and stated assumptions. |
+| Research Assistant | A system component that helps users investigate a stock by presenting structured information and supporting explanations. |
+| Functional Requirement | A requirement specifying a function or behavior that the system must provide. |
+| Non-functional Requirement | A requirement specifying a quality attribute or constraint, such as performance, reliability, or usability. |
+
+
+
 
 
