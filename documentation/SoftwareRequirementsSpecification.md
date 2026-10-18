@@ -232,3 +232,9 @@ The external providers shall be accessed through adapter classes so that a provi
 | Data formats | JSON, ISO 8601 / UTC | Data exchange and timestamps. |
 | Data protection | GDPR (if applicable) | Handling of any personal data. |
 | Version control | Git with GitHub | All documentation and code are versioned; documentation is kept separate from code. |
+
+## 4. Supporting Information
+
+### 4.1 Revision History
+
+The revision history of this document (author, date and changes) is kept in the Git commit history of this repository.
