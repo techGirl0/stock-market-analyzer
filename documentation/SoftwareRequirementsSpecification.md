@@ -154,3 +154,16 @@ The system shall provide documentation and help so that retail investors and fin
 | DOC-7 | The AI chat bot shall tell users what it can and cannot do (it shows scenarios and risk, and gives no personal advice or price targets), and research briefs shall show their sources. |
 
 Out of scope for now: video tutorials, a separate help-desk or chat support system.
+
+### 3.8 Purchased Components
+
+At this stage of the project no components are purchased.
+
+The project uses free or open-source components and free tiers of external data services. If the project continues beyond the course, the following paid components may be considered:
+
+- A paid market-data feed (for real-time instead of delayed prices).
+- A paid news or fundamentals data provider.
+- Paid usage of a large language model API for the research assistant.
+- Cloud hosting for deployment.
+
+Any purchase would require team approval and a check of the license terms (see 3.10).
