@@ -178,3 +178,7 @@ Any purchase would require team approval and a check of the license terms (see 3
 - The interface shall present ticker search, the structured research brief, watchlists and alerts, portfolios, and a chat with the AI bot. Charts, news, sentiment, risk indicators and forecasts are presented as they are delivered.
 - Alerts shall be described as price alerts and shall not suggest buying or selling.
 - The interface shall use neutral wording such as "insights", "scenarios" and "risk", and shall avoid wording such as "you should buy".
+
+#### 3.9.2 Hardware Interfaces
+
+The system has no special hardware interfaces. It runs on standard server hardware (via Docker) and is accessed from standard computers with a web browser.
