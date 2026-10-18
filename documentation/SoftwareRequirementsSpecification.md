@@ -182,3 +182,16 @@ Any purchase would require team approval and a check of the license terms (see 3
 #### 3.9.2 Hardware Interfaces
 
 The system has no special hardware interfaces. It runs on standard server hardware (via Docker) and is accessed from standard computers with a web browser.
+
+#### 3.9.3 Software Interfaces
+
+| Interface | Description |
+| --- | --- |
+| Frontend to backend | The frontend communicates with the Python/FastAPI backend through a REST API (and WebSocket for live updates, if implemented). |
+| Market data provider | The backend retrieves current and historical stock prices from an external market-data API. (tbd) |
+| News provider | The backend retrieves financial news from an external news API or RSS feeds. (tbd) |
+| NLP / ML components | The backend uses Python libraries for sentiment analysis and forecasting. |
+| Database | The backend stores data in a database. (tbd) |
+| LLM service | If the research assistant is implemented, the backend calls an external LLM API through a replaceable interface. |
+
+The external providers shall be accessed through adapter classes so that a provider can be replaced without changing the rest of the system.
