@@ -250,3 +250,13 @@ The following are explicitly not part of the planned system:
 - Complex role-based access control.
 
 Use cases without a colour in the use case diagram (section 2.2) are not planned within the project period.
+
+### 4.3 Assumptions and Open Issues
+
+| ID | Item | Status |
+| --- | --- | --- |
+| A-1 | Free or delayed data is sufficient for the first release. | Assumption |
+| A-2 | Final choice of market data and news providers. | Open |
+| A-3 | Choice of project license. | Open |
+| A-4 | Legend of the use case diagram (section 2.2): green = planned until the end of December, yellow = planned until the end of June. | Agreed |
+| A-5 | Accounts are limited to register, log in and log out, with no complex role-based access. | Assumption |
