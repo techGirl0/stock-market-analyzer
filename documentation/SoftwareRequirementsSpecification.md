@@ -238,3 +238,15 @@ The external providers shall be accessed through adapter classes so that a provi
 ### 4.1 Revision History
 
 The revision history of this document (author, date and changes) is kept in the Git commit history of this repository.
+
+### 4.2 Excluded Features (Non-Goals)
+
+The following are explicitly not part of the planned system:
+
+- Trading of any kind (no buying or selling, no broker connection).
+- Bank connections or payments.
+- Personalized buy/sell advice. The system shows forecast scenarios and risk, never a recommendation or a single price target.
+- Social features between users.
+- Complex role-based access control.
+
+Use cases without a colour in the use case diagram (section 2.2) are not planned within the project period.
