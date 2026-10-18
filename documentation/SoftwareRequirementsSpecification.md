@@ -195,3 +195,10 @@ The system has no special hardware interfaces. It runs on standard server hardwa
 | LLM service | If the research assistant is implemented, the backend calls an external LLM API through a replaceable interface. |
 
 The external providers shall be accessed through adapter classes so that a provider can be replaced without changing the rest of the system.
+
+#### 3.9.4 Communications Interfaces
+
+- All communication between browser and server shall use HTTPS.
+- Data shall be exchanged in JSON format.
+- Timestamps shall be stored and transmitted in UTC (ISO 8601).
+- External API keys shall be stored in environment variables and never committed to the repository.
