@@ -167,3 +167,14 @@ The project uses free or open-source components and free tiers of external data 
 - Cloud hosting for deployment.
 
 Any purchase would require team approval and a check of the license terms (see 3.10).
+
+### 3.9 Interfaces
+
+#### 3.9.1 User Interfaces
+
+- The system shall provide a web-based user interface built with Next.js, React and TypeScript.
+- The interface shall be usable in current versions of common desktop browsers (Chrome, Firefox, Edge, Safari).
+- The interface shall provide registration, login and logout.
+- The interface shall present ticker search, the structured research brief, watchlists and alerts, portfolios, and a chat with the AI bot. Charts, news, sentiment, risk indicators and forecasts are presented as they are delivered.
+- Alerts shall be described as price alerts and shall not suggest buying or selling.
+- The interface shall use neutral wording such as "insights", "scenarios" and "risk", and shall avoid wording such as "you should buy".
