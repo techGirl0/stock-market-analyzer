@@ -138,3 +138,19 @@ Testing:
 -Codacy
 -CodeMR
 -RestAssured
+
+### 3.7 Online User Documentation and Help System Requirements
+
+The system shall provide documentation and help so that retail investors and fintech learners can use it without prior training.
+
+| ID | Requirement |
+| --- | --- |
+| DOC-1 | The system shall provide a help page that explains each main feature (stock search, market data, news, sentiment, risk indicators, forecasts). |
+| DOC-2 | The system shall provide a glossary that explains financial and technical terms used in the interface (for example "sentiment score", "risk indicator", "forecast scenario"). |
+| DOC-3 | The system shall show short contextual explanations (tooltips or info icons) next to risk indicators, sentiment scores and forecasts. |
+| DOC-4 | Every forecast and risk view shall display a short note that results are uncertain and are not investment advice. |
+| DOC-5 | The backend REST API shall be documented through an auto-generated OpenAPI page (provided by FastAPI). |
+| DOC-6 | The repository shall contain a README with setup and run instructions (including Docker). |
+| DOC-7 | The AI chat bot shall tell users what it can and cannot do (it shows scenarios and risk, and gives no personal advice or price targets), and research briefs shall show their sources. |
+
+Out of scope for now: video tutorials, a separate help-desk or chat support system.
