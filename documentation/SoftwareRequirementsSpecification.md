@@ -218,3 +218,17 @@ The external providers shall be accessed through adapter classes so that a provi
 - **News content:** News articles belong to their publishers. The system shall show headlines, short summaries and links to the original source rather than copying full articles.
 - **Personal data:** The system provides user accounts (register, log in, log out) and stores user data such as watchlists, alerts and portfolios. This data shall be handled according to applicable data-protection law (for example GDPR). The system shall store only the data it needs, and passwords shall never be stored in plain text.
 - **Legal review:** A legal review of disclaimers and interface wording would be needed before any public launch.
+
+### 3.12 Applicable Standards
+
+| Area | Standard or convention | How it applies |
+| --- | --- | --- |
+| Requirements documentation | ISO/IEC/IEEE 29148 | Structure and quality of this SRS (the template follows the Rational Unified Process SRS). |
+| Software quality | ISO/IEC 25010 | Basis for the quality requirements (usability, reliability, performance, supportability). |
+| Modeling | UML 2.x | Use case diagram in section 2.2. |
+| Accessibility | WCAG 2.1 level AA | Target for the web interface. |
+| Web security | OWASP Top 10 | Guidance for secure development of the web application and API. |
+| API description | OpenAPI 3 | REST API documentation. |
+| Data formats | JSON, ISO 8601 / UTC | Data exchange and timestamps. |
+| Data protection | GDPR (if applicable) | Handling of any personal data. |
+| Version control | Git with GitHub | All documentation and code are versioned; documentation is kept separate from code. |
