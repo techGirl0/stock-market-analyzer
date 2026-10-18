@@ -209,3 +209,12 @@ The external providers shall be accessed through adapter classes so that a provi
 - **Open-source components:** All third-party libraries (for example FastAPI, React, Next.js and the NLP/ML libraries) shall only be used under their own licenses. The team shall check that these licenses allow the intended use and shall keep a list of dependencies and their licenses.
 - **Data providers:** Free tiers of market and news APIs often restrict redistribution and the display of real-time exchange data. The system shall respect the terms of each provider, including rate limits and attribution rules.
 - **Real-time data:** Displaying real-time exchange data publicly may require a paid license. Until one is obtained, the system shall use free or delayed data.
+
+### 3.11 Legal, Copyright and Other Notices
+
+- **Not investment advice:** The system is an educational and research tool. Nothing it shows is personalized investment advice, a recommendation, or a guarantee of future performance. This notice shall be visible in the interface and in the documentation.
+- **Data accuracy:** Market data, news and analysis come from third-party sources and models. They may be delayed, incomplete or wrong. The team accepts no liability for decisions based on them.
+- **Copyright:** (c) 2026 WolfStreet Signal team. Third-party names and trademarks belong to their owners.
+- **News content:** News articles belong to their publishers. The system shall show headlines, short summaries and links to the original source rather than copying full articles.
+- **Personal data:** The system provides user accounts (register, log in, log out) and stores user data such as watchlists, alerts and portfolios. This data shall be handled according to applicable data-protection law (for example GDPR). The system shall store only the data it needs, and passwords shall never be stored in plain text.
+- **Legal review:** A legal review of disclaimers and interface wording would be needed before any public launch.
