@@ -202,3 +202,10 @@ The external providers shall be accessed through adapter classes so that a provi
 - Data shall be exchanged in JSON format.
 - Timestamps shall be stored and transmitted in UTC (ISO 8601).
 - External API keys shall be stored in environment variables and never committed to the repository.
+
+### 3.10 Licensing Requirements
+
+- **Project license:** The team shall choose and add a license file (for example MIT) to the repository.
+- **Open-source components:** All third-party libraries (for example FastAPI, React, Next.js and the NLP/ML libraries) shall only be used under their own licenses. The team shall check that these licenses allow the intended use and shall keep a list of dependencies and their licenses.
+- **Data providers:** Free tiers of market and news APIs often restrict redistribution and the display of real-time exchange data. The system shall respect the terms of each provider, including rate limits and attribution rules.
+- **Real-time data:** Displaying real-time exchange data publicly may require a paid license. Until one is obtained, the system shall use free or delayed data.
