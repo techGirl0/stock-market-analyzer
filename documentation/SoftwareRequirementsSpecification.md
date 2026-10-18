@@ -260,3 +260,8 @@ Use cases without a colour in the use case diagram (section 2.2) are not planned
 | A-3 | Choice of project license. | Open |
 | A-4 | Legend of the use case diagram (section 2.2): green = planned until the end of December, yellow = planned until the end of June. | Agreed |
 | A-5 | Accounts are limited to register, log in and log out, with no complex role-based access. | Assumption |
+
+### 4.4 Related Documents
+
+- Use case diagram: `documentation/UseCaseDiagram.png`
+- Project blog: https://wolfstreeetsignalblog.wordpress.com/
