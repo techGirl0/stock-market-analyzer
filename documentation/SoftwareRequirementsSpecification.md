@@ -98,7 +98,7 @@ Section 2 provides an overview of the stock market analysis application, includi
 ## 2. Overall Description
 
 ### 2.1 Vision
-WolfStreet Signal, serves as a knowledgeable resource for retail investors and fintech learners. Our AI is designed with specific protocols: it does not engage in complex mathematical calculations, make speculative predictions about stock performances, or offer personalized investment advice. Instead, it allows users to make informed decisions by analyzing hard data, enabling them to investigate probabilistic forecasts and risk profiles with a focus on market insights.
+WolfStreet Signal serves as a knowledgeable resource for retail investors and fintech learners. The AI provides general suggestions and explanations based on available market data, financial news, risk indicators, and documented analysis. It must not make hunch-based or unsupported speculative claims, invent facts, perform undisclosed calculations, or offer personalized investment advice. Forecasts are presented as evidence-based probabilistic scenarios with stated assumptions and uncertainty so that users can make their own informed decisions.
 ### 2.2 Use Case Diagram
 
 ![OUCD](/documentation/UseCaseDiagram.png)
@@ -132,12 +132,146 @@ Deployment:
 -Docker
 
 Testing:
+-pytest 
+-Jest
 -Cucumber
 -Espresso
 -JUnit
 -Codacy
 -CodeMR
 -RestAssured
+
+### 3.1 Functionality
+
+The system shall provide the following functional capabilities.
+
+#### 3.1.1 User accounts
+
+| ID | Requirement |
+| --- | --- |
+| FUNC-1 | The system shall allow a user to register an account using a valid email address and password. |
+| FUNC-2 | The system shall allow a registered user to log in and log out securely. |
+| FUNC-3 | The system shall validate required account fields and display an actionable message when input is invalid. |
+| FUNC-4 | The system shall store passwords using a secure one-way password-hashing method and shall never store them in plain text. |
+| FUNC-26 | The system shall allow an authenticated user to delete their account, which shall remove the user's personal data, watchlists, portfolios, and alerts. |
+
+#### 3.1.2 Stock search and market data
+
+| ID | Requirement |
+| --- | --- |
+| FUNC-5 | The system shall allow users to search for a stock by ticker symbol or company name. |
+| FUNC-6 | The system shall display the selected instrument's current or most recently available price, price change, percentage change, volume, and timestamp. While the page is open, the displayed values shall refresh at a configurable interval, within provider limits, without a full page reload. |
+| FUNC-7 | The system shall display historical price data for a selected time range and interval when data is available. |
+| FUNC-8 | The system shall display the source and whether market data is real-time or delayed. |
+| FUNC-9 | The system shall show a clear unavailable-data message when a provider cannot return market data. |
+
+#### 3.1.3 News and sentiment
+
+| ID | Requirement |
+| --- | --- |
+| FUNC-10 | The system shall display financial news related to a selected stock or company. |
+| FUNC-11 | Each news item shall display its headline, publisher, publication time, source link, and a short summary when available. The system shall not reproduce the full text of articles. |
+| FUNC-12 | The system shall analyze the sentiment of each displayed news item from its headline and available summary text, and label it as positive, negative, or neutral with a score or confidence value. |
+| FUNC-13 | The system shall associate news items with the relevant ticker symbols using provider-supplied tags and the queried instrument, and shall not display an association it cannot determine. |
+| FUNC-14 | The system shall identify unavailable, low-confidence, or incomplete analysis rather than presenting it as a confirmed result. |
+
+#### 3.1.4 Research, risk, and forecasting
+
+| ID | Requirement |
+| --- | --- |
+| FUNC-15 | The system shall generate a structured research brief for a selected stock containing a market snapshot, recent news with a sentiment summary, risk indicators, forecast scenarios, and limitations. All figures in the brief shall come from the system's documented calculations and data sources. |
+| FUNC-16 | Research briefs shall show the sources and timestamps used to produce the brief. |
+| FUNC-17 | The system shall calculate and display risk indicators for a selected stock, at minimum realized volatility, maximum drawdown, beta against a documented benchmark, and a liquidity indicator, using documented input data and methodology. |
+| FUNC-18 | The system shall present forecast scenarios for documented time horizons (at least one week, one month, and three months), each with a range of outcomes, stated assumptions, an uncertainty range, and a model or data timestamp. |
+| FUNC-19 | The system shall not present forecasts as guarantees, personalized advice, or a single mandatory price target. |
+| FUNC-20 | When the research assistant is implemented, it shall answer questions and provide general suggestions using available application data and documented analysis, clearly identify the evidence and assumptions behind its responses, and state when the requested information is unavailable or insufficient to support a conclusion. It shall not tell a user to buy, sell, or hold a specific instrument or give personalized investment advice. |
+
+#### 3.1.5 Watchlists, portfolios, and alerts
+
+| ID | Requirement |
+| --- | --- |
+| FUNC-21 | The system shall allow an authenticated user to add and remove stocks from a personal watchlist. |
+| FUNC-22 | The system shall allow an authenticated user to create and view a portfolio containing selected instruments and quantities, with its current value calculated from the latest available prices. |
+| FUNC-23 | The system shall allow an authenticated user to create and remove price alerts for selected instruments. |
+| FUNC-24 | The system shall notify the user in the application when a configured price-alert condition is met, subject to provider availability. The notification shall state the condition that was met and shall not suggest buying or selling. |
+| FUNC-25 | Watchlists, portfolios, and alerts shall be isolated between user accounts. |
+
+### 3.2 Usability
+
+| ID | Requirement |
+| --- | --- |
+| USE-1 | A first-time user shall be able to search for a stock and open its analysis from the main page without prior training. |
+| USE-2 | The interface shall use consistent navigation, labels, controls, date formats, number formats, and chart conventions. |
+| USE-3 | The system shall provide clear validation, loading, empty-state, and error messages for user actions. |
+| USE-4 | Charts and analysis views shall include legends, units, and time ranges, and each chart shall provide a one-sentence text summary of what it shows. |
+| USE-5 | The interface shall be responsive and usable on supported desktop and mobile viewport sizes, down to a width of 360 px. |
+| USE-6 | The web interface shall target WCAG 2.1 Level AA, including keyboard navigation, visible focus states, sufficient colour contrast, and labels for form controls. Automated accessibility checks shall run as part of the build. A formal conformance audit is not required for the first release. |
+| USE-7 | The system shall use neutral language such as "insight", "scenario", and "risk" and shall avoid wording that instructs a user to buy or sell. |
+| USE-8 | Risk, sentiment, and forecast results shall provide concise contextual explanations through labels, tooltips, or linked help content. |
+| USE-9 | Users shall be able to identify the age, source, and limitations of data shown on an analysis page. |
+
+### 3.3 Reliability
+
+| ID | Requirement |
+| --- | --- |
+| REL-1 | The system shall preserve user account data, watchlists, portfolios, and alerts across normal application restarts. |
+| REL-2 | The system shall handle temporary provider, database, and network failures without exposing stack traces or corrupted results to users. |
+| REL-3 | The system shall distinguish between unavailable, stale, partial, and successfully retrieved data. |
+| REL-4 | Failed background ingestion or analysis jobs shall be logged with enough information to identify the failed operation and shall be retried automatically where safe, using a limited number of retries with increasing delays. |
+| REL-5 | The system shall prevent duplicate processing from creating duplicate user alerts, news items, or stored market records. |
+| REL-6 | The system shall use UTC timestamps consistently for stored data, API responses, logs, and displayed update times. |
+| REL-7 | The system shall validate external data before storing or displaying it and shall not silently replace invalid values with fabricated defaults. |
+| REL-8 | The system shall provide health or readiness information for required backend dependencies. |
+| REL-9 | A short database backup and restoration procedure shall be documented before production deployment, and the restoration shall be rehearsed at least once. |
+
+### 3.4 Performance
+
+The following targets apply under the expected course-project load and shall be validated using representative test data.
+
+| ID | Requirement |
+| --- | --- |
+| PERF-1 | The system shall return a successful stock search response within 2 seconds for at least 95% of requests when the required data is cached or available locally. |
+| PERF-2 | The system shall return a historical chart data response within 3 seconds for at least 95% of requests under normal expected load. |
+| PERF-3 | The initial analysis page shall provide visible loading feedback within 1 second and shall identify any component that is still loading. |
+| PERF-4 | The system shall deliver live market updates through the supported WebSocket connection, when implemented, without requiring a full page reload. |
+| PERF-5 | The system shall paginate or limit news, search, and historical-data responses so that a single request does not return an unbounded result set. |
+| PERF-6 | Background ingestion, sentiment analysis, and forecast calculations shall not block interactive API requests. |
+| PERF-7 | The API shall enforce configured rate limits for users and clients, and the system shall cache and throttle its calls to external providers to stay within their rate limits. |
+| PERF-8 | A performance test shall record response latency, error rate, and throughput, and where practical resource usage, for a representative workload, and its results shall be documented. |
+
+### 3.5 Supportability
+
+| ID | Requirement |
+| --- | --- |
+| SUP-1 | The codebase shall be organized into separate frontend, backend, service, data-access, and provider-adapter responsibilities. |
+| SUP-2 | The project shall use version control and shall keep source code, configuration templates, and documentation under Git. |
+| SUP-3 | The system shall expose configuration through environment variables or documented configuration files rather than hard-coded secrets or provider credentials. |
+| SUP-4 | The project shall provide setup, local-development, test, and Docker run instructions in the README. |
+| SUP-5 | The project shall include automated unit tests for calculations, validation, provider adapters, and other critical business logic. |
+| SUP-6 | The project shall include integration or contract tests for the core API endpoints and for each external-service boundary, using recorded provider responses where practical. |
+| SUP-7 | The system shall produce structured logs for authentication events, provider failures, background jobs, and unexpected application errors without logging secrets or sensitive credentials. |
+| SUP-8 | Database changes shall be made through versioned migrations, and the API shall be versioned. Both shall be reviewed together with the related code changes. |
+| SUP-9 | Dependencies shall be pinned or bounded to supported versions and monitored with an automated dependency-vulnerability check, and known high-severity issues shall be resolved before a release. |
+| SUP-10 | A maintainer shall be able to replace a market-data, news, or language-model provider through its adapter interface without rewriting unrelated application services. |
+
+### 3.6 Design Constraints
+
+| ID | Requirement |
+| --- | --- |
+| CON-1 | The backend shall use Python with FastAPI and the frontend shall use Next.js, React, and TypeScript as specified in section 2.3. |
+| CON-2 | The system shall use REST and JSON for normal frontend-backend communication and may use WebSocket for live updates. |
+| CON-3 | The system shall use UTC and ISO 8601 timestamps for persisted and exchanged date-time values. |
+| CON-4 | The system shall access market-data, news, NLP, and LLM services through replaceable adapter or service interfaces. |
+| CON-5 | The system shall not execute trades, connect to a broker for order placement, or provide personalized buy/sell recommendations. |
+| CON-6 | The system shall communicate forecast uncertainty and shall not represent probabilistic scenarios as guaranteed future results. |
+| CON-7 | The system shall respect the licensing, attribution, rate-limit, redistribution, and delayed-data requirements of every external data provider. |
+| CON-8 | API keys, passwords, and other secrets shall not be committed to source control and shall be supplied through protected environment configuration. |
+| CON-9 | The application shall be deployable using Docker as specified in the technology stack. |
+| CON-10 | The initial implementation shall support standard web browsers and shall not require specialized client hardware. |
+| CON-11 | The system shall follow the project's target standards for accessibility, web security, API documentation, and data protection described in section 3.12. |
+| CON-12 | The system shall validate all external input on the server and shall access the database only through parameterized queries or an object-relational mapper, following the OWASP Top 10 guidance referenced in section 3.12. |
+| CON-13 | Authentication shall use short-lived access tokens with a refresh mechanism, failed login attempts shall be rate limited, cookies carrying tokens shall be HttpOnly, Secure, and SameSite, and cross-origin access shall be restricted to an explicit allowlist. |
+| CON-14 | Text received from external sources, such as news content, shall be treated as untrusted: it shall be encoded when displayed and shall never be executed or followed as instructions by any automated component. |
 
 ### 3.7 Online User Documentation and Help System Requirements
 
@@ -151,7 +285,7 @@ The system shall provide documentation and help so that retail investors and fin
 | DOC-4 | Every forecast and risk view shall display a short note that results are uncertain and are not investment advice. |
 | DOC-5 | The backend REST API shall be documented through an auto-generated OpenAPI page (provided by FastAPI). |
 | DOC-6 | The repository shall contain a README with setup and run instructions (including Docker). |
-| DOC-7 | The AI chat bot shall tell users what it can and cannot do (it shows scenarios and risk, and gives no personal advice or price targets), and research briefs shall show their sources. |
+| DOC-7 | The AI chatbot shall tell users what it can and cannot do: it provides general, evidence-based suggestions from available data and analysis, does not rely on hunches or unsupported speculation, and does not provide personalized investment advice or guaranteed price targets. Research briefs shall show their sources. |
 
 Out of scope for now: video tutorials, a separate help-desk or chat support system.
 
