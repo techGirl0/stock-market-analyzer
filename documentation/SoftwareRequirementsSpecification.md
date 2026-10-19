@@ -145,9 +145,9 @@ The system shall provide documentation and help so that retail investors and fin
 
 | ID | Requirement |
 | --- | --- |
-| DOC-1 | The system shall provide a help page that explains each main feature (stock search, market data, news, sentiment, risk indicators, forecasts). |
+| DOC-1 | The system shall provide a help page that explains each main feature (accounts, ticker search, research brief, watchlists and alerts, portfolios, AI chat). |
 | DOC-2 | The system shall provide a glossary that explains financial and technical terms used in the interface (for example "sentiment score", "risk indicator", "forecast scenario"). |
-| DOC-3 | The system shall show short contextual explanations (tooltips or info icons) next to risk indicators, sentiment scores and forecasts. |
+| DOC-3 | The system shall show short contextual explanations (tooltips or info icons) next to any risk indicators, sentiment scores or forecasts that the system shows. |
 | DOC-4 | Every forecast and risk view shall display a short note that results are uncertain and are not investment advice. |
 | DOC-5 | The backend REST API shall be documented through an auto-generated OpenAPI page (provided by FastAPI). |
 | DOC-6 | The repository shall contain a README with setup and run instructions (including Docker). |
@@ -175,7 +175,7 @@ Any purchase would require team approval and a check of the license terms (see 3
 - The system shall provide a web-based user interface built with Next.js, React and TypeScript.
 - The interface shall be usable in current versions of common desktop browsers (Chrome, Firefox, Edge, Safari).
 - The interface shall provide registration, login and logout.
-- The interface shall present ticker search, the structured research brief, watchlists and alerts, portfolios, and a chat with the AI bot. Charts, news, sentiment, risk indicators and forecasts are presented as they are delivered.
+- The interface shall present ticker search, the structured research brief, watchlists and alerts, portfolios, and a chat with the AI bot. Further views such as the event-driven news feed, volatility forecasts, scenario analysis and the composite risk score are not planned within the project period.
 - Alerts shall be described as price alerts and shall not suggest buying or selling.
 - The interface shall use neutral wording such as "insights", "scenarios" and "risk", and shall avoid wording such as "you should buy".
 
@@ -190,7 +190,7 @@ The system has no special hardware interfaces. It runs on standard server hardwa
 | Frontend to backend | The frontend communicates with the Python/FastAPI backend through a REST API (and WebSocket for live updates, if implemented). |
 | Market data provider | The backend retrieves current and historical stock prices from an external market-data API. (tbd) |
 | News provider | The backend retrieves financial news from an external news API or RSS feeds. (tbd) |
-| NLP / ML components | The backend uses Python libraries for sentiment analysis and forecasting. |
+| NLP / ML components | The backend uses Python libraries for natural language processing (and for forecasting, if implemented in a later phase). |
 | Database | The backend stores data in a database. (tbd) |
 | LLM service | If the research assistant is implemented, the backend calls an external LLM API through a replaceable interface. |
 
@@ -249,7 +249,7 @@ The following are explicitly not part of the planned system:
 - Social features between users.
 - Complex role-based access control.
 
-Use cases without a colour in the use case diagram (section 2.2) are not planned within the project period.
+Use cases without a colour in the use case diagram (section 2.2) are not planned within the project period. This applies to the event-driven news feed, volatility forecasts, long-term scenario analysis, the composite risk score, and the administration use cases. They belong to the long-term vision described in section 1.2.
 
 ### 4.3 Assumptions and Open Issues
 
