@@ -16,7 +16,37 @@ Authenticated users can curate a personal watchlist to track preferred financial
 ![Manage Watchlist Activity Diagram](/Media/ManageWatchlistActivityDiagramm.jpg)
 
 ### 2.1.2 Mock-up
-![Manage Watchlist Mockup](../Pictures/Wireframes/ManageWatchlist.png)
+Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
+
+**W1: Watchlist (list view)**
+
+![Watchlist](<../../Media/W1 - Watchlist (list or read).png>)
+
+**W2: Empty watchlist**
+
+![Empty watchlist](<../../Media/W2 - Empty watchlist.png>)
+
+**W3: Add stock dialog**
+
+![Add stock dialog](<../../Media/W3 - Add stock dialog (create).png>)
+
+**W4: Add stock error (invalid ticker)**
+
+![Add stock error](<../../Media/W4 - Add stock error (invalid ticker).png>)
+
+**W5: Remove confirmation**
+
+![Remove confirmation](<../../Media/W5 - Remove confirmation (delete).png>)
+
+**W6: Success message**
+
+![Success message](<../../Media/W6 - Success message (end of use case).png>)
+
+**CRUD:** Manage watchlist is a CRUD use case.
+- Create: add stock (W3, W4, W6)
+- Read: view watchlist (W1, W2)
+- ~~Update~~: struck out, a watchlist entry has no editable fields
+- Delete: remove stock (W5)
 
 ### 2.1.3 Narrative
 ```gherkin
