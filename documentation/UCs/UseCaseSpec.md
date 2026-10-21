@@ -20,7 +20,22 @@ Users can search for a stock by its ticker symbol or company name to explore its
 ![Search Stock Activity Diagram](/Media/SearchStock.jpg)
 
 ### 2.1.2 Mock-up
-![Search Stock Mockup](../Pictures/Wireframes/SearchStock.png)
+
+**S1: Search screen**
+
+![Search screen](<../../Media/S1 - Search screen.png>)
+
+**S2: Search results**
+
+![Search results](<../../Media/S2 - Search results.png>)
+
+**S3: No stock found (alternative flow)**
+
+![No stock found](<../../Media/S3 - No stock found (error).png>)
+
+**S4: Stock detail**
+
+![Stock detail](<../../Media/S4 - Stock detail (end of use case).png>)
 
 ### 2.1.3 Narrative
 ```gherkin
