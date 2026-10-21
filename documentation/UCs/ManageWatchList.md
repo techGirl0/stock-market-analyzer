@@ -6,7 +6,7 @@ Authenticated users can curate a personal watchlist to track preferred financial
 
 # 2 Flow of Events
 ## 2.1 Basic Flow
-- User clicks the "Add to Watchlist" button while viewing a stock's dashboard.
+- User clicks the "Add Stock" button while viewing a stock's dashboard.
 - UI requests to add the stock to the user's watchlist.
 - System saves the user's watchlist preference in the database.
 - System subscribes the user to receive live, event-driven news alerts for that ticker.
@@ -79,6 +79,7 @@ Feature: manage watchlist
 ## 2.2 Alternative Flows
 ### 2.2.1 Remove from Watchlist
 - User navigates to their watchlist or the stock's dashboard and clicks the "Remove" button.
+- User see Yes/No confirmation before deleting. 
 - UI requests to remove the stock.
 - System deletes the watchlist entry from the database.
 - System unsubscribes the user from live alerts for that ticker.

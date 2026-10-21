@@ -7,7 +7,7 @@ Users can search for a stock by its ticker symbol or company name to explore its
 # 2 Flow of Events
 ## 2.1 Basic Flow
 - User enters a ticker symbol or company name into the search bar.
-- UI requests an instrument search.
+- UI requests an instrument Search.
 - System searches instruments and returns matches.
 - UI displays the search results.
 - User selects the desired instrument from the list.
