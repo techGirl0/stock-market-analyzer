@@ -13,34 +13,34 @@ Authenticated users can curate a personal watchlist to track preferred financial
 - UI displays a confirmation and shows the updated watchlist.
 
 ### 2.1.1 Activity Diagram
-![Manage Watchlist Activity Diagram](/Media/ManageWatchlistActivityDiagramm.jpg)
+![Manage Watchlist Activity Diagram](/documentation/Media/ManageWatchlistActivityDiagramm.jpg)
 
 ### 2.1.2 Mock-up
 Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
 
 **W1: Watchlist (list view)**
 
-![Watchlist](<../../Media/W1 - Watchlist (list or read).png>)
+![Watchlist](</documentation/Media/W1 - Watchlist (list or read).png>)
 
 **W2: Empty watchlist**
 
-![Empty watchlist](<../../Media/W2 - Empty watchlist.png>)
+![Empty watchlist](</documentation/Media/W2 - Empty watchlist.png>)
 
 **W3: Add stock dialog**
 
-![Add stock dialog](<../../Media/W3 - Add stock dialog (create).png>)
+![Add stock dialog](</documentation/Media/W3 - Add stock dialog (create).png>)
 
 **W4: Add stock error (invalid ticker)**
 
-![Add stock error](<../../Media/W4 - Add stock error (invalid ticker).png>)
+![Add stock error](</documentation/Media/W4 - Add stock error (invalid ticker).png>)
 
 **W5: Remove confirmation**
 
-![Remove confirmation](<../../Media/W5 - Remove confirmation (delete).png>)
+![Remove confirmation](</documentation/Media/W5 - Remove confirmation (delete).png>)
 
 **W6: Success message**
 
-![Success message](<../../Media/W6 - Success message (end of use case).png>)
+![Success message](</documentation/Media/W6 - Success message (end of use case).png>)
 
 **CRUD:** Manage watchlist is a CRUD use case.
 - Create: add stock (W3, W4, W6)
