@@ -101,7 +101,7 @@ Section 2 provides an overview of the stock market analysis application, includi
 WolfStreet Signal serves as a knowledgeable resource for retail investors and fintech learners. The AI provides general suggestions and explanations based on available market data, financial news, risk indicators, and documented analysis. It must not make hunch-based or unsupported speculative claims, invent facts, perform undisclosed calculations, or offer personalized investment advice. Forecasts are presented as evidence-based probabilistic scenarios with stated assumptions and uncertainty so that users can make their own informed decisions.
 ### 2.2 Use Case Diagram
 
-![OUCD](/Media/UseCaseDiagram.png)
+![OUCD](/Media/UseCaseDiagram.jpg)
 
 - Green: Planned till end of december
 - Yellow: Planned till end of june
