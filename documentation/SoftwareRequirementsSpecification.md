@@ -106,6 +106,33 @@ WolfStreet Signal serves as a knowledgeable resource for retail investors and fi
 - Green: Planned till end of december
 - Yellow: Planned till end of june
 
+#### 2.2.1 Use-case scope and requirements mapping
+
+The use-case diagram provides a high-level view of user goals. Section 3.1
+decomposes those goals into testable functional requirements. The following
+scope definition makes the June use cases explicit:
+
+| Use case | Included scope | Related requirements |
+| --- | --- | --- |
+| Register Account | Register with a valid email address and password, including validation and secure password storage. | FUNC-1, FUNC-3, FUNC-4 |
+| Log in / Log out | Securely authenticate a registered user and allow the user to end the session. | FUNC-2, FUNC-3 |
+| Search tickers | Search by ticker or company name and view the selected instrument's available market data. | FUNC-5–FUNC-9 |
+| Manage watchlists & alerts | Add and remove watchlist instruments, create and remove price alerts, and receive in-application notifications when conditions are met. | FUNC-21, FUNC-23–FUNC-25 |
+| **Manage portfolios** | **For an authenticated user, create a personal portfolio, add selected instruments with quantities, and view the holdings and current calculated value. Portfolio data is isolated per account and persists across normal restarts.** | **FUNC-22, FUNC-25, REL-1** |
+| Generate structured research brief | Generate a sourced brief containing a market snapshot, recent news and sentiment, risk indicators, forecast scenarios, and limitations. | FUNC-15–FUNC-19 |
+| Chat with AI Bot | Answer questions and provide general suggestions using available application data and documented analysis, without personalized investment advice. | FUNC-20 |
+
+“Manage Portfolios” does not include deleting portfolios, buying or selling
+securities, broker integration, transaction execution, historical performance
+accounting, or advanced portfolio optimisation. Those capabilities are outside
+the planned scope. Editing a holding quantity is also not part of the first
+release.
+
+The uncoloured use cases in the diagram are deferred and are not part of the
+project-period deliverables. This includes the event-driven news feed,
+volatility forecasts, long-term scenario analysis, composite risk score, and
+administration use cases.
+
 ### 2.3 Technology Stack
 The technology we use is:
 
@@ -191,7 +218,7 @@ The system shall provide the following functional capabilities.
 | ID | Requirement |
 | --- | --- |
 | FUNC-21 | The system shall allow an authenticated user to add and remove stocks from a personal watchlist. |
-| FUNC-22 | The system shall allow an authenticated user to create and view a portfolio containing selected instruments and quantities, with its current value calculated from the latest available prices. |
+| FUNC-22 | The system shall allow an authenticated user to create and view a personal portfolio containing selected instruments and quantities, with its current value calculated from the latest available prices. |
 | FUNC-23 | The system shall allow an authenticated user to create and remove price alerts for selected instruments. |
 | FUNC-24 | The system shall notify the user in the application when a configured price-alert condition is met, subject to provider availability. The notification shall state the condition that was met and shall not suggest buying or selling. |
 | FUNC-25 | Watchlists, portfolios, and alerts shall be isolated between user accounts. |
