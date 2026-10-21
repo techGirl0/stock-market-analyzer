@@ -13,10 +13,10 @@ Users can utilize the platform's AI research assistant to generate a structured,
 - UI displays the completed research brief, explicitly showing the sources and timestamps used to produce it.
 
 ### 2.1.1 Activity Diagram
-![Generate Brief Activity Diagram](/Media/GenerateBriefActivityDiagramm.jpg)
+![Generate Brief Activity Diagram](/documentation/Media/GenerateBriefActivityDiagramm.jpg)
 
 ### 2.1.2 Mock-up
-![Generate Brief Mockup](../Pictures/Wireframes/GenerateBrief.png)
+![Generate Brief Mockup](/documentation/Pictures/Wireframes/GenerateBrief.png)
 
 ### 2.1.3 Narrative
 ```gherkin

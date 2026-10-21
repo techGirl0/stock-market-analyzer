@@ -17,25 +17,25 @@ Users can search for a stock by its ticker symbol or company name to explore its
 - System optionally establishes a WebSocket connection for live market updates (when implemented).
 
 ### 2.1.1 Activity Diagram
-![Search Stock Activity Diagram](/Media/SearchStock.jpg)
+![Search Stock Activity Diagram](/documentation/Media/SearchStock.jpg)
 
 ### 2.1.2 Mock-up
 
 **S1: Search screen**
 
-![Search screen](<../../Media/S1 - Search screen.png>)
+![Search screen](</documentation/Media/S1 - Search screen.png>)
 
 **S2: Search results**
 
-![Search results](<../../Media/S2 - Search results.png>)
+![Search results](</documentation/Media/S2 - Search results.png>)
 
 **S3: No stock found (alternative flow)**
 
-![No stock found](<../../Media/S3 - No stock found (error).png>)
+![No stock found](</documentation/Media/S3 - No stock found (error).png>)
 
 **S4: Stock detail**
 
-![Stock detail](<../../Media/S4 - Stock detail (end of use case).png>)
+![Stock detail](</documentattion/Media/S4 - Stock detail (end of use case).png>)
 
 ### 2.1.3 Narrative
 ```gherkin
