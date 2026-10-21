@@ -35,7 +35,15 @@ Users can search for a stock by its ticker symbol or company name to explore its
 
 **S4: Stock detail**
 
-![Stock detail](</documentattion/Media/S4 - Stock detail (end of use case).png>)
+![Stock detail](</documentation/Media/S4 - Stock detail (end of use case).png>)
+
+**S5: Loading feedback**
+
+![Loading feedback](</documentation/Media/S5 - Loading feedback.png>)
+
+**S6: Data unavailable (alternative flow)**
+
+![Data unavailable](</documentation/Media/S6 - Data unavailable (error).png>)
 
 ### 2.1.3 Narrative
 ```gherkin
