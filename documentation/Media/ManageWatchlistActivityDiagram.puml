@@ -1,0 +1,64 @@
+@startuml
+title Activity Diagram: Manage Watchlist
+
+|User|
+start
+:Open watchlist;
+
+|UI|
+:Display watchlist;
+if (Watchlist empty?) then (yes)
+  :Display empty watchlist;
+else (no)
+  :Display watchlist entries;
+endif
+
+|User|
+if (Add a stock?) then (yes)
+  |UI|
+  :Open Add Stock dialog;
+
+  |User|
+  :Enter ticker symbol;
+
+  |System|
+  :Validate ticker;
+  if (Ticker valid?) then (yes)
+    :Save stock to watchlist;
+
+    |UI|
+    :Display success message;
+  else (no)
+    |UI|
+    :Display invalid-ticker error;
+
+    |User|
+    :Correct ticker or cancel;
+  endif
+
+else (no)
+  if (Remove a stock?) then (yes)
+    :Select Remove;
+
+    |UI|
+    :Show Yes/No confirmation;
+
+    |User|
+    if (Confirm removal?) then (yes)
+      |System|
+      :Remove stock from watchlist;
+
+      |UI|
+      :Update watchlist;
+    else (no)
+      |UI|
+      :Keep stock in watchlist;
+    endif
+  else (no)
+    :Finish viewing watchlist;
+  endif
+endif
+
+|User|
+stop
+@enduml
