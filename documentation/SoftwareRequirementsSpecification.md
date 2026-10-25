@@ -21,7 +21,7 @@
   - [3.5 Supportability](#35-supportability)
   - [3.6 Design Constraints](#36-design-constraints)
   - [3.7 Online User Documentation and Help System Requirements](#37-online-user-documentation-and-help-system-requirements)
-  - [3.8 Purchased Components](#purchased-components)
+  - [3.8 Purchased Components](#38-purchased-components)
   - [3.9 Interfaces](#39-interfaces)
   - [3.10 Licensing Requirements](#310-licensing-requirements)
   - [3.11 Legal, Copyright and Other Notices](#311-legal-copyright-and-other-notices)
@@ -43,20 +43,21 @@ The intended audience includes developers, project stakeholders, course instruct
 
 ### 1.2 Scope
 
-The stock market analysis application is designed to support the analysis and exploration of financial market information. It aims to provide users with relevant market data, financial news, and analytical insights through a centralized platform.
+The stock market analysis application is designed to support the analysis and exploration of financial market information. It aims to provide users with relevant market data and analytical insights through a centralized platform. The system scope is divided into features planned for the project period and features reserved for the longer-term vision.
 
-The planned system functionality includes:
+The planned project-period functionality includes:
 
-- Searching for stocks using ticker symbols.
-- Displaying current and historical stock market data.
-- Presenting financial news related to selected stocks or companies.
-- Analyzing financial news sentiment using natural language processing.
-- Presenting risk indicators and relevant market insights.
-- Providing forecasts or potential market scenarios while communicating uncertainty.
+- Registering an account and securely logging in and out.
+- Searching for stocks by ticker symbol or company name.
+- Displaying available current or most recently available market data and historical price data.
+- Generating a structured research brief from available data and sources.
+- Managing personal watchlists and price alerts.
+- Creating and viewing personal portfolios.
+- Providing an AI research assistant, where implemented within the agreed project scope.
 
-The system focuses on presenting and analyzing financial information. It is not intended to execute financial transactions or provide personalized investment recommendations. Analytical results and forecasts may contain uncertainty and do not guarantee future market performance.
+The longer-term vision may include expanded financial-news presentation and sentiment analysis, advanced risk indicators, volatility forecasts, long-term scenario analysis, a composite risk score, and an event-driven news feed. Features marked as deferred in Section 2.2 and Section 4.2 are not project-period deliverables. Requirements describing these features define intended behavior if the relevant feature is implemented; they do not override the agreed delivery scope.
 
-The final scope and availability of individual features depend on the requirements agreed upon by the project team and the implementation constraints of the project.
+The system focuses on presenting and analyzing financial information. It is not intended to execute financial transactions or provide personalized investment recommendations. Analytical results and forecasts may contain uncertainty and do not guarantee future market performance. The final availability of individual features is subject to the scope agreed upon by the project team and the implementation constraints of the course project.
 
 
 
@@ -101,45 +102,52 @@ Section 2 provides an overview of the stock market analysis application, includi
 WolfStreet Signal serves as a knowledgeable resource for retail investors and fintech learners. The AI provides general suggestions and explanations based on available market data, financial news, risk indicators, and documented analysis. It must not make hunch-based or unsupported speculative claims, invent facts, perform undisclosed calculations, or offer personalized investment advice. Forecasts are presented as evidence-based probabilistic scenarios with stated assumptions and uncertainty so that users can make their own informed decisions.
 ### 2.2 Use Case Diagram
 
-![OUCD](/Media/UseCaseDiagram.jpg)
+![Use Case Diagram](Media/UseCaseDiagram.jpg)
 
 - Green: Planned till end of december
 - Yellow: Planned till end of june
 
+#### 2.2.1 Use-case scope and requirements mapping
+
+The use-case diagram provides a high-level view of user goals. Section 3.1
+decomposes those goals into testable functional requirements. The following
+scope definition makes the June use cases explicit:
+
+| Use case | Included scope | Related requirements |
+| --- | --- | --- |
+| Register Account | Register with a valid email address and password, including validation and secure password storage. | FUNC-1, FUNC-3, FUNC-4 |
+| Log in / Log out | Securely authenticate a registered user and allow the user to end the session. | FUNC-2, FUNC-3 |
+| Search tickers | Search by ticker or company name and view the selected instrument's available market data. | FUNC-5–FUNC-9 |
+| Manage watchlists & alerts | Add and remove watchlist instruments, create and remove price alerts, and receive in-application notifications when conditions are met. | FUNC-21, FUNC-23–FUNC-25 |
+| **Manage portfolios** | **For an authenticated user, create a personal portfolio, add selected instruments with quantities, and view the holdings and current calculated value. Portfolio data is isolated per account and persists across normal restarts.** | **FUNC-22, FUNC-25, REL-1** |
+| Generate structured research brief | Generate a sourced brief containing a market snapshot, recent news and sentiment, risk indicators, forecast scenarios, and limitations. | FUNC-15–FUNC-19 |
+| Chat with AI Bot | Answer questions and provide general suggestions using available application data and documented analysis, without personalized investment advice. | FUNC-20 |
+
+“Manage Portfolios” does not include deleting portfolios, buying or selling
+securities, broker integration, transaction execution, historical performance
+accounting, or advanced portfolio optimisation. Those capabilities are outside
+the planned scope. Editing a holding quantity is also not part of the first
+release.
+
+The uncoloured use cases in the diagram are deferred and are not part of the
+project-period deliverables. This includes the event-driven news feed,
+volatility forecasts, long-term scenario analysis, composite risk score, and
+administration use cases. Their related requirements describe intended future
+behavior only and do not make these features part of the current delivery scope.
+
 ### 2.3 Technology Stack
-The technology we use is:
 
-Backend:
--Python with FastAPI
+The project uses the following technology stack:
 
-Frontend:
--Next.Js
--React
--TypeScript
+- **Backend:** Python with FastAPI
+- **Frontend:** Next.js, React, TypeScript
+- **AI and machine learning:** Python with natural language processing (NLP) and forecasting
+- **IDE:** IntelliJ IDEA and Visual Studio Code
+- **Project management and version control:** Jira and GitHub
+- **Deployment:** Docker
+- **Testing and quality tools:** pytest, Jest, Cucumber, Espresso, JUnit, Codacy, CodeMR, and RestAssured
 
-AI/machine Learning:
--Python with NLP and Forcasting
-
-IDE:
--IntelliJ and Visual Studio Code
-
-Project Management:
--Jira
--GitHub
-
-
-Deployment:
--Docker
-
-Testing:
--pytest 
--Jest
--Cucumber
--Espresso
--JUnit
--Codacy
--CodeMR
--RestAssured
+## 3. Specific Requirements
 
 ### 3.1 Functionality
 
@@ -191,7 +199,7 @@ The system shall provide the following functional capabilities.
 | ID | Requirement |
 | --- | --- |
 | FUNC-21 | The system shall allow an authenticated user to add and remove stocks from a personal watchlist. |
-| FUNC-22 | The system shall allow an authenticated user to create and view a portfolio containing selected instruments and quantities, with its current value calculated from the latest available prices. |
+| FUNC-22 | The system shall allow an authenticated user to create and view a personal portfolio containing selected instruments and quantities, with its current value calculated from the latest available prices. |
 | FUNC-23 | The system shall allow an authenticated user to create and remove price alerts for selected instruments. |
 | FUNC-24 | The system shall notify the user in the application when a configured price-alert condition is met, subject to provider availability. The notification shall state the condition that was met and shall not suggest buying or selling. |
 | FUNC-25 | Watchlists, portfolios, and alerts shall be isolated between user accounts. |
@@ -279,9 +287,9 @@ The system shall provide documentation and help so that retail investors and fin
 
 | ID | Requirement |
 | --- | --- |
-| DOC-1 | The system shall provide a help page that explains each main feature (stock search, market data, news, sentiment, risk indicators, forecasts). |
+| DOC-1 | The system shall provide a help page that explains each main feature (accounts, ticker search, research brief, watchlists and alerts, portfolios, AI chat). |
 | DOC-2 | The system shall provide a glossary that explains financial and technical terms used in the interface (for example "sentiment score", "risk indicator", "forecast scenario"). |
-| DOC-3 | The system shall show short contextual explanations (tooltips or info icons) next to risk indicators, sentiment scores and forecasts. |
+| DOC-3 | The system shall show short contextual explanations (tooltips or info icons) next to any risk indicators, sentiment scores or forecasts that the system shows. |
 | DOC-4 | Every forecast and risk view shall display a short note that results are uncertain and are not investment advice. |
 | DOC-5 | The backend REST API shall be documented through an auto-generated OpenAPI page (provided by FastAPI). |
 | DOC-6 | The repository shall contain a README with setup and run instructions (including Docker). |
@@ -309,7 +317,7 @@ Any purchase would require team approval and a check of the license terms (see 3
 - The system shall provide a web-based user interface built with Next.js, React and TypeScript.
 - The interface shall be usable in current versions of common desktop browsers (Chrome, Firefox, Edge, Safari).
 - The interface shall provide registration, login and logout.
-- The interface shall present ticker search, the structured research brief, watchlists and alerts, portfolios, and a chat with the AI bot. Charts, news, sentiment, risk indicators and forecasts are presented as they are delivered.
+- The interface shall present ticker search, the structured research brief, watchlists and alerts, portfolios, and a chat with the AI bot. Further views such as the event-driven news feed, volatility forecasts, scenario analysis and the composite risk score are not planned within the project period.
 - Alerts shall be described as price alerts and shall not suggest buying or selling.
 - The interface shall use neutral wording such as "insights", "scenarios" and "risk", and shall avoid wording such as "you should buy".
 
@@ -324,7 +332,7 @@ The system has no special hardware interfaces. It runs on standard server hardwa
 | Frontend to backend | The frontend communicates with the Python/FastAPI backend through a REST API (and WebSocket for live updates, if implemented). |
 | Market data provider | The backend retrieves current and historical stock prices from an external market-data API. (tbd) |
 | News provider | The backend retrieves financial news from an external news API or RSS feeds. (tbd) |
-| NLP / ML components | The backend uses Python libraries for sentiment analysis and forecasting. |
+| NLP / ML components | The backend uses Python libraries for natural language processing (and for forecasting, if implemented in a later phase). |
 | Database | The backend stores data in a database. (tbd) |
 | LLM service | If the research assistant is implemented, the backend calls an external LLM API through a replaceable interface. |
 
@@ -383,7 +391,7 @@ The following are explicitly not part of the planned system:
 - Social features between users.
 - Complex role-based access control.
 
-Use cases without a colour in the use case diagram (section 2.2) are not planned within the project period.
+Use cases without a colour in the use case diagram (section 2.2) are not planned within the project period. This applies to the event-driven news feed, volatility forecasts, long-term scenario analysis, the composite risk score, and the administration use cases. They belong to the longer-term vision described in Section 1.2.
 
 ### 4.3 Assumptions and Open Issues
 
@@ -397,5 +405,5 @@ Use cases without a colour in the use case diagram (section 2.2) are not planned
 
 ### 4.4 Related Documents
 
-- Use case diagram: `documentation/UseCaseDiagram.png`
+- Use case diagram: `documentation/Media/UseCaseDiagram.jpg`
 - Project blog: https://wolfstreeetsignalblog.wordpress.com/
