@@ -17,7 +17,8 @@ Users can search for a stock by its ticker symbol or company name to explore its
 - System optionally establishes a WebSocket connection for live market updates (when implemented).
 
 ### 2.1.1 Activity Diagram
-![Search Stock Activity Diagram](/documentation/Media/SearchStock.jpg)
+
+![Search Stock Activity Diagram](../Media/SearchStock.png)
 
 ### 2.1.2 Mock-up
 
