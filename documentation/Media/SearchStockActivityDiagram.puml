@@ -1,0 +1,43 @@
+@startuml
+title Activity Diagram: Search for a Stock
+
+|User|
+start
+:Enter ticker symbol or company name;
+
+|UI|
+:Request instrument search;
+
+|System|
+:Search instruments;
+if (Results found?) then (yes)
+  |UI|
+  :Display search results;
+
+  |User|
+  :Select desired stock;
+
+  |UI|
+  :Show loading feedback;
+  :Request stock data;
+
+  |System|
+  :Fetch quote, historical data,\nand related news;
+
+  if (Data available?) then (yes)
+    |UI|
+    :Display stock dashboard;
+  else (no)
+    |UI|
+    :Show unavailable-data message;
+  endif
+
+else (no)
+  |UI|
+  :Show empty-state message;
+  :Prompt user to try another search;
+endif
+
+|User|
+stop
+@enduml

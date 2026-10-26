@@ -21,7 +21,7 @@
   - [3.5 Supportability](#35-supportability)
   - [3.6 Design Constraints](#36-design-constraints)
   - [3.7 Online User Documentation and Help System Requirements](#37-online-user-documentation-and-help-system-requirements)
-  - [3.8 Purchased Components](#purchased-components)
+  - [3.8 Purchased Components](#38-purchased-components)
   - [3.9 Interfaces](#39-interfaces)
   - [3.10 Licensing Requirements](#310-licensing-requirements)
   - [3.11 Legal, Copyright and Other Notices](#311-legal-copyright-and-other-notices)
@@ -43,20 +43,21 @@ The intended audience includes developers, project stakeholders, course instruct
 
 ### 1.2 Scope
 
-The stock market analysis application is designed to support the analysis and exploration of financial market information. It aims to provide users with relevant market data, financial news, and analytical insights through a centralized platform.
+The stock market analysis application is designed to support the analysis and exploration of financial market information. It aims to provide users with relevant market data and analytical insights through a centralized platform. The system scope is divided into features planned for the project period and features reserved for the longer-term vision.
 
-The planned system functionality includes:
+The planned project-period functionality includes:
 
-- Searching for stocks using ticker symbols.
-- Displaying current and historical stock market data.
-- Presenting financial news related to selected stocks or companies.
-- Analyzing financial news sentiment using natural language processing.
-- Presenting risk indicators and relevant market insights.
-- Providing forecasts or potential market scenarios while communicating uncertainty.
+- Registering an account and securely logging in and out.
+- Searching for stocks by ticker symbol or company name.
+- Displaying available current or most recently available market data and historical price data.
+- Generating a structured research brief from available data and sources.
+- Managing personal watchlists and price alerts.
+- Creating and viewing personal portfolios.
+- Providing an AI research assistant, where implemented within the agreed project scope.
 
-The system focuses on presenting and analyzing financial information. It is not intended to execute financial transactions or provide personalized investment recommendations. Analytical results and forecasts may contain uncertainty and do not guarantee future market performance.
+The longer-term vision may include expanded financial-news presentation and sentiment analysis, advanced risk indicators, volatility forecasts, long-term scenario analysis, a composite risk score, and an event-driven news feed. Features marked as deferred in Section 2.2 and Section 4.2 are not project-period deliverables. Requirements describing these features define intended behavior if the relevant feature is implemented; they do not override the agreed delivery scope.
 
-The final scope and availability of individual features depend on the requirements agreed upon by the project team and the implementation constraints of the project.
+The system focuses on presenting and analyzing financial information. It is not intended to execute financial transactions or provide personalized investment recommendations. Analytical results and forecasts may contain uncertainty and do not guarantee future market performance. The final availability of individual features is subject to the scope agreed upon by the project team and the implementation constraints of the course project.
 
 
 
@@ -101,7 +102,7 @@ Section 2 provides an overview of the stock market analysis application, includi
 WolfStreet Signal serves as a knowledgeable resource for retail investors and fintech learners. The AI provides general suggestions and explanations based on available market data, financial news, risk indicators, and documented analysis. It must not make hunch-based or unsupported speculative claims, invent facts, perform undisclosed calculations, or offer personalized investment advice. Forecasts are presented as evidence-based probabilistic scenarios with stated assumptions and uncertainty so that users can make their own informed decisions.
 ### 2.2 Use Case Diagram
 
-![OUCD](/Media/UseCaseDiagram.jpg)
+![Use Case Diagram](Media/UseCaseDiagram.jpg)
 
 - Green: Planned till end of december
 - Yellow: Planned till end of june
@@ -131,42 +132,22 @@ release.
 The uncoloured use cases in the diagram are deferred and are not part of the
 project-period deliverables. This includes the event-driven news feed,
 volatility forecasts, long-term scenario analysis, composite risk score, and
-administration use cases.
+administration use cases. Their related requirements describe intended future
+behavior only and do not make these features part of the current delivery scope.
 
 ### 2.3 Technology Stack
-The technology we use is:
 
-Backend:
--Python with FastAPI
+The project uses the following technology stack:
 
-Frontend:
--Next.Js
--React
--TypeScript
+- **Backend:** Python with FastAPI
+- **Frontend:** Next.js, React, TypeScript
+- **AI and machine learning:** Python with natural language processing (NLP) and forecasting
+- **IDE:** IntelliJ IDEA and Visual Studio Code
+- **Project management and version control:** Jira and GitHub
+- **Deployment:** Docker
+- **Testing and quality tools:** pytest, Jest, Cucumber, Espresso, JUnit, Codacy, CodeMR, and RestAssured
 
-AI/machine Learning:
--Python with NLP and Forcasting
-
-IDE:
--IntelliJ and Visual Studio Code
-
-Project Management:
--Jira
--GitHub
-
-
-Deployment:
--Docker
-
-Testing:
--pytest 
--Jest
--Cucumber
--Espresso
--JUnit
--Codacy
--CodeMR
--RestAssured
+## 3. Specific Requirements
 
 ### 3.1 Functionality
 
@@ -410,7 +391,7 @@ The following are explicitly not part of the planned system:
 - Social features between users.
 - Complex role-based access control.
 
-Use cases without a colour in the use case diagram (section 2.2) are not planned within the project period. This applies to the event-driven news feed, volatility forecasts, long-term scenario analysis, the composite risk score, and the administration use cases. They belong to the long-term vision described in section 1.2.
+Use cases without a colour in the use case diagram (section 2.2) are not planned within the project period. This applies to the event-driven news feed, volatility forecasts, long-term scenario analysis, the composite risk score, and the administration use cases. They belong to the longer-term vision described in Section 1.2.
 
 ### 4.3 Assumptions and Open Issues
 
@@ -424,5 +405,5 @@ Use cases without a colour in the use case diagram (section 2.2) are not planned
 
 ### 4.4 Related Documents
 
-- Use case diagram: `documentation/UseCaseDiagram.png`
+- Use case diagram: `documentation/Media/UseCaseDiagram.jpg`
 - Project blog: https://wolfstreeetsignalblog.wordpress.com/
