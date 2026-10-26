@@ -7,6 +7,7 @@ start
 
 |UI|
 :Display watchlist;
+
 if (Watchlist empty?) then (yes)
   :Display empty watchlist;
 else (no)
@@ -18,22 +19,34 @@ if (Add a stock?) then (yes)
   |UI|
   :Open Add Stock dialog;
 
-  |User|
-  :Enter ticker symbol;
+  repeat
+    |User|
+    :Enter ticker symbol;
 
-  |System|
-  :Validate ticker;
+    |System|
+    :Validate ticker;
+
+    |UI|
+    if (Ticker valid?) then (yes)
+      :Show valid ticker;
+    else (no)
+      :Display invalid-ticker error;
+    endif
+
+    |User|
+  repeat while (Ticker invalid and retry?) is (yes)
+  -> no;
+
   if (Ticker valid?) then (yes)
+    |System|
     :Save stock to watchlist;
 
     |UI|
     :Display success message;
+    :Update watchlist;
   else (no)
-    |UI|
-    :Display invalid-ticker error;
-
     |User|
-    :Correct ticker or cancel;
+    :Cancel adding stock;
   endif
 
 else (no)
