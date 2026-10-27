@@ -3,19 +3,9 @@ title Activity Diagram: Manage Watchlist
 
 |User|
 start
-:Open watchlist;
+if (Viewing a stock's dashboard?) then (yes)
+  :Click "Add Stock" button;
 
-|UI|
-:Display watchlist;
-
-if (Watchlist empty?) then (yes)
-  :Display empty watchlist;
-else (no)
-  :Display watchlist entries;
-endif
-
-|User|
-if (Add a stock?) then (yes)
   |UI|
   :Open Add Stock dialog;
 
@@ -50,25 +40,35 @@ if (Add a stock?) then (yes)
   endif
 
 else (no)
-  if (Remove a stock?) then (yes)
-    :Select Remove;
+  :Open watchlist;
 
-    |UI|
-    :Show Yes/No confirmation;
+  |UI|
+  if (Watchlist empty?) then (yes)
+    :Display empty watchlist;
+  else (no)
+    :Display watchlist entries;
 
     |User|
-    if (Confirm removal?) then (yes)
-      |System|
-      :Remove stock from watchlist;
+    if (Remove a stock?) then (yes)
+      :Select Remove;
 
       |UI|
-      :Update watchlist;
+      :Show Yes/No confirmation;
+
+      |User|
+      if (Confirm removal?) then (yes)
+        |System|
+        :Remove stock from watchlist;
+
+        |UI|
+        :Update watchlist;
+      else (no)
+        |UI|
+        :Keep stock in watchlist;
+      endif
     else (no)
-      |UI|
-      :Keep stock in watchlist;
+      :Finish viewing watchlist;
     endif
-  else (no)
-    :Finish viewing watchlist;
   endif
 endif
 

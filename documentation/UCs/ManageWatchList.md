@@ -9,11 +9,10 @@ Authenticated users can curate a personal watchlist to track preferred financial
 - User clicks the "Add Stock" button while viewing a stock's dashboard.
 - UI requests to add the stock to the user's watchlist.
 - System saves the user's watchlist preference in the database.
-- System subscribes the user to receive live, event-driven news alerts for that ticker.
 - UI displays a confirmation and shows the updated watchlist.
 
 ### 2.1.1 Activity Diagram
-![Manage Watchlist Activity Diagram](../Media/ManageWatchlistActivityDiagram.png)
+![Manage Watchlist Activity Diagram](../Media/ManageWatchlistActivityDiagramm.png)
 
 ### 2.1.2 Mock-up
 Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
@@ -82,7 +81,6 @@ Feature: manage watchlist
 - User see Yes/No confirmation before deleting. 
 - UI requests to remove the stock.
 - System deletes the watchlist entry from the database.
-- System unsubscribes the user from live alerts for that ticker.
 - UI updates to show the stock has been removed.
 
 # 3 Special Requirements

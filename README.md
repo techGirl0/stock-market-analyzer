@@ -69,7 +69,7 @@ instructional buy/sell language.
 ## Documentation
 
 - [Software Requirements Specification](documentation/SoftwareRequirementsSpecification.md)
-- [Use Case Diagram](documentation/UseCaseDiagram.png)
+- [Use Case Diagram](documentation/Media/UseCaseDiagram.jpg)
 
 ## Status
 
