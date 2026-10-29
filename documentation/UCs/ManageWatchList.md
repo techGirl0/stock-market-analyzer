@@ -12,7 +12,7 @@ Authenticated users can curate a personal watchlist to track preferred financial
 - UI displays a confirmation and shows the updated watchlist.
 
 ### 2.1.1 Activity Diagram
-![Manage Watchlist Activity Diagram](../Media/ManageWatchlistActivityDiagramm.png)
+![Manage Watchlist Activity Diagram](../Media/ManageWatchlistActivityDiagramm.jpg)
 
 ### 2.1.2 Mock-up
 Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)

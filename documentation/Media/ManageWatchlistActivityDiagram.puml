@@ -1,77 +1,35 @@
 @startuml
-title Activity Diagram: Manage Watchlist
+skinparam activity {
+BackgroundColor #FFFCE6
+BorderColor #E04B4B
+ArrowColor #E04B4B
+}
+skinparam conditionStyle diamond
+skinparam NoteBackgroundColor #FFFCE6
+skinparam NoteBorderColor #E04B4B
 
 |User|
 start
-if (Viewing a stock's dashboard?) then (yes)
-  :Click "Add Stock" button;
+:Click "Generate Brief" button;
 
-  |UI|
-  :Open Add Stock dialog;
+|UI|
+:Show loading feedback;
+:Request research brief;
 
-  repeat
-    |User|
-    :Enter ticker symbol;
+|System|
+:Orchestrate research agent;
+:Gather data via tools (quotes, news, risk, scenarios);
 
-    |System|
-    :Validate ticker;
-
-    |UI|
-    if (Ticker valid?) then (yes)
-      :Show valid ticker;
-    else (no)
-      :Display invalid-ticker error;
-    endif
-
-    |User|
-  repeat while (Ticker invalid and retry?) is (yes)
-  -> no;
-
-  if (Ticker valid?) then (yes)
-    |System|
-    :Save stock to watchlist;
-
-    |UI|
-    :Display success message;
-    :Update watchlist;
-  else (no)
-    |User|
-    :Cancel adding stock;
-  endif
-
+if (Is all requested data available?) then (yes)
+:Generate complete brief;
 else (no)
-  :Open watchlist;
-
-  |UI|
-  if (Watchlist empty?) then (yes)
-    :Display empty watchlist;
-  else (no)
-    :Display watchlist entries;
-
-    |User|
-    if (Remove a stock?) then (yes)
-      :Select Remove;
-
-      |UI|
-      :Show Yes/No confirmation;
-
-      |User|
-      if (Confirm removal?) then (yes)
-        |System|
-        :Remove stock from watchlist;
-
-        |UI|
-        :Update watchlist;
-      else (no)
-        |UI|
-        :Keep stock in watchlist;
-      endif
-    else (no)
-      :Finish viewing watchlist;
-    endif
-  endif
+:Generate brief with missing data note;
 endif
 
-|User|
+:Append tool citations and timestamps;
+
+|UI|
+:Display structured research brief;
+:Show sources and investment disclaimers;
 stop
 @enduml
