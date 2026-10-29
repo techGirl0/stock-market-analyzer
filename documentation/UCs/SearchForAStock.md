@@ -50,14 +50,13 @@ Users can search for a stock by its ticker symbol or company name to explore its
 Feature: search for a stock
 
   As a user
-  i want to search for a financial instrument by ticker or company name
-  in order to view its market data, charts, and news.
+  I want to search for a financial instrument by ticker or company name
+  In order to view its market data, charts, and news.
 
   Background:
-    And I am on the homepage
+    Given I am on the homepage
 
-  Scenario: successful stock search
-    Given I am on the "main" page
+  Scenario: successful stock search (Happy Path)
     When I enter "AAPL" in the search field
     And I press the "search" button
     Then I see "AAPL - Apple Inc." in the search results
@@ -66,14 +65,12 @@ Feature: search for a stock
     And I am routed to the "stock dashboard" page for "AAPL"
     And I see the current price, historical chart, and recent news
 
-  Scenario: no results found
-    Given I am on the "main" page
+  Scenario: no results found (Unhappy Path)
     When I enter "INVALIDTICKER123" in the search field
     And I press the "search" button
     Then I receive an "empty state" message
 
-  Scenario: data unavailable
-    Given I am on the "main" page
+  Scenario: data unavailable (Unhappy Path)
     When I enter "AAPL" in the search field
     And I press the "search" button
     And I click on "AAPL - Apple Inc."

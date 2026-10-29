@@ -52,26 +52,33 @@ Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
 Feature: manage watchlist
 
   As a signed in user
-  i want to add and remove stocks from my watchlist
+  I want to add and remove stocks from my watchlist
   in order to track my preferred stocks and receive news alerts.
 
   Background:
     And I am on the homepage
 
-  Scenario: add stock to watchlist
+  Scenario: add stock to watchlist (Happy Path)
     Given I am signed in with username "USER" and password "PASSWORD"
     And I am on the "stock dashboard" page for "AAPL"
     When I press the "Add to Watchlist" button
     Then I receive a "success" message
     And "AAPL" is visible in my watchlist sidebar
 
-  Scenario: remove stock from watchlist
+  Scenario: remove stock from watchlist (Happy Path)
     Given I am signed in with username "USER" and password "PASSWORD"
     And I am on the "watchlist" page
     And "AAPL" is currently in my watchlist
     When I press the "Remove" button next to "AAPL"
     Then I receive a "success" message
     And "AAPL" is removed from my watchlist sidebar
+
+  Scenario: add stock fails due to invalid ticker (Unhappy Path)
+    Given I am signed in with username "USER" and password "PASSWORD"
+    And I attempt to add a stock to my watchlist
+    When I enter an invalid ticker symbol "XXXX"
+    Then I should see an "invalid ticker" error message
+    And the stock is not added to my watchlist
 ```
     
 
