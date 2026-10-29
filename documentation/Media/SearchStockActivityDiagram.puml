@@ -10,6 +10,7 @@ start
 
 |System|
 :Search instruments;
+
 if (Results found?) then (yes)
   |UI|
   :Display search results;
