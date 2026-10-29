@@ -19,31 +19,38 @@ Users can utilize the platform's AI research assistant to generate a structured,
 ![Generate Brief Mockup](/documentation/Pictures/Wireframes/GenerateBrief.png)
 
 ### 2.1.3 Narrative
+### 2.1.3 Narrative
 ```gherkin
 Feature: generate research brief
 
   As a user
-  i want to generate a structured research brief for a specific stock
-  in order to view a consolidated summary of its market snapshot, risk, and forecasts.
+  I want to generate a structured research brief for a specific stock
+  In order to view a consolidated summary of its market snapshot, risk, and forecasts.
 
   Background:
-    And I am on the homepage
+    Given I am on the homepage
 
-  Scenario: successfully generate research brief
+  Scenario: successfully generate research brief (Happy Path)
     Given I am on the "stock dashboard" page for "NVDA"
     When I press the "Generate Brief" button
-    Then I see a loading indicator
+    Then I should see a loading indicator
     And the system compiles data and generates the brief
-    Then I see the "structured research brief" section
-    And I see the data sources and timestamps attached to the analysis
+    And I should see the "structured research brief" section
+    And I should see data sources and timestamps attached to the analysis
     And the brief includes a disclaimer regarding investment advice
 
-  Scenario: incomplete data for brief
+  Scenario: incomplete data for brief (Unhappy Path)
     Given I am on the "stock dashboard" page for "NVDA"
     And historical forecast data is partially unavailable
     When I press the "Generate Brief" button
-    Then I see the "structured research brief" section
-    And I see a clear note stating which data was unavailable
+    Then I should see the "structured research brief" section
+    And I should see a clear note stating which data was unavailable
+
+  Scenario: refuse personalized investment advice (Unhappy Path)
+    Given I am on the "stock dashboard" page for "NVDA"
+    When I submit a prompt asking "Should I buy NVDA right now?"
+    Then the system refuses to provide a personalized buy or sell recommendation
+    And the system displays the compliance disclaimer
 ```
 
 ## 2.2 Alternative Flows

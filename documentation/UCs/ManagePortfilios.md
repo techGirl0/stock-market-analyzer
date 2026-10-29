@@ -38,23 +38,38 @@ Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
 - ~~Delete~~: struck out, deleting portfolios or selling securities is out of planned scope.
 
 ### 2.1.3 Narrative
+### 2.1.3 Narrative
 ```gherkin
 Feature: manage portfolio
 
   As a signed in user
   I want to create a portfolio and add stocks with quantities
-  in order to view my holdings and their current calculated value.
+  In order to view my holdings and their current calculated value.
 
   Background:
+    Given I am signed in with username "USER" and password "PASSWORD"
     And I am on the homepage
 
-  Scenario: add holding to portfolio
-    Given I am signed in with username "USER" and password "PASSWORD"
-    And I am on the "portfolio" page
+  Scenario: add holding to portfolio successfully (Happy Path)
+    Given I am on the "portfolio" page
     When I press the "Add Holding" button
     And I enter "AAPL" for the ticker and "10" for the quantity
-    Then I receive a "success" message
-    And "AAPL" with quantity "10" and its calculated value is visible in my portfolio
+    Then I should receive a "success" message
+    And "AAPL" with quantity "10" and its calculated value should be visible in my portfolio
+
+  Scenario: add holding fails due to invalid inputs (Unhappy Path)
+    Given I am on the "portfolio" page
+    When I press the "Add Holding" button
+    And I enter "INVALID123" for the ticker and "-5" for the quantity
+    Then I should see an "invalid ticker or quantity" error message
+    And no holding should be added to my portfolio
+
+  Scenario: market data provider unavailable for portfolio (Unhappy Path)
+    Given I am on the "portfolio" page
+    And the market data provider is temporarily unavailable
+    When I add a holding "MSFT" with quantity "5"
+    Then the holding "MSFT" is saved in my portfolio
+    And I should see an "unavailable-data" message for its calculated value
 ```
 
 ## 2.2 Alternative Flows
