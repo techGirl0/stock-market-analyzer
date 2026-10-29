@@ -94,3 +94,4 @@ The user receives a compliant, evidence-based response or a polite refusal if th
 # 6 Extension Points
 ## 6.1 Generate Structured Research Brief
 The user can request the bot to formulate its response into a full structured research brief, initiating the "Generate structured research brief" use case.
+The user can request the bot to formulate its response into a full structured research brief, initiating the "Generate structured research brief" use case.
