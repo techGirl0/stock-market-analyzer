@@ -4,6 +4,7 @@ from behave import given, when, then
 @given('I am signed in with username "{user}" and password "{password}"')
 def step_impl_login(context, user, password):
     context.user = user
+    context.password = password
     context.logged_in = True
 
 @given('I am on the homepage')
@@ -24,13 +25,15 @@ def step_impl_on_watchlist(context):
 
 @given('"{ticker}" is currently in my watchlist')
 def step_impl_ticker_in_watchlist(context, ticker):
-    context.watchlist = getattr(context, 'watchlist', [])
+    if not hasattr(context, 'watchlist'):
+        context.watchlist = []
     if ticker not in context.watchlist:
         context.watchlist.append(ticker)
 
 @when('I press the "Add to Watchlist" button')
 def step_impl_add_watchlist(context):
-    context.watchlist = getattr(context, 'watchlist', [])
+    if not hasattr(context, 'watchlist'):
+        context.watchlist = []
     context.watchlist.append(context.current_ticker)
     context.last_message = "success"
 
@@ -41,6 +44,7 @@ def step_impl_remove_watchlist(context, ticker):
 
 @when('I attempt to add a stock with invalid ticker "{ticker}"')
 def step_impl_invalid_ticker(context, ticker):
+    context.invalid_ticker_attempt = ticker
     context.last_message = "invalid ticker"
 
 @then('I should see a "{status}" message')
@@ -67,10 +71,11 @@ def step_impl_enter_search(context, query):
 
 @when('I press the "search" button')
 def step_impl_press_search(context):
-    if context.search_query == "INVALIDTICKER123":
+    query = getattr(context, 'search_query', '')
+    if query == "INVALIDTICKER123":
         context.search_results = []
     else:
-        context.search_results = [f"{context.search_query} - Apple Inc."]
+        context.search_results = [f"{query} - Apple Inc."]
 
 @when('I click on "{result_label}"')
 def step_impl_click_result(context, result_label):
@@ -86,7 +91,7 @@ def step_impl_verify_results(context, result_label):
 
 @then('I should see a loading indicator')
 def step_impl_loading_indicator(context):
-    pass  # Mock UI step
+    context.loading_shown = True
 
 @then('I should be routed to the "stock dashboard" page for "{ticker}"')
 def step_impl_routed_dashboard(context, ticker):
