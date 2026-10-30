@@ -17,19 +17,32 @@ Authenticated users can create a personal portfolio to track their holdings. The
 ![Manage Portfolio Activity Diagram](../Media/ManagePortfolioActivityDiagramm.jpg)
 
 ### 2.1.2 Mock-up
+
 Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
 
 **P1: Portfolio (list view with calculated values)**
+
 ![Portfolio](</documentation/Media/P1 - Portfolio.png>)
 
 **P2: Empty portfolio**
+
 ![Empty portfolio](</documentation/Media/P2 - Empty portfolio.png>)
 
 **P3: Add holding dialog**
+
 ![Add holding dialog](</documentation/Media/P3 - Add holding dialog.png>)
 
 **P4: Add holding error (invalid ticker or quantity)**
+
 ![Add holding error](</documentation/Media/P4 - Add holding error.png>)
+
+**P5: Value unavailable (alternative flow)**
+
+![Value unavailable](</documentation/Media/P5 - Value unavailable.png>)
+
+**P6: Holding added (success)**
+
+![Holding added](</documentation/Media/P6 - Holding added (success).png>)
 
 **CRUD:** Manage portfolio is restricted to Create and Read operations for the first release.
 - Create: add stock holding with quantity (P3, P4)
