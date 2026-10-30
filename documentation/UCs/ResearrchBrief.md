@@ -16,9 +16,28 @@ Users can utilize the platform's AI research assistant to generate a structured,
 ![Generate Brief Activity Diagram](/documentation/Media/GenerateBriefActivityDiagramm.jpg)
 
 ### 2.1.2 Mock-up
-![Generate Brief Mockup](/documentation/Pictures/Wireframes/GenerateBrief.png)
+Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
 
-### 2.1.3 Narrative
+**B1: Stock dashboard with "Generate Brief" button**
+
+![Stock dashboard](</documentation/Media/B1 - Stock dashboard.png>)
+
+**B2: Brief loading**
+
+![Brief loading](</documentation/Media/B2 - Brief loading.png>)
+
+**B3: Research brief with sources and timestamps**
+
+![Research brief](</documentation/Media/B3 - Research brief.png>)
+
+**B4: Brief with missing data (alternative flow 2.2.1)**
+
+![Brief with missing data](</documentation/Media/B4 - Brief with missing data.png>)
+
+**B5: Advice request refused (alternative flow 2.2.2)**
+
+![Advice request refused](</documentation/Media/B5 - Advice request refused.png>)
+
 ### 2.1.3 Narrative
 ```gherkin
 Feature: generate research brief
