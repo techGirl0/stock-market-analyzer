@@ -38,7 +38,6 @@ Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
 - ~~Delete~~: struck out, clearing chat history is not explicitly defined in scope.
 
 ### 2.1.3 Narrative
-### 2.1.3 Narrative
 ```gherkin
 Feature: chat with AI bot
 
@@ -93,5 +92,4 @@ The user receives a compliant, evidence-based response or a polite refusal if th
 
 # 6 Extension Points
 ## 6.1 Generate Structured Research Brief
-The user can request the bot to formulate its response into a full structured research brief, initiating the "Generate structured research brief" use case.
 The user can request the bot to formulate its response into a full structured research brief, initiating the "Generate structured research brief" use case.
