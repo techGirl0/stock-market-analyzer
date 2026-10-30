@@ -17,18 +17,23 @@ Authenticated users can interact with an AI research assistant to ask questions 
 ![Chat with AIBot Activity Diagram](../Media/ChatWithAIBotActivityDiagramm.jpg)
 
 ### 2.1.2 Mock-up
+
 Design source: [Figma](https://www.figma.com/design/bBspMfnXbO5TzTM1VUkKjH)
 
 **C1: Chat interface (empty or active)**
+
 ![Chat interface](</documentation/Media/C1 - Chat interface.png>)
 
 **C2: Bot typing/loading state**
+
 ![Bot typing](</documentation/Media/C2 - Bot loading state.png>)
 
 **C3: Bot response with sources and assumptions**
+
 ![Bot response](</documentation/Media/C3 - Bot response.png>)
 
 **C4: Bot refusal (personalized advice requested)**
+
 ![Bot refusal](</documentation/Media/C4 - Bot refusal.png>)
 
 **CRUD:** Chat with AIBot is a Create and Read use case.
