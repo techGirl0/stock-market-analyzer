@@ -311,18 +311,33 @@ elif feature == "🔮 Scenario Analysis":
     if not ticker:
         st.info("👈 Enter a stock symbol in the sidebar.")
     elif pipeline:
-        def render_scenarios(pip, tkr):
+        def render_scenarios(pip, tkr, compact=False):
             scenarios = pip.get("scenarios")
             if not scenarios:
                 st.warning("Not enough data to compute scenarios.")
                 return
 
-            for s in scenarios:
-                st.subheader(f"In {s['horizon_years']} year(s)")
-                c1, c2, c3 = st.columns(3)
-                c1.metric("😟 Worse case",  f"${s['bear']}")
-                c2.metric("😐 Middle case", f"${s['base']}")
-                c3.metric("😊 Better case", f"${s['bull']}")
+            if compact:
+                # Compact table layout — fits inside a narrow comparison column
+                rows = ["| Horizon | 😟 Worse | 😐 Middle | 😊 Better |",
+                        "|---------|----------|-----------|-----------|"]
+                for s in scenarios:
+                    yrs = s['horizon_years']
+                    label = f"{yrs} year" if yrs == 1 else f"{yrs} years"
+                    rows.append(
+                        f"| {label} | ${s['bear']} | ${s['base']} | ${s['bull']} |"
+                    )
+                st.markdown("\n".join(rows))
+            else:
+                # Full layout — 3 metrics per row, plenty of space
+                for s in scenarios:
+                    yrs = s['horizon_years']
+                    label = f"In {yrs} year" if yrs == 1 else f"In {yrs} years"
+                    st.subheader(label)
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("😟 Worse case",  f"${s['bear']}")
+                    c2.metric("😐 Middle case", f"${s['base']}")
+                    c3.metric("😊 Better case", f"${s['bull']}")
 
             st.divider()
             if st.button(f"💬 Explain {tkr} scenarios", use_container_width=True, key=f"scen_btn_{tkr}"):
@@ -335,9 +350,9 @@ elif feature == "🔮 Scenario Analysis":
         if compare_on and ticker_b and pipeline_b:
             col_a, col_b = comparison_cols(ticker, ticker_b)
             with col_a:
-                render_scenarios(pipeline, ticker)
+                render_scenarios(pipeline, ticker, compact=True)
             with col_b:
-                render_scenarios(pipeline_b, ticker_b)
+                render_scenarios(pipeline_b, ticker_b, compact=True)
         else:
             render_scenarios(pipeline, ticker)
 
