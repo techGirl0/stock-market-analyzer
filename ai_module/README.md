@@ -9,7 +9,7 @@ Built with Python + Streamlit. Runs independently — no database, Redis, Docker
 
 | Feature | What it does |
 |---|---|
-| Research Brief | Generates a full plain-English summary of a stock (company, price, news, risk, scenarios) |
+| Research Brief | Generates a full plain-English summary of a stock (company, price, news, risk, scenarios). Downloadable as a styled PDF. |
 | News Feed | Fetches latest headlines and labels each one GOOD / BAD / NEUTRAL using AI |
 | Risk Score | Calculates a 1–10 composite risk score from volatility, beta, and 52-week position |
 | Volatility Forecast | Shows expected price movement range for next 5, 10, and 20 days |

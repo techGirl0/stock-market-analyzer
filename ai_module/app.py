@@ -1,7 +1,9 @@
 import streamlit as st
 import sys
 import os
+import re
 from datetime import datetime
+from fpdf import FPDF
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -20,6 +22,96 @@ st.set_page_config(page_title="Stock Market AI", page_icon="📈", layout="cente
 st.title("📈 Stock Market AI Assistant")
 st.markdown("Not sure what a stock is doing? Just ask. Everything explained in plain English.")
 st.divider()
+
+
+# ── PDF builder ───────────────────────────────────────────────────────────────
+
+def build_brief_pdf(ticker: str, company_name: str, brief_text: str, fetched_at: str) -> bytes:
+    """
+    Renders the research brief as a styled PDF and returns the raw bytes.
+    Uses only core fonts (no external font files needed).
+    """
+    from fpdf.enums import XPos, YPos
+
+    def clean(line: str) -> str:
+        line = re.sub(r"^#{1,3}\s*", "", line)
+        line = re.sub(r"\*\*(.*?)\*\*", r"\1", line)
+        line = re.sub(r"\*(.*?)\*", r"\1", line)
+        return line.strip()
+
+    def safe(text: str) -> str:
+        """Replace characters outside latin-1 so core fonts don't crash."""
+        return (
+            text
+            .replace("\u2014", "-")
+            .replace("\u2013", "-")
+            .replace("\u2018", "'")
+            .replace("\u2019", "'")
+            .replace("\u201c", '"')
+            .replace("\u201d", '"')
+            .replace("\u2022", "-")
+            .replace("\u00b1", "+/-")
+            .encode("latin-1", errors="replace").decode("latin-1")
+        )
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.add_page()
+    pdf.set_margins(18, 18, 18)
+
+    # ── Header bar ────────────────────────────────────────────────────────────
+    pdf.set_fill_color(26, 35, 126)
+    pdf.rect(0, 0, 210, 32, style="F")
+
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_xy(18, 8)
+    pdf.cell(0, 10, safe(f"Research Brief: {ticker}"),
+             new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_xy(18, 20)
+    pdf.cell(0, 6, safe(f"{company_name}  |  Data fetched: {fetched_at}"),
+             new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+    pdf.set_text_color(30, 30, 30)
+    pdf.ln(10)
+
+    # ── Body ──────────────────────────────────────────────────────────────────
+    for raw_line in brief_text.splitlines():
+        line = clean(raw_line)
+        if not line:
+            pdf.ln(3)
+            continue
+
+        if re.match(r"^#{1,3}\s", raw_line):
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.set_fill_color(230, 235, 255)
+            pdf.set_text_color(26, 35, 126)
+            pdf.ln(3)
+            pdf.cell(0, 8, safe(line), fill=True,
+                     new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.set_text_color(30, 30, 30)
+            pdf.ln(1)
+        elif raw_line.strip().startswith("- "):
+            pdf.set_font("Helvetica", "", 10)
+            pdf.set_x(22)
+            pdf.multi_cell(0, 6, safe("- " + line.lstrip("- ").strip()))
+        else:
+            pdf.set_font("Helvetica", "", 10)
+            pdf.multi_cell(0, 6, safe(line))
+
+    # ── Footer ────────────────────────────────────────────────────────────────
+    pdf.set_y(-18)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(
+        0, 6,
+        "Educational only - not financial advice. Data sourced from Yahoo Finance via yfinance.",
+        align="C",
+    )
+
+    return bytes(pdf.output())
 
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -102,12 +194,17 @@ if feature == "📄 Research Brief":
                         st.session_state[f"brief_{ticker}"] = generate_research_brief(pipeline)
                 if f"brief_{ticker}" in st.session_state:
                     st.markdown(st.session_state[f"brief_{ticker}"])
-                    # Export button
+                    pdf_bytes = build_brief_pdf(
+                        ticker,
+                        pipeline["company"]["name"],
+                        st.session_state[f"brief_{ticker}"],
+                        pipeline["fetched_at"],
+                    )
                     st.download_button(
-                        label="⬇️ Download brief (.txt)",
-                        data=st.session_state[f"brief_{ticker}"],
-                        file_name=f"{ticker}_brief_{datetime.today().strftime('%Y%m%d')}.txt",
-                        mime="text/plain",
+                        label="⬇️ Download as PDF",
+                        data=pdf_bytes,
+                        file_name=f"{ticker}_brief_{datetime.today().strftime('%Y%m%d')}.pdf",
+                        mime="application/pdf",
                         use_container_width=True,
                     )
             with col_b:
@@ -116,11 +213,17 @@ if feature == "📄 Research Brief":
                         st.session_state[f"brief_{ticker_b}"] = generate_research_brief(pipeline_b)
                 if f"brief_{ticker_b}" in st.session_state:
                     st.markdown(st.session_state[f"brief_{ticker_b}"])
+                    pdf_bytes_b = build_brief_pdf(
+                        ticker_b,
+                        pipeline_b["company"]["name"],
+                        st.session_state[f"brief_{ticker_b}"],
+                        pipeline_b["fetched_at"],
+                    )
                     st.download_button(
-                        label="⬇️ Download brief (.txt)",
-                        data=st.session_state[f"brief_{ticker_b}"],
-                        file_name=f"{ticker_b}_brief_{datetime.today().strftime('%Y%m%d')}.txt",
-                        mime="text/plain",
+                        label="⬇️ Download as PDF",
+                        data=pdf_bytes_b,
+                        file_name=f"{ticker_b}_brief_{datetime.today().strftime('%Y%m%d')}.pdf",
+                        mime="application/pdf",
                         use_container_width=True,
                     )
         else:
@@ -133,11 +236,17 @@ if feature == "📄 Research Brief":
                 st.success("Done!")
                 st.markdown(st.session_state[f"brief_{ticker}"])
                 st.divider()
+                pdf_bytes = build_brief_pdf(
+                    ticker,
+                    pipeline["company"]["name"],
+                    st.session_state[f"brief_{ticker}"],
+                    pipeline["fetched_at"],
+                )
                 st.download_button(
-                    label="⬇️ Download brief as .txt",
-                    data=st.session_state[f"brief_{ticker}"],
-                    file_name=f"{ticker}_brief_{datetime.today().strftime('%Y%m%d')}.txt",
-                    mime="text/plain",
+                    label="⬇️ Download as PDF",
+                    data=pdf_bytes,
+                    file_name=f"{ticker}_brief_{datetime.today().strftime('%Y%m%d')}.pdf",
+                    mime="application/pdf",
                     use_container_width=True,
                 )
                 st.caption("📌 All data from Yahoo Finance via yfinance. Educational only — not financial advice.")
