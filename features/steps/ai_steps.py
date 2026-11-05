@@ -126,3 +126,4 @@ def step_impl_verify_scenario_disclaimer(context):
 @given('historical price data is unavailable')
 def step_impl_historical_data_unavailable(context):
     context.historical_price_data_unavailable = True
+
