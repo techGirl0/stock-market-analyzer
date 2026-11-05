@@ -4,8 +4,33 @@ from datetime import datetime, timezone
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MAIN PIPELINE
+# TICKER VALIDATION
 # ─────────────────────────────────────────────────────────────────────────────
+
+def validate_ticker(ticker: str) -> tuple[bool, str]:
+    """
+    Checks whether a ticker is real and has usable data.
+    Returns (is_valid, error_type) where error_type is one of:
+      - "ok"           → ticker exists and has data
+      - "not_found"    → ticker does not exist / cannot be found
+      - "no_data"      → ticker exists but data is currently unavailable
+    """
+    try:
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        # yfinance returns {"trailingPegRatio": None} or similar minimal dict
+        # for invalid tickers — a real ticker always has quoteType or shortName
+        quote_type = info.get("quoteType")
+        short_name = info.get("shortName") or info.get("longName")
+        if not quote_type and not short_name:
+            return False, "not_found"
+        # Ticker exists but might have no live price (e.g. halted, delisted)
+        price = info.get("currentPrice") or info.get("regularMarketPrice")
+        if not price:
+            return False, "no_data"
+        return True, "ok"
+    except Exception:
+        return False, "no_data"
 
 def run_pipeline(ticker: str) -> dict:
     """
@@ -135,7 +160,7 @@ def run_pipeline(ticker: str) -> dict:
 def _52w_position(price, info) -> float | None:
     low = info.get("fiftyTwoWeekLow")
     high = info.get("fiftyTwoWeekHigh")
-    if price and low and high and high != low:
+    if price is not None and low is not None and high is not None and high != low:
         return round((price - low) / (high - low) * 100, 1)
     return None
 

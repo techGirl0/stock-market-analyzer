@@ -6,7 +6,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from stock_data import run_pipeline
+from stock_data import run_pipeline, validate_ticker
 from ai_engine import (
     generate_research_brief,
     get_news_feed,
@@ -92,6 +92,7 @@ def build_brief_pdf(ticker: str, company_name: str, brief_text: str, fetched_at:
             pdf.set_fill_color(230, 235, 255)
             pdf.set_text_color(26, 35, 126)
             pdf.ln(3)
+            pdf.set_x(18)
             pdf.cell(0, 8, safe(line), fill=True,
                      new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             pdf.set_text_color(30, 30, 30)
@@ -102,6 +103,7 @@ def build_brief_pdf(ticker: str, company_name: str, brief_text: str, fetched_at:
             pdf.multi_cell(0, 6, safe("- " + line.lstrip("- ").strip()))
         else:
             pdf.set_font("Helvetica", "", 10)
+            pdf.set_x(18)
             pdf.multi_cell(0, 6, safe(line))
 
     # ── Footer ────────────────────────────────────────────────────────────────
@@ -155,18 +157,91 @@ def load_pipeline(t: str):
     if not t:
         return None
     key = f"pipeline_{t}"
-    if key not in st.session_state:
-        with st.spinner(f"Loading data for {t}..."):
-            try:
-                st.session_state[key] = run_pipeline(t)
-            except Exception as e:
-                st.error(f"Could not load data for {t}: {e}")
-                return None
+    if key in st.session_state:
+        return st.session_state.get(key)
+
+    # Step 1 — validate before fetching
+    with st.spinner(f"Checking ticker {t}..."):
+        valid, error_type = validate_ticker(t)
+
+    if not valid:
+        if error_type == "not_found":
+            st.error(
+                f"**\"{t}\" is not a recognised stock ticker.**\n\n"
+                "Please check the symbol and try again. "
+                "Examples of valid tickers: AAPL, TSLA, MSFT, AMZN, GOOGL.",
+                icon="🔍",
+            )
+        else:  # no_data
+            st.error(
+                f"**\"{t}\" exists but its data is currently unavailable.**\n\n"
+                "This can happen when a stock is halted, delisted, or the data provider "
+                "is temporarily down. Try again in a few minutes.",
+                icon="📡",
+            )
+        return None
+
+    # Step 2 — fetch full pipeline
+    with st.spinner(f"Loading data for {t}..."):
+        try:
+            st.session_state[key] = run_pipeline(t)
+        except Exception as e:
+            st.error(f"Unexpected error loading data for {t}: {e}", icon="⚠️")
+            return None
+
     return st.session_state.get(key)
 
 
 pipeline  = load_pipeline(ticker)
 pipeline_b = load_pipeline(ticker_b) if (compare_on and ticker_b) else None
+
+
+# ── Data availability banner ──────────────────────────────────────────────────
+def show_data_banner(pip: dict, tkr: str):
+    """Shows a small status row so the user knows what data is available."""
+    if not pip:
+        return
+
+    has_price    = pip["market"].get("current_price") is not None
+    has_history  = pip.get("volatility") is not None   # proxy: computed only when >21 days
+    has_risk     = pip.get("risk") is not None
+    has_scenarios = pip.get("scenarios") is not None
+    has_news     = bool(pip.get("news"))
+
+    all_ok = all([has_price, has_history, has_risk, has_scenarios, has_news])
+    if all_ok:
+        st.success(f"All data loaded for **{tkr}**. All features available.", icon="✅")
+        return
+
+    # Something is missing — show a detailed breakdown
+    rows = []
+    rows.append(f"{'✅' if has_price    else '❌'} Current price & market snapshot")
+    rows.append(f"{'✅' if has_history  else '⚠️'} Price history (needed for Volatility & Scenarios)")
+    rows.append(f"{'✅' if has_risk     else '⚠️'} Risk score")
+    rows.append(f"{'✅' if has_news     else '⚠️'} News headlines")
+
+    missing = []
+    if not has_history:
+        missing.append("Volatility Forecast and Scenario Analysis")
+    if not has_risk:
+        missing.append("Risk Score")
+    if not has_news:
+        missing.append("News Feed")
+
+    with st.expander(f"⚠️ Some data is unavailable for **{tkr}** — click to see details", expanded=True):
+        for r in rows:
+            st.markdown(r)
+        if missing:
+            st.info(
+                "The following features will show a 'not enough data' message: "
+                + ", ".join(missing) + ". "
+                "All other features (Research Brief, Chat) still work normally."
+            )
+
+if ticker and pipeline:
+    show_data_banner(pipeline, ticker)
+if compare_on and ticker_b and pipeline_b:
+    show_data_banner(pipeline_b, ticker_b)
 
 
 # ── Comparison header helper ──────────────────────────────────────────────────
@@ -429,6 +504,13 @@ elif feature == "🔮 Scenario Analysis":
                 st.warning("Not enough data to compute scenarios.")
                 return
 
+            current = pip["market"]["current_price"]
+
+            def pct_change(target, base):
+                if base and target:
+                    return f"{((target - base) / base * 100):+.1f}%"
+                return "N/A"
+
             if compact:
                 # Compact table layout — fits inside a narrow comparison column
                 rows = ["| Horizon | 😟 Worse | 😐 Middle | 😊 Better |",
@@ -437,19 +519,24 @@ elif feature == "🔮 Scenario Analysis":
                     yrs = s['horizon_years']
                     label = f"{yrs} year" if yrs == 1 else f"{yrs} years"
                     rows.append(
-                        f"| {label} | ${s['bear']} | ${s['base']} | ${s['bull']} |"
+                        f"| {label} "
+                        f"| ${s['bear']} ({pct_change(s['bear'], current)}) "
+                        f"| ${s['base']} ({pct_change(s['base'], current)}) "
+                        f"| ${s['bull']} ({pct_change(s['bull'], current)}) |"
                     )
                 st.markdown("\n".join(rows))
             else:
-                # Full layout — 3 metrics per row, plenty of space
+                # Full layout — 3 metrics per row with % change delta
                 for s in scenarios:
                     yrs = s['horizon_years']
                     label = f"In {yrs} year" if yrs == 1 else f"In {yrs} years"
                     st.subheader(label)
                     c1, c2, c3 = st.columns(3)
-                    c1.metric("😟 Worse case",  f"${s['bear']}")
-                    c2.metric("😐 Middle case", f"${s['base']}")
-                    c3.metric("😊 Better case", f"${s['bull']}")
+                    c1.metric("😟 Worse case",  f"${s['bear']}",  pct_change(s['bear'],  current))
+                    c2.metric("😐 Middle case", f"${s['base']}",  pct_change(s['base'],  current))
+                    c3.metric("😊 Better case", f"${s['bull']}",  pct_change(s['bull'],  current))
+
+                st.caption(f"Current price: ${current}  ·  % change shown relative to today")
 
             st.divider()
             if st.button(f"💬 Explain {tkr} scenarios", use_container_width=True, key=f"scen_btn_{tkr}"):
