@@ -76,6 +76,47 @@ End with a one-line disclaimer."""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# NEWS SENTIMENT SCORE  (used by risk pipeline)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def score_news_sentiment(ticker: str, headlines: list[dict]) -> float | None:
+    """
+    Sends all headlines to the LLM in one call and returns a sentiment score
+    between -1.0 (all bad) and +1.0 (all good). Returns None if no headlines.
+    This is called once inside run_pipeline() and cached in the pipeline dict.
+    """
+    if not headlines:
+        return None
+
+    titles = "\n".join(f"- {h['title']}" for h in headlines)
+
+    prompt = f"""These are recent news headlines about {ticker} stock:
+
+{titles}
+
+Based only on these headlines, rate the overall news sentiment on a scale from -1.0 to +1.0:
+  -1.0 = all headlines are very negative for the stock
+   0.0 = neutral or mixed
+  +1.0 = all headlines are very positive for the stock
+
+Reply with a single number only. No explanation. Example: -0.3"""
+
+    try:
+        client = Groq(api_key=API_KEY)
+        response = client.chat.completions.create(
+            model=MODEL,
+            max_tokens=10,
+            extra_body={"reasoning_effort": "none"},
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = response.choices[0].message.content.strip()
+        score = float(re.search(r"-?\d+\.?\d*", raw).group())
+        return round(max(-1.0, min(1.0, score)), 2)
+    except Exception:
+        return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # NEWS FEED
 # ─────────────────────────────────────────────────────────────────────────────
 

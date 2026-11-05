@@ -3,6 +3,12 @@ import pandas as pd
 from datetime import datetime, timezone
 
 
+def _get_sentiment_scorer():
+    """Lazy import to avoid circular dependency (ai_engine imports stock_data)."""
+    from ai_engine import score_news_sentiment
+    return score_news_sentiment
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # TICKER VALIDATION
 # ─────────────────────────────────────────────────────────────────────────────
@@ -126,11 +132,7 @@ def run_pipeline(ticker: str) -> dict:
         result["risk_inputs"] = None
         result["scenarios"] = None
 
-    # ── Risk score ────────────────────────────────────────────────────────────
-    if result["risk_inputs"]:
-        result["risk"] = _compute_risk_score(result["risk_inputs"])
-    else:
-        result["risk"] = None
+    # ── Risk score computed after news sentiment is added — see below ─────────
 
     # ── News headlines ────────────────────────────────────────────────────────
     try:
@@ -150,6 +152,23 @@ def run_pipeline(ticker: str) -> dict:
     except Exception:
         result["news"] = []
 
+    # ── News sentiment score (feeds into risk) ────────────────────────────────
+    if result["news"] and result["risk_inputs"]:
+        try:
+            scorer = _get_sentiment_scorer()
+            sentiment = scorer(ticker, result["news"])
+            result["risk_inputs"]["news_sentiment"] = sentiment
+        except Exception:
+            result["risk_inputs"]["news_sentiment"] = None
+    elif result["risk_inputs"]:
+        result["risk_inputs"]["news_sentiment"] = None
+
+    # ── Risk score (recomputed now that sentiment is available) ───────────────
+    if result["risk_inputs"]:
+        result["risk"] = _compute_risk_score(result["risk_inputs"])
+    else:
+        result["risk"] = None
+
     return result
 
 
@@ -166,7 +185,7 @@ def _52w_position(price, info) -> float | None:
 
 
 def _compute_risk_score(inputs: dict) -> dict:
-    """Turns volatility, beta, 52w position into a 1-10 score with breakdown."""
+    """Turns volatility, beta, 52w position, and news sentiment into a 1-10 score."""
     scores = []
     components = {}
 
@@ -178,7 +197,7 @@ def _compute_risk_score(inputs: dict) -> dict:
         elif vol < 50: v = 8
         else:          v = 10
         components["volatility"] = {"label": "Price swings (volatility)", "value": f"{vol}%", "score": v}
-        scores.append((v, 0.5))
+        scores.append((v, 0.4))
 
     beta = inputs.get("beta")
     if isinstance(beta, (int, float)):
@@ -189,7 +208,7 @@ def _compute_risk_score(inputs: dict) -> dict:
         elif ab < 1.6: b = 7
         else:          b = 9
         components["beta"] = {"label": "Sensitivity to market (beta)", "value": str(beta), "score": b}
-        scores.append((b, 0.3))
+        scores.append((b, 0.25))
 
     pos = inputs.get("52w_position_pct")
     if isinstance(pos, (int, float)):
@@ -200,6 +219,27 @@ def _compute_risk_score(inputs: dict) -> dict:
         else:          p = 5
         components["52w_position"] = {"label": "Position in yearly range", "value": f"{pos}%", "score": p}
         scores.append((p, 0.2))
+
+    # ── News sentiment (scored -1.0 to +1.0, converted to risk 1–10) ─────────
+    # Positive news → lower risk contribution; negative news → higher risk
+    sentiment = inputs.get("news_sentiment")
+    if isinstance(sentiment, (int, float)):
+        # Map: +1.0 → score 2 (good news = low risk)
+        #       0.0 → score 5 (neutral)
+        #      -1.0 → score 9 (bad news = high risk)
+        n = round(5 - (sentiment * 3.5))
+        n = max(1, min(10, n))
+        sentiment_label = (
+            "Positive" if sentiment > 0.2 else
+            "Negative" if sentiment < -0.2 else
+            "Neutral"
+        )
+        components["news_sentiment"] = {
+            "label": "Recent news sentiment",
+            "value": f"{sentiment_label} ({sentiment:+.2f})",
+            "score": n,
+        }
+        scores.append((n, 0.15))
 
     if not scores:
         return None
@@ -258,12 +298,16 @@ def format_pipeline_for_prompt(data: dict) -> str:
 
     if data.get("risk_inputs"):
         ri = data["risk_inputs"]
+        sentiment_line = ""
+        if isinstance(ri.get("news_sentiment"), (int, float)):
+            sentiment_line = f"\nNews sentiment score: {ri['news_sentiment']:+.2f} (-1=very negative, 0=neutral, +1=very positive)"
         lines += [
             "",
             "--- Risk Inputs (calculated from 1 year of daily price data) ---",
             f"30-day annualized volatility: {ri['volatility_30d']}%",
             f"Beta vs SPY: {ri['beta']}",
             f"52-week position: {ri['52w_position_pct']}% (0=at yearly low, 100=at yearly high)",
+            sentiment_line,
         ]
 
     if data.get("risk") and data["risk"]:
