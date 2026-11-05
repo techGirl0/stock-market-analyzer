@@ -3,7 +3,6 @@ import sys
 import os
 import re
 from datetime import datetime
-from fpdf import FPDF
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -31,7 +30,11 @@ def build_brief_pdf(ticker: str, company_name: str, brief_text: str, fetched_at:
     Renders the research brief as a styled PDF and returns the raw bytes.
     Uses only core fonts (no external font files needed).
     """
-    from fpdf.enums import XPos, YPos
+    try:
+        from fpdf import FPDF
+        from fpdf.enums import XPos, YPos
+    except ImportError:
+        raise ImportError("fpdf2 is not installed. Run: pip install fpdf2==2.9.0")
 
     def clean(line: str) -> str:
         line = re.sub(r"^#{1,3}\s*", "", line)
