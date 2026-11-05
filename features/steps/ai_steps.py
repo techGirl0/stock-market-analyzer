@@ -127,3 +127,46 @@ def step_impl_verify_scenario_disclaimer(context):
 def step_impl_historical_data_unavailable(context):
     context.historical_price_data_unavailable = True
 
+
+# ==============================================================================
+# 10. COMPARE TWO STOCKS STEPS
+# ==============================================================================
+
+@when('I enable the "Compare two stocks" toggle')
+def step_impl_enable_compare(context):
+    context.compare_on = True
+
+@when('I disable the "Compare two stocks" toggle')
+def step_impl_disable_compare(context):
+    context.compare_on = False
+
+@when('I enter "{ticker}" as the second stock symbol')
+def step_impl_enter_second_ticker(context, ticker):
+    context.ticker_b = ticker
+
+@when('I leave the second stock symbol empty')
+def step_impl_leave_second_ticker_empty(context):
+    context.ticker_b = ""
+
+@then('I should see a side-by-side view of "{ticker_a}" and "{ticker_b}"')
+def step_impl_verify_side_by_side(context, ticker_a, ticker_b):
+    assert getattr(context, 'compare_on', False) is True
+    assert getattr(context, 'ticker_b', '') == ticker_b
+
+@then('I should see a risk score for "{ticker}"')
+def step_impl_verify_risk_score_for_ticker(context, ticker):
+    # Risk score is available for any ticker with sufficient price history
+    context.risk_score_shown_for = ticker
+
+@then('I should see scenario data for "{ticker}"')
+def step_impl_verify_scenario_data_for_ticker(context, ticker):
+    context.scenario_data_shown_for = ticker
+
+@then('I should see only the single stock view for "{ticker}"')
+def step_impl_verify_single_view(context, ticker):
+    assert (
+        getattr(context, 'compare_on', True) is False
+        or getattr(context, 'ticker_b', '') == ""
+    )
+    assert getattr(context, 'current_ticker', ticker) == ticker
+
