@@ -1,0 +1,5 @@
+groq
+yfinance
+streamlit
+pandas
+python-dotenv
