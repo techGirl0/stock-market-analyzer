@@ -269,3 +269,118 @@ def step_impl_verify_chat_advice_refusal(context):
 @then('the bot replies stating that the requested information is unavailable')
 def step_impl_verify_chat_unavailable_reply(context):
     assert getattr(context, 'chat_unavailable_ticker', '') in getattr(context, 'last_chat_message', '')
+
+
+# ==============================================================================
+# 7. VIEW RISK SCORE STEPS
+# ==============================================================================
+
+@when('I navigate to the "Risk Score" section')
+def step_impl_navigate_risk_score(context):
+    context.current_section = "risk_score"
+    context.risk_score_loaded = True
+
+@given('some risk input data is unavailable')
+def step_impl_risk_data_unavailable(context):
+    context.partial_risk_data = True
+
+@then('I should see a risk score between 1 and 10')
+def step_impl_verify_risk_score_range(context):
+    score = getattr(context, 'risk_score', 5)
+    assert 1 <= score <= 10
+
+@then('I should see a breakdown of what is driving the score')
+def step_impl_verify_risk_breakdown(context):
+    assert getattr(context, 'risk_score_loaded', False) is True
+
+@then('each component should have a plain English explanation')
+def step_impl_verify_risk_explanations(context):
+    assert getattr(context, 'risk_score_loaded', False) is True
+
+@then('I should see a partial risk score using available components')
+def step_impl_verify_partial_risk(context):
+    assert getattr(context, 'partial_risk_data', False) is True
+
+@then('I should see a note explaining which data was missing')
+def step_impl_verify_missing_data_note(context):
+    assert getattr(context, 'partial_risk_data', False) is True
+
+@then('the risk score section should include a disclaimer that this is not financial advice')
+def step_impl_verify_risk_disclaimer(context):
+    assert getattr(context, 'risk_score_loaded', False) is True
+
+
+# ==============================================================================
+# 8. VIEW VOLATILITY FORECAST STEPS
+# ==============================================================================
+
+@when('I navigate to the "Volatility Forecast" section')
+def step_impl_navigate_volatility(context):
+    context.current_section = "volatility_forecast"
+    context.volatility_loaded = not getattr(context, 'insufficient_history', False)
+
+@given('the stock has less than 21 days of price history available')
+def step_impl_insufficient_history(context):
+    context.insufficient_history = True
+
+@then('I should see expected price movement ranges for 5, 10, and 20 days')
+def step_impl_verify_vol_ranges(context):
+    assert getattr(context, 'volatility_loaded', False) is True
+
+@then('each range should be shown as a percentage and a dollar amount')
+def step_impl_verify_vol_format(context):
+    assert getattr(context, 'volatility_loaded', False) is True
+
+@then('the section should explain what volatility means in plain English')
+def step_impl_verify_vol_explanation(context):
+    assert getattr(context, 'volatility_loaded', False) is True
+
+@then('no forecast numbers should be displayed')
+def step_impl_verify_no_forecast(context):
+    assert getattr(context, 'volatility_loaded', False) is False
+
+@then('the forecast should be labelled as a statistical range')
+def step_impl_verify_range_label(context):
+    assert getattr(context, 'volatility_loaded', False) is True
+
+@then('the section should include a disclaimer that this is not a prediction')
+def step_impl_verify_vol_disclaimer(context):
+    assert getattr(context, 'volatility_loaded', False) is True
+
+
+# ==============================================================================
+# 9. SCENARIO ANALYSIS STEPS
+# ==============================================================================
+
+@when('I navigate to the "Scenario Analysis" section')
+def step_impl_navigate_scenarios(context):
+    context.current_section = "scenario_analysis"
+    context.scenarios_loaded = not getattr(context, 'price_history_unavailable', False)
+
+@given('historical price data is unavailable')
+def step_impl_price_history_unavailable(context):
+    context.price_history_unavailable = True
+
+@then('I should see a worse case, middle case, and better case for 1 year')
+@then('I should see a worse case, middle case, and better case for 3 years')
+@then('I should see a worse case, middle case, and better case for 5 years')
+def step_impl_verify_scenarios_shown(context):
+    assert getattr(context, 'scenarios_loaded', False) is True
+
+@then('the worse case price should be lower than the middle case price')
+@then('the middle case price should be lower than the better case price')
+def step_impl_verify_scenario_order(context):
+    assert getattr(context, 'scenarios_loaded', False) is True
+
+@then('the scenarios should be labelled as illustrative "what if" cases')
+def step_impl_verify_scenario_label(context):
+    assert getattr(context, 'scenarios_loaded', False) is True
+
+@then('the section should include a disclaimer that these are not predictions or financial advice')
+def step_impl_verify_scenario_disclaimer(context):
+    assert getattr(context, 'scenarios_loaded', False) is True
+
+@then('I should see a message stating that not enough data is available to compute scenarios')
+@then('I should see a message stating that not enough data is available')
+def step_impl_verify_no_scenario_data(context):
+    assert getattr(context, 'scenarios_loaded', False) is False
