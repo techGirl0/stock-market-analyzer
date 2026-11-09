@@ -1,0 +1,27 @@
+# Temporary generated files and handovers
+/temp/*
+!/temp/
+!/temp/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.pytest_cache/
+
+# IntelliJ IDEA
+.idea/shelf/
+.idea/workspace.xml
+.idea/httpRequests/
+.idea/queries/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/market-intelligence-platform-master-plan.md
+.idea/MasterPlan.md
+
+# Local assistant tooling
+.claude/
+
+*.db
+backend/**/data/
