@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Request
+from fastapi.responses import JSONResponse
 from uuid import uuid4
 
 from app.controllers import alerts, analysis, auth, health, instruments, portfolio, research, watchlists
@@ -12,7 +13,10 @@ from app.core.errors import (
     validation_error_handler,
     unhandled_error_handler,
 )
+from app.core.rate_limit import FixedWindowLimiter
+
 settings = get_settings()
+api_limiter = FixedWindowLimiter(settings.api_rate_limit, 60)
 app = FastAPI(title=settings.app_name, version="1.0.0")
 app.add_exception_handler(BackendError, backend_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
@@ -30,6 +34,20 @@ app.add_middleware(
 async def request_id_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or str(uuid4())
     request.state.request_id = request_id
+    try:
+        api_limiter.check(request.client.host if request.client else "unknown")
+    except BackendError as exc:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": {
+                    "code": exc.code,
+                    "message": exc.message,
+                    "request_id": request_id,
+                    "details": exc.details,
+                }
+            },
+        )
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
     return response
