@@ -9,6 +9,7 @@ from fastapi import Header
 from uuid import UUID
 from app.core.errors import BackendError
 from app.services.watchlists import WatchlistService
+from functools import lru_cache
 
 
 @lru_cache
@@ -31,7 +32,14 @@ def get_database() -> Database:
 def get_current_user(authorization: str | None = Header(default=None)) -> UUID:
     if not authorization or not authorization.startswith("Bearer "):
         raise BackendError("authentication_required", "Authentication is required.", 401)
-    return decode_access_token(authorization[7:], get_settings().jwt_secret)
+    user_id = decode_access_token(authorization[7:], get_settings().jwt_secret)
+    with get_database().connection() as connection:
+        exists = connection.execute(
+            "SELECT 1 FROM users WHERE id = ?", (str(user_id),)
+        ).fetchone()
+    if exists is None:
+        raise BackendError("authentication_required", "Authentication is required.", 401)
+    return user_id
 
 
 def get_watchlist_service() -> WatchlistService:
