@@ -2,7 +2,16 @@ from datetime import datetime, timedelta, timezone
 
 from app.connectors.market import ConnectorUnavailable, MarketDataConnector
 from app.core.errors import BackendError
-from app.schemas.v1 import Candle, InstrumentMatch, NewsArticle, Page, Quote
+from app.schemas.v1 import (
+    Availability,
+    Candle,
+    DataMeta,
+    HistoryResponse,
+    InstrumentMatch,
+    NewsArticle,
+    Page,
+    Quote,
+)
 
 
 class InstrumentService:
@@ -39,10 +48,23 @@ class InstrumentService:
             ) from exc
 
     async def candles(
-        self, symbol: str, start: datetime | None, end: datetime | None, interval: str
+        self,
+        symbol: str,
+        start: datetime | None,
+        end: datetime | None,
+        interval: str,
+        limit: int = 100,
     ) -> Page[Candle]:
         end = end or datetime.now(timezone.utc)
         start = start or end - timedelta(days=30)
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=timezone.utc)
+        else:
+            start = start.astimezone(timezone.utc)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=timezone.utc)
+        else:
+            end = end.astimezone(timezone.utc)
         if start >= end:
             raise BackendError("validation_error", "start must be before end.", 422)
         try:
@@ -55,7 +77,16 @@ class InstrumentService:
             items = await self.connector.candles(
                 symbol, start=start, end=end, interval=interval
             )
-            return Page(items=items)
+            fetched_at = datetime.now(timezone.utc)
+            return Page(
+                items=items[:limit],
+                meta=DataMeta(
+                    source=type(self.connector).__name__,
+                    fetched_at=fetched_at,
+                    availability=Availability.available,
+                    delayed=True,
+                ),
+            )
         except BackendError:
             raise
         except ConnectorUnavailable as exc:
@@ -86,3 +117,26 @@ class InstrumentService:
                 "News data is temporarily unavailable.",
                 503,
             ) from exc
+
+    async def history(
+        self,
+        symbol: str,
+        start: datetime | None,
+        end: datetime | None,
+        interval: str,
+        limit: int,
+    ) -> HistoryResponse:
+        page = await self.candles(symbol, start, end, interval, limit)
+        if page.meta is None:
+            raise BackendError(
+                "provider_unavailable",
+                "Historical market data is temporarily unavailable.",
+                503,
+            )
+        return HistoryResponse(
+            items=page.items,
+            source=page.meta.source,
+            delayed=page.meta.delayed,
+            availability=page.meta.availability,
+            fetched_at=page.meta.fetched_at,
+        )

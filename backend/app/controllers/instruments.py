@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
-from app.schemas.v1 import Candle, InstrumentMatch, NewsArticle, Page, Quote
+from app.schemas.v1 import Candle, HistoryResponse, InstrumentMatch, NewsArticle, Page, Quote
 from app.services.instruments import InstrumentService
 from app.dependencies import get_instrument_service
 
@@ -32,9 +32,22 @@ async def get_candles(
     start: datetime | None = None,
     end: datetime | None = None,
     interval: str = Query(default="1d", pattern=r"^(1m|5m|15m|1h|1d)$"),
+    limit: int = Query(default=100, ge=1, le=500),
     service: InstrumentService = Depends(get_instrument_service),
 ) -> Page[Candle]:
-    return await service.candles(symbol, start, end, interval)
+    return await service.candles(symbol, start, end, interval, limit)
+
+
+@router.get("/{symbol}/history", response_model=HistoryResponse)
+async def get_history(
+    symbol: str,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    interval: str = Query(default="1d", pattern=r"^(1m|5m|15m|1h|1d)$"),
+    limit: int = Query(default=100, ge=1, le=500),
+    service: InstrumentService = Depends(get_instrument_service),
+) -> HistoryResponse:
+    return await service.history(symbol, start, end, interval, limit)
 
 
 @router.get("/{symbol}/news", response_model=Page[NewsArticle])
