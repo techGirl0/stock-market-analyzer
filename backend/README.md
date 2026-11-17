@@ -71,6 +71,12 @@ uvicorn app.main:app --reload
 
 The OpenAPI document is available at `http://127.0.0.1:8000/docs`.
 
+## Docker
+
+From the repository root, run `docker compose up --build` and open
+`http://127.0.0.1:8000/api/v1/health/live`. SQLite data is stored in the
+named `backend-data` volume. This repository has no frontend service.
+
 Set `MARKET_DATA_PROVIDER=yfinance` only after installing the optional
 `yfinance` dependency. The default `demo` provider makes local development
 and tests independent of network access.

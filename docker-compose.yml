@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_PATH: /app/data/app.db
+      JWT_SECRET: ${JWT_SECRET:-development-only-change-me}
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  backend-data:
