@@ -18,8 +18,9 @@ def get_market_connector() -> MarketDataConnector:
     return DemoMarketDataConnector()
 
 
+@lru_cache
 def get_instrument_service() -> InstrumentService:
-    return InstrumentService(get_market_connector())
+    return InstrumentService(get_market_connector(), get_settings())
 
 
 @lru_cache
