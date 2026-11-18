@@ -5,9 +5,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.connectors.market import DemoMarketDataConnector
+from app.core.db import Database
 from app.dependencies import get_database, get_instrument_service
 from app.main import app
-from app.core.db import Database
 from app.services.instruments import InstrumentService
 
 

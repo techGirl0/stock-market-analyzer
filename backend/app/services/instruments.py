@@ -79,14 +79,22 @@ class InstrumentService:
             raise
         except ConnectorUnavailable as exc:
             stale, _ = self._cached(key)
-            if isinstance(stale, Quote) and self.clock() - self._cache[key][0] <= self._setting("provider_max_stale_seconds", 300):
+            if (
+                isinstance(stale, Quote)
+                and self.clock() - self._cache[key][0]
+                <= self._setting("provider_max_stale_seconds", 300)
+            ):
                 return stale.model_copy(
                     update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
                 )
             raise BackendError("provider_unavailable", str(exc), 503) from exc
         except Exception as exc:
             stale, _ = self._cached(key)
-            if isinstance(stale, Quote) and self.clock() - self._cache[key][0] <= self._setting("provider_max_stale_seconds", 300):
+            if (
+                isinstance(stale, Quote)
+                and self.clock() - self._cache[key][0]
+                <= self._setting("provider_max_stale_seconds", 300)
+            ):
                 return stale.model_copy(
                     update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
                 )
@@ -147,14 +155,24 @@ class InstrumentService:
             raise
         except ConnectorUnavailable as exc:
             stale, _ = self._cached(key)
-            if isinstance(stale, Page) and self.clock() - self._cache[key][0] <= self._setting("provider_max_stale_seconds", 300):
+            if (
+                isinstance(stale, Page)
+                and stale.meta is not None
+                and self.clock() - self._cache[key][0]
+                <= self._setting("provider_max_stale_seconds", 300)
+            ):
                 return stale.model_copy(
                     update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
                 )
             raise BackendError("provider_unavailable", str(exc), 503) from exc
         except Exception as exc:
             stale, _ = self._cached(key)
-            if isinstance(stale, Page) and self.clock() - self._cache[key][0] <= self._setting("provider_max_stale_seconds", 300):
+            if (
+                isinstance(stale, Page)
+                and stale.meta is not None
+                and self.clock() - self._cache[key][0]
+                <= self._setting("provider_max_stale_seconds", 300)
+            ):
                 return stale.model_copy(
                     update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
                 )
