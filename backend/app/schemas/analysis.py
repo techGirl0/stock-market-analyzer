@@ -1,0 +1,21 @@
+from datetime import datetime
+from typing import Literal
+from pydantic import BaseModel
+from app.schemas.v1 import Availability
+
+class AnalysisMeta(BaseModel):
+    availability: Availability
+    calculated_at: datetime
+    calculation_version: str
+    assumptions: list[str]
+    disclaimer: str
+
+class RiskProfile(BaseModel):
+    score: int | None
+    components: dict[str, float | None]
+    meta: AnalysisMeta
+
+class ForecastResponse(BaseModel):
+    horizon: str
+    scenarios: list[dict[str, float]]
+    meta: AnalysisMeta
