@@ -2,9 +2,9 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
+from app.dependencies import get_instrument_service
 from app.schemas.v1 import HistoryResponse, InstrumentMatch, Page, Quote
 from app.services.instruments import InstrumentService
-from app.dependencies import get_instrument_service
 
 router = APIRouter(prefix="/instruments", tags=["instruments"])
 

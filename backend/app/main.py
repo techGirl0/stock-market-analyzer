@@ -1,25 +1,26 @@
-from fastapi import FastAPI
+from uuid import uuid4
+
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Request
 from fastapi.responses import JSONResponse
-from uuid import uuid4
 
 from app.controllers import auth, health, instruments
 from app.core.config import get_settings
 from app.core.errors import (
     BackendError,
     backend_error_handler,
-    validation_error_handler,
     unhandled_error_handler,
+    validation_error_handler,
 )
 from app.core.rate_limit import FixedWindowLimiter
 
 settings = get_settings()
 api_limiter = FixedWindowLimiter(settings.api_rate_limit, 60)
 app = FastAPI(title=settings.app_name, version="1.0.0")
-app.add_exception_handler(BackendError, backend_error_handler)
-app.add_exception_handler(RequestValidationError, validation_error_handler)
+# FastAPI's handler stub requires a broader exception parameter than these handlers.
+app.add_exception_handler(BackendError, backend_error_handler)  # type: ignore[arg-type]
+app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, unhandled_error_handler)
 app.add_middleware(
     CORSMiddleware,
