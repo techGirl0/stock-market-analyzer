@@ -52,3 +52,4 @@ def test_request_id_is_returned() -> None:
     response = client.get("/api/v1/health/live", headers={"X-Request-ID": "test-request"})
     assert response.status_code == 200
     assert response.headers["X-Request-ID"] == "test-request"
+

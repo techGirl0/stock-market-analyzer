@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     llm_provider: str = "disabled"
     groq_api_key: str | None = None
     groq_model: str = "qwen/qwen3-27b"
+    provider_cache_seconds: int = 60
+    provider_max_stale_seconds: int = 300
+    provider_request_budget: int = 60
+    provider_budget_window_seconds: int = 60
+    api_rate_limit: int = 120
 
     model_config = SettingsConfigDict(
         env_file=".env",
