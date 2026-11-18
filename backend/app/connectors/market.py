@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta, timezone
-from typing import Protocol
+from decimal import Decimal
+from typing import Protocol, cast
 from uuid import UUID, uuid5
+
+from pydantic import AnyHttpUrl
 
 from app.schemas.v1 import (
     Availability,
@@ -66,13 +69,13 @@ class DemoMarketDataConnector:
     async def quote(self, symbol: str) -> Quote:
         instrument = self._instrument(symbol)
         now = datetime.now(timezone.utc)
-        price = 100 + len(instrument.symbol)
+        price = Decimal(100 + len(instrument.symbol))
         return Quote(
             instrument=instrument,
             price=price,
             previous_close=price - 1,
-            change=1,
-            change_percent=round(100 / (price - 1), 4),
+            change=Decimal(1),
+            change_percent=(Decimal(100) / (price - Decimal(1))).quantize(Decimal("0.0001")),
             volume=1_000_000,
             as_of=now,
             meta=DataMeta(
@@ -89,18 +92,18 @@ class DemoMarketDataConnector:
         if not await self.validate(symbol):
             return []
         points = []
-        base = 100.0
+        base = Decimal("100.0")
         for day in range(30):
             timestamp = start + timedelta(days=day)
             if timestamp > end:
                 break
-            close = base + (day % 5) * 0.8 - (day % 3) * 0.2
+            close = base + Decimal(day % 5) * Decimal("0.8") - Decimal(day % 3) * Decimal("0.2")
             points.append(
                 Candle(
                     timestamp=timestamp,
-                    open=close - 0.5,
-                    high=close + 1,
-                    low=close - 1,
+                    open=close - Decimal("0.5"),
+                    high=close + Decimal(1),
+                    low=close - Decimal(1),
                     close=close,
                     volume=100_000 + day,
                 )
@@ -117,7 +120,7 @@ class DemoMarketDataConnector:
                 headline=f"{normalize_symbol(symbol)} market data demo item",
                 publisher="WolfStreet Signal Demo",
                 published_at=now,
-                source_url="https://example.com/market-data-demo",
+                source_url=cast(AnyHttpUrl, "https://example.com/market-data-demo"),
                 summary="Demo content used for local API development.",
                 sentiment="unavailable",
                 meta=DataMeta(

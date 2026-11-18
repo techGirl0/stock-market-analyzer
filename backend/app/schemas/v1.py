@@ -55,6 +55,14 @@ class Candle(BaseModel):
     volume: int | None = None
 
 
+class HistoryResponse(BaseModel):
+    items: list[Candle]
+    source: str
+    delayed: bool
+    availability: Availability
+    fetched_at: datetime
+
+
 class NewsArticle(BaseModel):
     id: UUID
     headline: str

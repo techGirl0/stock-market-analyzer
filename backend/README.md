@@ -71,6 +71,12 @@ uvicorn app.main:app --reload
 
 The OpenAPI document is available at `http://127.0.0.1:8000/docs`.
 
+## Docker
+
+From the repository root, run `docker compose up --build` and open
+`http://127.0.0.1:8000/api/v1/health/live`. SQLite data is stored in the
+named `backend-data` volume. This repository has no frontend service.
+
 Set `MARKET_DATA_PROVIDER=yfinance` only after installing the optional
 `yfinance` dependency. The default `demo` provider makes local development
 and tests independent of network access.
@@ -86,8 +92,11 @@ strong `JWT_SECRET`, and add Redis-backed caching and workers.
 ## Tests and worker
 
 ```powershell
-py -m pytest -q
+py -m pytest tests -q
 ```
+
+The test suite uses a temporary SQLite database and deterministic provider
+responses; it does not make live network calls.
 
 The suite covers health, market endpoints, authentication and token rotation,
 watchlist ownership, portfolios, alerts, research/chat, analysis outputs,

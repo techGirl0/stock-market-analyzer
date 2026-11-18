@@ -1,5 +1,6 @@
-from fastapi.testclient import TestClient
 from uuid import uuid4
+
+from fastapi.testclient import TestClient
 
 from app.main import app
 
@@ -53,3 +54,19 @@ def test_request_id_is_returned() -> None:
     assert response.status_code == 200
     assert response.headers["X-Request-ID"] == "test-request"
 
+
+def test_deleted_account_token_is_rejected() -> None:
+    email = f"delete-{uuid4().hex}@example.com"
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "correct horse battery"},
+    )
+    token = registered.json()["access_token"]
+    deleted = client.delete(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert deleted.status_code == 204
+    repeated = client.delete(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert repeated.status_code == 401
