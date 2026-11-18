@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Request
 from uuid import uuid4
 
-from app.controllers import alerts, analysis, auth, health, instruments, portfolio, research, watchlists
+from app.controllers import auth, health, instruments
 from app.core.config import get_settings
 from app.core.errors import (
     BackendError,
@@ -12,7 +12,6 @@ from app.core.errors import (
     validation_error_handler,
     unhandled_error_handler,
 )
-
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="1.0.0")
 app.add_exception_handler(BackendError, backend_error_handler)
@@ -38,8 +37,3 @@ async def request_id_middleware(request: Request, call_next):
 app.include_router(health.router, prefix=settings.api_prefix)
 app.include_router(instruments.router, prefix=settings.api_prefix)
 app.include_router(auth.router, prefix=settings.api_prefix)
-app.include_router(watchlists.router, prefix=settings.api_prefix)
-app.include_router(portfolio.router, prefix=settings.api_prefix)
-app.include_router(alerts.router, prefix=settings.api_prefix)
-app.include_router(research.router, prefix=settings.api_prefix)
-app.include_router(analysis.router, prefix=settings.api_prefix)
