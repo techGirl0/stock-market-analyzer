@@ -115,6 +115,12 @@ The team shares the project decisions and progress on the
 - [Week 4: Search and watchlist use cases](https://wolfstreeetsignalblog.wordpress.com/2026/10/27/week-4-search-and-watchlist-use-cases/)
   - Detailed user journeys, alternative flows, activity diagrams, and
     mockups for the first two feature areas.
+ - [Week 5: Cucumber Test and Ai usage](https://wolfstreeetsignalblog.wordpress.com/2026/11/02/testing-smarter-not-harder-how-ai-was-used-to-create-cucumber-test-scenarios/)
+  - Explanation of how AI was used for creating tests and what Cucmber tests are used for
+- [Week 6: SCRUM setup](https://wolfstreeetsignalblog.wordpress.com/2026/11/09/week-6-running-wolfstreet-signal-as-a-scrum-project-with-jira-rup-and-our-first-elaboration-sprint/)
+  - SCRUM rules and setup up of JIRA 
+- [Week 7: Mid reflecation](https://wolfstreeetsignalblog.wordpress.com/2026/11/17/week-7-a-small-reflections/)
+  - Reflecation about what is made and what can be improved
 
 ## Status
 
