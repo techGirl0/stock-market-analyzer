@@ -12,7 +12,6 @@ from app.core.errors import (
     validation_error_handler,
     unhandled_error_handler,
 )
-
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="1.0.0")
 app.add_exception_handler(BackendError, backend_error_handler)
