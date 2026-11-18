@@ -86,8 +86,11 @@ strong `JWT_SECRET`, and add Redis-backed caching and workers.
 ## Tests and worker
 
 ```powershell
-py -m pytest -q
+py -m pytest tests -q
 ```
+
+The test suite uses a temporary SQLite database and deterministic provider
+responses; it does not make live network calls.
 
 The suite covers health, market endpoints, authentication and token rotation,
 watchlist ownership, portfolios, alerts, research/chat, analysis outputs,
