@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Request, Response
 
+from app.core.rate_limit import auth_limiter
 from app.dependencies import get_current_user
 from app.schemas.auth import AuthResponse, Credentials, RefreshRequest
 from app.services.auth import AuthService, get_auth_service
-from app.core.rate_limit import auth_limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -25,7 +25,9 @@ def login(request: Request, payload: Credentials, service: AuthService = Depends
 
 
 @router.post("/refresh", response_model=AuthResponse)
-def refresh(request: Request, payload: RefreshRequest, service: AuthService = Depends(get_auth_service)) -> AuthResponse:
+def refresh(
+    request: Request, payload: RefreshRequest, service: AuthService = Depends(get_auth_service)
+) -> AuthResponse:
     auth_limiter.check(request.client.host if request.client else "unknown")
     return response(*service.refresh(payload.refresh_token))
 
