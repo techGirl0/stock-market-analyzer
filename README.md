@@ -124,3 +124,15 @@ Implementation will start with the account foundation, then move through the
 search-to-research journey and watchlist workflows. Forecasting, risk
 analysis, and the broader intelligence platform remain planned extensions
 until the current delivery scope is complete.
+## Repository layout
+
+The backend is a layered FastAPI service in `backend/app/`: controllers expose
+HTTP routes, services hold application logic, schemas define Pydantic contracts,
+connectors isolate external providers, and core contains configuration,
+security, persistence, and shared errors. The repository also contains
+`ai_module/` for the separate AI work, `documentation/` for requirements and
+design material, and `features/` for acceptance scenarios.
+
+Run the backend from the repository root with `py -m pytest backend/tests -q`,
+or from `backend/` with `py -m pytest tests -q`. `docker compose up --build` starts the
+backend with a named SQLite volume; there is no frontend service.
