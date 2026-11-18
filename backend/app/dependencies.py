@@ -1,13 +1,14 @@
 from functools import lru_cache
+from uuid import UUID
+
+from fastapi import Header
 
 from app.connectors.market import DemoMarketDataConnector, MarketDataConnector, YFinanceMarketDataConnector
 from app.core.config import get_settings
-from app.services.instruments import InstrumentService
 from app.core.db import Database
-from app.core.security import decode_access_token
-from fastapi import Header
-from uuid import UUID
 from app.core.errors import BackendError
+from app.core.security import decode_access_token
+from app.services.instruments import InstrumentService
 
 
 @lru_cache
