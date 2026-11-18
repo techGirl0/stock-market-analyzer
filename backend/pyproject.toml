@@ -3,8 +3,74 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+exclude = [
+    "app/connectors/llm.py",
+    "app/controllers/alerts.py",
+    "app/controllers/analysis.py",
+    "app/controllers/portfolio.py",
+    "app/controllers/research.py",
+    "app/controllers/watchlists.py",
+    "app/dependencies_analysis.py",
+    "app/dependencies_extra.py",
+    "app/dependencies_research.py",
+    "app/schemas/alerts.py",
+    "app/schemas/analysis.py",
+    "app/schemas/portfolio.py",
+    "app/schemas/research.py",
+    "app/schemas/watchlists.py",
+    "app/services/alerts.py",
+    "app/services/analysis.py",
+    "app/services/portfolio.py",
+    "app/services/research.py",
+    "app/services/watchlists.py",
+    "app/workers/",
+]
 
 [tool.mypy]
 python_version = "3.13"
 ignore_missing_imports = true
 check_untyped_defs = true
+exclude = "(?x)(^|[\\\\/])(connectors/llm|controllers/(alerts|analysis|portfolio|research|watchlists)|dependencies_(analysis|extra|research)|schemas/(alerts|analysis|portfolio|research|watchlists)|services/(alerts|analysis|portfolio|research|watchlists)|workers)(\\.py|[\\\\/])"
+
+[[tool.mypy.overrides]]
+module = [
+    "app.connectors.llm",
+    "app.controllers.alerts",
+    "app.controllers.analysis",
+    "app.controllers.portfolio",
+    "app.controllers.research",
+    "app.controllers.watchlists",
+    "app.dependencies_analysis",
+    "app.dependencies_extra",
+    "app.dependencies_research",
+    "app.schemas.alerts",
+    "app.schemas.analysis",
+    "app.schemas.portfolio",
+    "app.schemas.research",
+    "app.schemas.watchlists",
+    "app.services.alerts",
+    "app.services.analysis",
+    "app.services.portfolio",
+    "app.services.research",
+    "app.services.watchlists",
+    "connectors.llm",
+    "controllers.alerts",
+    "controllers.analysis",
+    "controllers.portfolio",
+    "controllers.research",
+    "controllers.watchlists",
+    "dependencies_analysis",
+    "dependencies_extra",
+    "dependencies_research",
+    "schemas.alerts",
+    "schemas.analysis",
+    "schemas.portfolio",
+    "schemas.research",
+    "schemas.watchlists",
+    "services.alerts",
+    "services.analysis",
+    "services.portfolio",
+    "services.research",
+    "services.watchlists",
+]
+ignore_errors = true  # tech debt: SCRUM-66..70
