@@ -13,6 +13,7 @@ from app.core.errors import BackendError
 from app.core.security import decode_access_token
 from app.models.user import User
 from app.services.instruments import InstrumentService
+from app.services.watchlists import WatchlistService
 
 
 @lru_cache
@@ -44,3 +45,10 @@ async def get_current_user(
     if exists is None:
         raise BackendError("authentication_required", "Authentication is required.", 401)
     return user_id
+
+
+async def get_watchlist_service(
+    session: AsyncSession = Depends(get_session),
+    instruments: InstrumentService = Depends(get_instrument_service),
+) -> WatchlistService:
+    return WatchlistService(session, instruments)

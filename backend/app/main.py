@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.controllers import auth, health, instruments
+from app.controllers import auth, health, instruments, watchlists
 from app.core.config import get_settings
 from app.core.errors import (
     BackendError,
@@ -56,3 +56,4 @@ async def request_id_middleware(request: Request, call_next):
 app.include_router(health.router, prefix=settings.api_prefix)
 app.include_router(instruments.router, prefix=settings.api_prefix)
 app.include_router(auth.router, prefix=settings.api_prefix)
+app.include_router(watchlists.router, prefix=settings.api_prefix)
