@@ -1,8 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
+from fastapi import Depends
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import Settings
-from app.core.db import Database
+from app.core.database import get_session
 from app.core.errors import BackendError
 from app.core.security import (
     create_access_token,
@@ -11,74 +16,89 @@ from app.core.security import (
     password_matches,
     token_hash,
 )
+from app.models.refresh_token import RefreshToken
+from app.models.user import User
 
 
 class AuthService:
-    def __init__(self, database: Database, settings: Settings) -> None:
-        self.database = database
+    def __init__(self, session: AsyncSession, settings: Settings) -> None:
+        self.session = session
         self.settings = settings
 
-    def register(self, email: str, password: str) -> tuple[str, str]:
+    async def register(self, email: str, password: str) -> tuple[str, str]:
         normalized = email.strip().lower()
         if len(password) < 8:
             raise BackendError("validation_error", "Password must contain at least 8 characters.", 422)
         user_id = uuid4()
+        self.session.add(
+            User(
+                id=user_id,
+                email=normalized,
+                password_hash=password_hash(password),
+                created_at=datetime.now(timezone.utc),
+            )
+        )
         try:
-            with self.database.connection() as connection:
-                connection.execute(
-                    "INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, ?, ?)",
-                    (str(user_id), normalized, password_hash(password), datetime.now(timezone.utc).isoformat()),
-                )
-        except Exception as exc:
-            if "UNIQUE constraint failed" in str(exc):
-                raise BackendError("resource_conflict", "An account already exists for this email.", 409) from exc
-            raise
-        return self._issue(user_id)
+            await self.session.flush()
+        except IntegrityError as exc:
+            await self.session.rollback()
+            raise BackendError("resource_conflict", "An account already exists for this email.", 409) from exc
+        return await self._issue(user_id)
 
-    def login(self, email: str, password: str) -> tuple[str, str]:
-        with self.database.connection() as connection:
-            row = connection.execute(
-                "SELECT id, password_hash FROM users WHERE email = ?", (email.strip().lower(),)
-            ).fetchone()
-        if row is None or not password_matches(password, row["password_hash"]):
+    async def login(self, email: str, password: str) -> tuple[str, str]:
+        user = await self.session.scalar(select(User).where(User.email == email.strip().lower()))
+        if user is None or not password_matches(password, user.password_hash):
             raise BackendError("invalid_credentials", "Email or password is incorrect.", 401)
-        return self._issue(UUID(row["id"]))
+        return await self._issue(user.id)
 
-    def _issue(self, user_id: UUID) -> tuple[str, str]:
+    async def _issue(self, user_id: UUID) -> tuple[str, str]:
         access = create_access_token(user_id, self.settings.jwt_secret)
         token_id, refresh = new_refresh_token()
         expires = datetime.now(timezone.utc) + timedelta(days=7)
-        with self.database.connection() as connection:
-            connection.execute(
-                "INSERT INTO refresh_tokens (token_id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-                (str(token_id), str(user_id), token_hash(refresh), expires.isoformat()),
+        self.session.add(
+            RefreshToken(
+                token_id=token_id,
+                user_id=user_id,
+                token_hash=token_hash(refresh),
+                expires_at=expires,
             )
+        )
+        await self.session.commit()
         return access, refresh
 
-    def refresh(self, refresh: str) -> tuple[str, str]:
-        with self.database.connection() as connection:
-            row = connection.execute(
-                "SELECT token_id, user_id, expires_at, revoked FROM refresh_tokens WHERE token_hash = ?",
-                (token_hash(refresh),),
-            ).fetchone()
-            if row is None or row["revoked"] or datetime.fromisoformat(row["expires_at"]) <= datetime.now(timezone.utc):
-                raise BackendError("authentication_required", "Refresh token is invalid or expired.", 401)
-            connection.execute("UPDATE refresh_tokens SET revoked = 1 WHERE token_id = ?", (row["token_id"],))
-        return self._issue(UUID(row["user_id"]))
+    async def refresh(self, refresh: str) -> tuple[str, str]:
+        token = await self.session.scalar(
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash(refresh))
+        )
+        if (
+            token is None
+            or token.revoked
+            or token.expires_at.replace(tzinfo=timezone.utc) <= datetime.now(timezone.utc)
+        ):
+            raise BackendError("authentication_required", "Refresh token is invalid or expired.", 401)
+        token.revoked = True
+        await self.session.flush()
+        return await self._issue(token.user_id)
 
-    def logout(self, refresh: str) -> None:
-        with self.database.connection() as connection:
-            connection.execute("UPDATE refresh_tokens SET revoked = 1 WHERE token_hash = ?", (token_hash(refresh),))
+    async def logout(self, refresh: str) -> None:
+        token = await self.session.scalar(
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash(refresh))
+        )
+        if token is not None:
+            token.revoked = True
+            await self.session.commit()
 
-    def delete_account(self, user_id: UUID) -> None:
-        with self.database.connection() as connection:
-            cursor = connection.execute("DELETE FROM users WHERE id = ?", (str(user_id),))
-            if cursor.rowcount == 0:
-                raise BackendError("resource_not_found", "Account was not found.", 404)
+    async def delete_account(self, user_id: UUID) -> None:
+        user = await self.session.get(User, user_id)
+        if user is None:
+            raise BackendError("resource_not_found", "Account was not found.", 404)
+        await self.session.delete(user)
+        await self.session.commit()
 
 
-def get_auth_service() -> AuthService:
+async def get_auth_service(
+    session: AsyncSession = Depends(get_session),
+) -> AuthService:
     from app.core.config import get_settings
-    from app.dependencies import get_database
 
-    return AuthService(get_database(), get_settings())
+    return AuthService(session, get_settings())

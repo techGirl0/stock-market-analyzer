@@ -59,6 +59,25 @@ The service reads settings from environment variables or a local `.env` file:
 
 Never commit `.env` files, API keys, passwords, or production secrets.
 
+## Database
+
+The application uses SQLAlchemy's async engine. Local development defaults to
+SQLite through `DATABASE_URL=sqlite+aiosqlite:///backend/data/app.db`; set
+`DATABASE_URL` to a PostgreSQL `postgresql+asyncpg://...` URL for production.
+Copy `backend/.env.example` to `.env` and provide `POSTGRES_PASSWORD` when
+using PostgreSQL or Docker Compose.
+
+Run migrations from `backend/`:
+
+```powershell
+py -m alembic upgrade head
+py -m alembic downgrade base
+```
+
+The test fixture creates the SQLAlchemy schema in a temporary SQLite database.
+Set `TEST_DATABASE_URL` to run the PostgreSQL integration test. Compose starts
+PostgreSQL with a named volume and runs `alembic upgrade head` before the API.
+
 ## Run locally
 
 ```powershell
