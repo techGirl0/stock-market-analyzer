@@ -14,7 +14,7 @@ Implemented routes include:
 - `GET /instruments/search`
 - `GET /instruments/{symbol}/quote`, `/candles`, `/news`, `/risk`, `/forecast`
 - `POST /instruments/{symbol}/brief`, `/chat`
-- `GET/POST /watchlists`, `POST/DELETE /watchlists/{id}/items/{item_id}`
+- `GET/POST /watchlists`, `GET/DELETE /watchlists/{id}`, `POST/DELETE /watchlists/{id}/items/{item_id}`
 - `GET/POST /portfolios`, `GET /portfolios/{id}`
 - `POST /portfolios/{id}/holdings`
 - `GET/POST/DELETE /alerts`

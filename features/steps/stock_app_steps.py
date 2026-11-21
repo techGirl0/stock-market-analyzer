@@ -8,6 +8,19 @@ from behave import given, when, then
 def step_impl_login(context, user, password):
     context.user = user
     context.password = password
+    email = "user@example.com" if user == "USER" else f"{user.lower()}@example.com"
+    response = context.client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": password},
+    )
+    if response.status_code not in (201, 409):
+        raise AssertionError(response.text)
+    response = context.client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": password},
+    )
+    assert response.status_code == 200, response.text
+    context.auth = {"Authorization": f"Bearer {response.json()['access_token']}"}
     context.logged_in = True
 
 @given('I am on the homepage')
@@ -37,26 +50,69 @@ def step_impl_on_watchlist(context):
 
 @given('"{ticker}" is currently in my watchlist')
 def step_impl_ticker_in_watchlist(context, ticker):
-    if not hasattr(context, 'watchlist'):
-        context.watchlist = []
-    if ticker not in context.watchlist:
-        context.watchlist.append(ticker)
+    response = context.client.get("/api/v1/watchlists", headers=context.auth)
+    assert response.status_code == 200, response.text
+    lists = response.json()
+    if not lists:
+        created = context.client.post(
+            "/api/v1/watchlists", headers=context.auth, json={"name": "Scenario"}
+        )
+        assert created.status_code == 201, created.text
+        lists = [created.json()]
+    context.watchlist_id = lists[0]["id"]
+    added = context.client.post(
+        f"/api/v1/watchlists/{context.watchlist_id}/items",
+        headers=context.auth,
+        json={"symbol": ticker},
+    )
+    assert added.status_code in (201, 409), added.text
 
 @when('I press the "Add to Watchlist" button')
 def step_impl_add_watchlist(context):
-    if not hasattr(context, 'watchlist'):
-        context.watchlist = []
-    context.watchlist.append(getattr(context, 'current_ticker', 'AAPL'))
+    lists = context.client.get("/api/v1/watchlists", headers=context.auth).json()
+    if not lists:
+        created = context.client.post(
+            "/api/v1/watchlists", headers=context.auth, json={"name": "Scenario"}
+        )
+        assert created.status_code == 201, created.text
+        lists = [created.json()]
+    context.watchlist_id = lists[0]["id"]
+    response = context.client.post(
+        f"/api/v1/watchlists/{context.watchlist_id}/items",
+        headers=context.auth,
+        json={"symbol": getattr(context, "current_ticker", "AAPL")},
+    )
+    assert response.status_code == 201, response.text
     context.last_message = "success"
 
 @when('I press the "Remove" button next to "{ticker}"')
 def step_impl_remove_watchlist(context, ticker):
-    context.watchlist = [t for t in getattr(context, 'watchlist', []) if t != ticker]
+    lists = context.client.get("/api/v1/watchlists", headers=context.auth).json()
+    items = lists[0]["items"]
+    item = next(item for item in items if item["symbol"] == ticker)
+    response = context.client.delete(
+        f"/api/v1/watchlists/{lists[0]['id']}/items/{item['id']}",
+        headers=context.auth,
+    )
+    assert response.status_code == 204, response.text
     context.last_message = "success"
 
 @when('I attempt to add a stock with invalid ticker "{ticker}"')
 def step_impl_invalid_ticker(context, ticker):
     context.invalid_ticker_attempt = ticker
+    lists = context.client.get("/api/v1/watchlists", headers=context.auth).json()
+    if not lists:
+        created = context.client.post(
+            "/api/v1/watchlists", headers=context.auth, json={"name": "Scenario"}
+        )
+        assert created.status_code == 201, created.text
+        lists = [created.json()]
+    response = context.client.post(
+        f"/api/v1/watchlists/{lists[0]['id']}/items",
+        headers=context.auth,
+        json={"symbol": ticker},
+    )
+    assert response.status_code == 404, response.text
     context.last_message = "invalid ticker"
 
 @then('I should see a "{status}" message')
@@ -67,13 +123,15 @@ def step_impl_check_message(context, status):
 @then('"{ticker}" should be visible in my watchlist sidebar')
 @then('"{ticker}" is visible in my watchlist sidebar')
 def step_impl_check_visible(context, ticker):
-    assert ticker in getattr(context, 'watchlist', [])
+    lists = context.client.get("/api/v1/watchlists", headers=context.auth).json()
+    assert ticker in [item["symbol"] for item in lists[0]["items"]]
 
 @then('"{ticker}" should be removed from my watchlist sidebar')
 @then('"{ticker}" is removed from my watchlist sidebar')
 @then('"{ticker}" should not be added to my watchlist')
 def step_impl_check_not_in_watchlist(context, ticker):
-    assert ticker not in getattr(context, 'watchlist', [])
+    lists = context.client.get("/api/v1/watchlists", headers=context.auth).json()
+    assert ticker not in [item["symbol"] for item in lists[0]["items"]]
 
 @then('I should see an "invalid ticker" error message')
 def step_impl_check_invalid_error(context):

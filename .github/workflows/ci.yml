@@ -38,6 +38,9 @@ jobs:
       - run: ruff check backend/app backend/tests
       - run: mypy --config-file backend/pyproject.toml backend/app
       - run: python -m pytest backend/tests -q
+      - run: python -m behave features/manage_watchlist.feature
+        env:
+          PYTHONPATH: backend
       - run: pip-audit -r backend/requirements.txt
 
   secret-scan:

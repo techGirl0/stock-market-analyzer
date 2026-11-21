@@ -12,6 +12,13 @@ class WatchlistItemCreate(BaseModel):
     symbol: str = Field(min_length=1, max_length=20)
 
 
+class WatchlistItemRead(BaseModel):
+    id: UUID
+    watchlist_id: UUID
+    symbol: str
+    created_at: datetime
+
+
 class WatchlistItem(BaseModel):
     id: UUID
     symbol: str
@@ -22,4 +29,11 @@ class Watchlist(BaseModel):
     id: UUID
     name: str
     items: list[WatchlistItem]
+    created_at: datetime
+
+
+class WatchlistRead(BaseModel):
+    id: UUID
+    user_id: UUID
+    name: str
     created_at: datetime

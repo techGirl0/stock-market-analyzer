@@ -1,83 +1,149 @@
 from datetime import datetime, timezone
-from uuid import UUID, uuid4
+from typing import Any
+from uuid import UUID
 
-from app.core.db import Database
+from fastcrud import FastCRUD
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.errors import BackendError
-from app.schemas.watchlists import Watchlist, WatchlistItem
+from app.models.watchlist import Watchlist as WatchlistModel
+from app.models.watchlist import WatchlistItem as WatchlistItemModel
+from app.schemas.watchlists import (
+    Watchlist,
+    WatchlistCreate,
+    WatchlistItem,
+    WatchlistItemCreate,
+    WatchlistItemRead,
+    WatchlistRead,
+)
+from app.services.instruments import InstrumentService
 
 
 class WatchlistService:
-    def __init__(self, database: Database) -> None:
-        self.database = database
+    def __init__(self, session: AsyncSession, instruments: InstrumentService) -> None:
+        self.session = session
+        self.instruments = instruments
+        self.watchlists: FastCRUD[Any, Any, Any, Any, Any, Any] = FastCRUD(WatchlistModel)
+        self.items: FastCRUD[Any, Any, Any, Any, Any, Any] = FastCRUD(WatchlistItemModel)
 
-    def list(self, user_id: UUID) -> list[Watchlist]:
-        with self.database.connection() as connection:
-            lists = connection.execute(
-                "SELECT id, name, created_at FROM watchlists WHERE user_id = ? ORDER BY created_at",
-                (str(user_id),),
-            ).fetchall()
-            return [self._read(connection, row) for row in lists]
-
-    def create(self, user_id: UUID, name: str) -> Watchlist:
-        watchlist_id = uuid4()
-        created_at = datetime.now(timezone.utc)
-        with self.database.connection() as connection:
-            connection.execute(
-                "INSERT INTO watchlists (id, user_id, name, created_at) VALUES (?, ?, ?, ?)",
-                (str(watchlist_id), str(user_id), name, created_at.isoformat()),
-            )
-        return Watchlist(id=watchlist_id, name=name, items=[], created_at=created_at)
-
-    def add(self, user_id: UUID, watchlist_id: UUID, symbol: str) -> WatchlistItem:
-        normalized = symbol.strip().upper()
-        item_id = uuid4()
-        created_at = datetime.now(timezone.utc)
-        with self.database.connection() as connection:
-            owned = connection.execute(
-                "SELECT 1 FROM watchlists WHERE id = ? AND user_id = ?",
-                (str(watchlist_id), str(user_id)),
-            ).fetchone()
-            if owned is None:
-                raise BackendError("resource_not_found", "Watchlist was not found.", 404)
-            try:
-                connection.execute(
-                    "INSERT INTO watchlist_items (id, watchlist_id, symbol, created_at) VALUES (?, ?, ?, ?)",
-                    (str(item_id), str(watchlist_id), normalized, created_at.isoformat()),
-                )
-            except Exception as exc:
-                if "UNIQUE constraint failed" in str(exc):
-                    raise BackendError("resource_conflict", "This symbol is already in the watchlist.", 409) from exc
-                raise
-        return WatchlistItem(id=item_id, symbol=normalized, created_at=created_at)
-
-    def remove(self, user_id: UUID, watchlist_id: UUID, item_id: UUID) -> None:
-        with self.database.connection() as connection:
-            cursor = connection.execute(
-                """
-                DELETE FROM watchlist_items
-                WHERE id = ? AND watchlist_id IN
-                    (SELECT id FROM watchlists WHERE id = ? AND user_id = ?)
-                """,
-                (str(item_id), str(watchlist_id), str(user_id)),
-            )
-            if cursor.rowcount == 0:
-                raise BackendError("resource_not_found", "Watchlist item was not found.", 404)
-
-    def _read(self, connection, row) -> Watchlist:
-        items = connection.execute(
-            "SELECT id, symbol, created_at FROM watchlist_items WHERE watchlist_id = ? ORDER BY created_at",
-            (row["id"],),
-        ).fetchall()
-        return Watchlist(
-            id=UUID(row["id"]),
-            name=row["name"],
-            created_at=datetime.fromisoformat(row["created_at"]),
-            items=[
-                WatchlistItem(
-                    id=UUID(item["id"]),
-                    symbol=item["symbol"],
-                    created_at=datetime.fromisoformat(item["created_at"]),
-                )
-                for item in items
-            ],
+    async def list(self, user_id: UUID, limit: int, offset: int) -> list[Watchlist]:
+        result = await self.watchlists.get_multi(
+            db=self.session,
+            offset=offset,
+            limit=limit,
+            schema_to_select=WatchlistRead,
+            user_id=user_id,
+            sort_columns="created_at",
+            sort_orders="asc",
         )
+        return [await self._read(item) for item in result["data"]]
+
+    async def get(self, user_id: UUID, watchlist_id: UUID) -> Watchlist:
+        record = await self._owned_watchlist(user_id, watchlist_id)
+        return await self._read(record)
+
+    async def create(self, user_id: UUID, payload: WatchlistCreate) -> Watchlist:
+        record = await self.watchlists.create(
+            db=self.session,
+            object=WatchlistCreateRecord(
+                user_id=user_id,
+                name=payload.name,
+                created_at=datetime.now(timezone.utc),
+            ),
+            schema_to_select=WatchlistRead,
+        )
+        await self.session.commit()
+        if record is None:
+            raise BackendError("internal_error", "Watchlist could not be created.", 500)
+        return await self._read(record)
+
+    async def delete(self, user_id: UUID, watchlist_id: UUID) -> None:
+        await self._owned_watchlist(user_id, watchlist_id)
+        await self.watchlists.delete(
+            db=self.session,
+            where=WatchlistModel.id == watchlist_id,
+            user_id=user_id,
+        )
+        await self.session.commit()
+
+    async def add(self, user_id: UUID, watchlist_id: UUID, payload: WatchlistItemCreate) -> WatchlistItem:
+        await self._owned_watchlist(user_id, watchlist_id)
+        normalized = payload.symbol.strip().upper()
+        try:
+            await self.instruments.quote(normalized)
+        except BackendError as exc:
+            if exc.code == "ticker_not_found":
+                raise BackendError("ticker_not_found", f'Ticker "{normalized}" was not found.', 404) from exc
+            raise
+        try:
+            record = await self.items.create(
+                db=self.session,
+                object=WatchlistItemCreateRecord(
+                    watchlist_id=watchlist_id,
+                    symbol=normalized,
+                    created_at=datetime.now(timezone.utc),
+                ),
+                schema_to_select=WatchlistItemRead,
+            )
+            await self.session.commit()
+        except Exception as exc:
+            await self.session.rollback()
+            if "uq_watchlist_items_watchlist_symbol" in str(exc) or "UNIQUE constraint" in str(exc):
+                raise BackendError("resource_conflict", "This symbol is already in the watchlist.", 409) from exc
+            raise
+        if record is None:
+            raise BackendError("internal_error", "Watchlist item could not be created.", 500)
+        return WatchlistItem.model_validate(record)
+
+    async def remove(self, user_id: UUID, watchlist_id: UUID, item_id: UUID) -> None:
+        await self._owned_watchlist(user_id, watchlist_id)
+        item = await self.items.get(
+            db=self.session,
+            schema_to_select=WatchlistItemRead,
+            id=item_id,
+            watchlist_id=watchlist_id,
+        )
+        if item is None:
+            raise BackendError("resource_not_found", "Watchlist item was not found.", 404)
+        await self.items.delete(db=self.session, where=WatchlistItemModel.id == item_id)
+        await self.session.commit()
+
+    async def _owned_watchlist(self, user_id: UUID, watchlist_id: UUID) -> WatchlistRead:
+        record = await self.watchlists.get(
+            db=self.session,
+            schema_to_select=WatchlistRead,
+            id=watchlist_id,
+            user_id=user_id,
+        )
+        if record is None:
+            raise BackendError("resource_not_found", "Watchlist was not found.", 404)
+        return WatchlistRead.model_validate(record)
+
+    async def _read(self, record: WatchlistRead | dict[str, object]) -> Watchlist:
+        watchlist = WatchlistRead.model_validate(record)
+        result = await self.items.get_multi(
+            db=self.session,
+            schema_to_select=WatchlistItemRead,
+            watchlist_id=watchlist.id,
+            sort_columns="created_at",
+            sort_orders="asc",
+        )
+        return Watchlist(
+            id=watchlist.id,
+            name=watchlist.name,
+            created_at=watchlist.created_at,
+            items=[WatchlistItem.model_validate(item) for item in result["data"]],
+        )
+
+
+class WatchlistCreateRecord(BaseModel):
+    user_id: UUID
+    name: str
+    created_at: datetime
+
+
+class WatchlistItemCreateRecord(BaseModel):
+    watchlist_id: UUID
+    symbol: str
+    created_at: datetime
