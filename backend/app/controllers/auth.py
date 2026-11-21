@@ -13,39 +13,43 @@ def response(access: str, refresh: str) -> AuthResponse:
 
 
 @router.post("/register", response_model=AuthResponse, status_code=201)
-def register(request: Request, payload: Credentials, service: AuthService = Depends(get_auth_service)) -> AuthResponse:
+async def register(
+    request: Request, payload: Credentials, service: AuthService = Depends(get_auth_service)
+) -> AuthResponse:
     auth_limiter.check(request.client.host if request.client else "unknown")
-    return response(*service.register(payload.email, payload.password))
+    return response(*(await service.register(payload.email, payload.password)))
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(request: Request, payload: Credentials, service: AuthService = Depends(get_auth_service)) -> AuthResponse:
+async def login(
+    request: Request, payload: Credentials, service: AuthService = Depends(get_auth_service)
+) -> AuthResponse:
     auth_limiter.check(request.client.host if request.client else "unknown")
-    return response(*service.login(payload.email, payload.password))
+    return response(*(await service.login(payload.email, payload.password)))
 
 
 @router.post("/refresh", response_model=AuthResponse)
-def refresh(
+async def refresh(
     request: Request, payload: RefreshRequest, service: AuthService = Depends(get_auth_service)
 ) -> AuthResponse:
     auth_limiter.check(request.client.host if request.client else "unknown")
-    return response(*service.refresh(payload.refresh_token))
+    return response(*(await service.refresh(payload.refresh_token)))
 
 
 @router.post("/logout", status_code=204)
-def logout(
+async def logout(
     payload: RefreshRequest,
     _: object = Depends(get_current_user),
     service: AuthService = Depends(get_auth_service),
 ) -> Response:
-    service.logout(payload.refresh_token)
+    await service.logout(payload.refresh_token)
     return Response(status_code=204)
 
 
 @router.delete("/me", status_code=204)
-def delete_account(
+async def delete_account(
     user_id=Depends(get_current_user),
     service: AuthService = Depends(get_auth_service),
 ) -> Response:
-    service.delete_account(user_id)
+    await service.delete_account(user_id)
     return Response(status_code=204)
