@@ -5,8 +5,10 @@
 | `generate_class_diagram.py` | Script that regenerates every diagram in this folder from the code |
 | `generated/classes_WolfStreetSignal.puml` | Raw pyreverse class diagram (unchanged tool output) |
 | `generated/packages_WolfStreetSignal.puml` | Raw pyreverse package diagram (unchanged tool output) |
-| `class-diagram-mvc.puml` / `.png` | SAD 5.2 class diagram with Model / View / Controller regions |
-| `package-diagram-mvc.puml` / `.png` | Module dependency diagram coloured by MVC role |
+| `class-diagram-mvc.puml` | SAD 5.2 class diagram source (PlantUML) |
+| `class-diagram-mvc.png` → `../Media/class-diagram-mvc.png` | SAD 5.2 class diagram with Model / View / Controller regions |
+| `package-diagram-mvc.puml` | Module dependency diagram source (PlantUML) |
+| `package-diagram-mvc.png` → `../Media/package-diagram-mvc.png` | Module dependency diagram coloured by MVC role |
 | `sad-section-2-mvc.md` | SAD section 2 text: MVC type |
 | `sad-section-5.2-class-diagram.md` | SAD section 5.2 text: class diagram |
 

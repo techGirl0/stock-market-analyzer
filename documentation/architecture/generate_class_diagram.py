@@ -28,6 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 BACKEND = ROOT / "backend"
 OUT = Path(__file__).resolve().parent
+MEDIA = ROOT / "documentation" / "Media"
 GENERATED = OUT / "generated"
 PROJECT = "WolfStreetSignal"
 
@@ -202,7 +203,7 @@ def build_package_diagram(puml: str) -> str:
 def render(plantuml_jar: Path, files: list[Path]) -> None:
     for fmt in ("png", "svg"):
         subprocess.run(
-            ["java", "-jar", str(plantuml_jar), f"-t{fmt}", "-o", str(OUT), *map(str, files)],
+            ["java", "-jar", str(plantuml_jar), f"-t{fmt}", "-o", str(MEDIA), *map(str, files)],
             check=True,
         )
 
@@ -228,7 +229,7 @@ def main() -> None:
 
     if args.plantuml:
         render(args.plantuml, [class_file, package_file])
-        print("Rendered PNG and SVG into", OUT.relative_to(ROOT))
+        print("Rendered PNG and SVG into", MEDIA.relative_to(ROOT))
 
 
 if __name__ == "__main__":
