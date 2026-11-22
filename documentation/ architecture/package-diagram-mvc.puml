@@ -1,0 +1,47 @@
+@startuml package-diagram-mvc
+' GENERATED FILE - pyreverse package diagram coloured by MVC role
+skinparam shadowing false
+left to right direction
+set namespaceSeparator none
+package "app.connectors.market\n<<MODEL>>" as app.connectors.market #F0F4C3 {
+}
+package "app.controllers.auth\n<<CONTROLLER>>" as app.controllers.auth #FFE0B2 {
+}
+package "app.controllers.watchlists\n<<CONTROLLER>>" as app.controllers.watchlists #FFE0B2 {
+}
+package "app.models.base\n<<MODEL>>" as app.models.base #C8E6C9 {
+}
+package "app.models.refresh_token\n<<MODEL>>" as app.models.refresh_token #C8E6C9 {
+}
+package "app.models.user\n<<MODEL>>" as app.models.user #C8E6C9 {
+}
+package "app.models.watchlist\n<<MODEL>>" as app.models.watchlist #C8E6C9 {
+}
+package "app.schemas.auth\n<<VIEW>>" as app.schemas.auth #BBDEFB {
+}
+package "app.schemas.watchlists\n<<VIEW>>" as app.schemas.watchlists #BBDEFB {
+}
+package "app.services.auth\n<<MODEL>>" as app.services.auth #DCEDC8 {
+}
+package "app.services.instruments\n<<MODEL>>" as app.services.instruments #DCEDC8 {
+}
+package "app.services.watchlists\n<<MODEL>>" as app.services.watchlists #DCEDC8 {
+}
+app.controllers.auth --> app.schemas.auth
+app.controllers.auth --> app.services.auth
+app.controllers.watchlists --> app.schemas.watchlists
+app.controllers.watchlists --> app.services.watchlists
+app.models.refresh_token --> app.models.base
+app.models.user --> app.models.base
+app.models.watchlist --> app.models.base
+app.services.auth --> app.models.refresh_token
+app.services.auth --> app.models.user
+app.services.instruments --> app.connectors.market
+app.services.watchlists --> app.models.watchlist
+app.services.watchlists --> app.schemas.watchlists
+app.services.watchlists --> app.services.instruments
+app.models.refresh_token ..> app.models.user
+app.models.user ..> app.models.refresh_token
+app.models.user ..> app.models.watchlist
+app.models.watchlist ..> app.models.user
+@enduml
