@@ -215,11 +215,11 @@ backend/app/
 
 ### 5.2 Architecturally Significant Design Packages
 
-The diagram below shows the full backend class structure, covering all four layers: Services, Models (SQLAlchemy ORM), Schemas (Pydantic), and Connectors.
+The diagram below shows the full backend class structure, covering all four layers: Models (SQLAlchemy ORM), Schemas (Pydantic), Services, and Connectors.
 
 ![UML Class Diagram — full backend](Media/UML-class-diagram-full.png)
 
-*Figure 5.2: UML class diagram of the WolfStreet Signal backend. Services (top), ORM models and Pydantic schemas (centre), connectors and database (right). Arrows show ownership, composition, and dependency relationships between classes.*
+*Figure 5.2: UML class diagram of the WolfStreet Signal backend. ORM models (top), Pydantic schemas (centre), services (left), connectors and database (bottom). Arrows show ownership, composition, and dependency relationships between classes.*
 
 **Package dependency diagram — MVC roles**
 
