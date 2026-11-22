@@ -1,0 +1,372 @@
+@startuml StockMarketAnalyzer
+
+!theme plain
+top to bottom direction
+scale max 2200 width
+skinparam dpi 150
+skinparam backgroundColor #0F172A
+skinparam defaultFontName "JetBrains Mono, Consolas, monospace"
+skinparam defaultFontSize 11
+skinparam classAttributeIconSize 0
+skinparam classBorderThickness 2
+skinparam roundCorner 10
+skinparam shadowing true
+skinparam linetype ortho
+skinparam nodesep 20
+skinparam ranksep 40
+skinparam padding 5
+skinparam ArrowThickness 1.5
+
+' ── Global arrow style ──
+skinparam ArrowColor #94A3B8
+skinparam ArrowFontColor #CBD5E1 
+skinparam ArrowFontSize 10
+skinparam ArrowFontStyle italic
+
+' ── Default class style ──
+skinparam class {
+    BackgroundColor #1E293B
+    BorderColor #334155
+    FontColor #F1F5F9
+    AttributeFontColor #CBD5E1
+    AttributeFontSize 11
+    StereotypeFontColor #7DD3FC
+    StereotypeFontSize 10
+    HeaderBackgroundColor #1E293B
+    FontStyle bold
+    FontSize 13
+}
+
+' ── Package styles ──
+skinparam package {
+    BackgroundColor #0F172A
+    BorderColor #334155
+    FontColor #94A3B8
+    FontSize 11
+    FontStyle bold
+    BorderThickness 1.5
+}
+
+' ── Note style ──
+skinparam note {
+    BackgroundColor #1E3A5F
+    BorderColor #3B82F6
+    FontColor #BAE6FD
+    FontSize 10
+}
+
+' ═══════════════════════════════════════
+' TITLE
+' ═══════════════════════════════════════
+title
+<size:20><color:#F8FAFC><b>Stock Market Analyzer</b></color></size>
+<size:13><color:#94A3B8>UML Class Diagram · FastAPI + SQLAlchemy + SQLite</color></size>
+end title
+
+' ═══════════════════════════════════════
+' PACKAGE: Models
+' ═══════════════════════════════════════
+package "⬡  Models  —  SQLAlchemy ORM" <<Frame>> #1A2744 {
+
+    skinparam class {
+        BackgroundColor #162032
+        BorderColor #3B82F6
+        HeaderBackgroundColor #1D4ED8
+        FontColor #DBEAFE
+        AttributeFontColor #BFDBFE
+        StereotypeFontColor #93C5FD
+    }
+
+    abstract class Base #162032 {
+        {abstract} + metadata : MetaData
+    }
+
+    together {
+        class User #162032 {
+            <color:#FCD34D>+ id</color> : UUID       <color:#94A3B8>«PK»</color>
+            + email : str             <color:#94A3B8>«UNIQUE»</color>
+            + password_hash : str
+            + created_at : datetime
+            ..
+            <color:#7DD3FC>+ refresh_tokens</color> : list[RefreshToken]
+            <color:#7DD3FC>+ watchlists</color> : list[Watchlist]
+        }
+
+        class RefreshToken #162032 {
+            <color:#FCD34D>+ token_id</color> : UUID  <color:#94A3B8>«PK»</color>
+            <color:#F87171>+ user_id</color> : UUID   <color:#94A3B8>«FK → users»</color>
+            + token_hash : str        <color:#94A3B8>«UNIQUE»</color>
+            + expires_at : datetime
+            + revoked : bool = False
+            ..
+            <color:#7DD3FC>+ user</color> : User
+        }
+
+        class Watchlist #162032 {
+            <color:#FCD34D>+ id</color> : UUID        <color:#94A3B8>«PK»</color>
+            <color:#F87171>+ user_id</color> : UUID   <color:#94A3B8>«FK → users»</color>
+            + name : str
+            + created_at : datetime
+            ..
+            <color:#7DD3FC>+ user</color> : User
+            <color:#7DD3FC>+ items</color> : list[WatchlistItem]
+        }
+
+        class WatchlistItem #162032 {
+            <color:#FCD34D>+ id</color> : UUID               <color:#94A3B8>«PK»</color>
+            <color:#F87171>+ watchlist_id</color> : UUID     <color:#94A3B8>«FK → watchlists»</color>
+            + symbol : str
+            + created_at : datetime
+            ..
+            <color:#94A3B8>«UNIQUE (watchlist_id, symbol)»</color>
+            <color:#7DD3FC>+ watchlist</color> : Watchlist
+        }
+    }
+
+    Base <|-- User
+    Base <|-- RefreshToken
+    Base <|-- Watchlist
+    Base <|-- WatchlistItem
+
+    User "1" *-[#3B82F6]- "0..*" RefreshToken : <color:#7DD3FC>owns >
+    User "1" *-[#3B82F6]- "0..*" Watchlist    : <color:#7DD3FC>owns >
+    Watchlist "1" *-[#3B82F6]- "0..*" WatchlistItem : <color:#7DD3FC>contains >
+}
+
+' ═══════════════════════════════════════
+' PACKAGE: Services
+' ═══════════════════════════════════════
+package "⚙  Services" <<Frame>> #1A2A1A {
+
+    skinparam class {
+        BackgroundColor #162616
+        BorderColor #22C55E
+        HeaderBackgroundColor #15803D
+        FontColor #DCFCE7
+        AttributeFontColor #BBF7D0
+        StereotypeFontColor #86EFAC
+    }
+
+    together {
+        class AuthService #162616 {
+            <color:#94A3B8>— session : AsyncSession</color>
+            <color:#94A3B8>— settings : Settings</color>
+            ==
+            + register(email: str, pwd: str) : tuple[str,str]
+            + login(email: str, pwd: str) : tuple[str,str]
+            + refresh(token: str) : tuple[str,str]
+            + logout(token: str) : None
+            + delete_account(user_id: UUID) : None
+            <color:#94A3B8>— _issue(user_id: UUID) : tuple[str,str]</color>
+        }
+
+        class WatchlistService #162616 {
+            <color:#94A3B8>— session : AsyncSession</color>
+            ==
+            + list(user_id: UUID) : list[Watchlist]
+            + create(user_id: UUID, name: str) : Watchlist
+            + delete(user_id: UUID, wl_id: UUID) : None
+            + add_item(user_id, wl_id, symbol: str) : WatchlistItem
+            + remove_item(user_id, wl_id, symbol: str) : None
+        }
+
+        class PortfolioService #162616 {
+            <color:#94A3B8>— database : Database</color>
+            <color:#94A3B8>— market : MarketDataConnector</color>
+            ==
+            + list(user_id: UUID) : list[Portfolio]
+            + create(user_id: UUID, name: str) : Portfolio
+            + get(user_id: UUID, portfolio_id: UUID) : Portfolio
+            + add(user_id, pid, sym: str, qty: float) : Holding
+            <color:#94A3B8>— _holding(hid, sym, qty, ts) : Holding</color>
+            <color:#94A3B8>— _read(conn, row) : Portfolio</color>
+        }
+
+        class AlertService #162616 {
+            <color:#94A3B8>— database : Database</color>
+            <color:#94A3B8>— market : MarketDataConnector</color>
+            ==
+            + list(user_id: UUID) : list[Alert]
+            + create(user_id, sym, op: str, thr: float) : Alert
+            + delete(user_id: UUID, alert_id: UUID) : None
+            + evaluate_active() : int
+            <color:#94A3B8>— _model(row) : Alert</color>
+        }
+    }
+}
+
+' ═══════════════════════════════════════
+' PACKAGE: Connectors
+' ═══════════════════════════════════════
+package "⬢  Connectors & Infrastructure" <<Frame>> #1E1A2E {
+
+    skinparam class {
+        BackgroundColor #1A1730
+        BorderColor #A78BFA
+        HeaderBackgroundColor #6D28D9
+        FontColor #EDE9FE
+        AttributeFontColor #DDD6FE
+        StereotypeFontColor #C4B5FD
+    }
+
+    together {
+        interface MarketDataConnector #1A1730 {
+            + search(query: str, limit: int) : list[InstrumentMatch]
+            + validate(symbol: str) : bool
+            + quote(symbol: str) : Quote
+            + candles(sym, start, end, intv) : list[Candle]
+            + news(symbol: str, limit: int) : list[NewsArticle]
+        }
+
+        class DemoMarketDataConnector #1A1730 {
+            <color:#94A3B8>— _known : dict[str, tuple[str,str]]</color>
+            ==
+            + search / validate / quote / candles / news
+            <color:#94A3B8>— _instrument(symbol) : InstrumentMatch</color>
+        }
+
+        class YFinanceMarketDataConnector #1A1730 {
+            <color:#94A3B8>— _yfinance : module</color>
+            ==
+            + search / validate / quote / candles / news
+        }
+
+        class Database #1A1730 {
+            <color:#94A3B8>— path : Path</color>
+            <color:#94A3B8>— _lock : Lock</color>
+            ==
+            + connection() : sqlite3.Connection
+            + initialize() : None
+            ..SQLite tables..
+            <color:#94A3B8>users · refresh_tokens · watchlists</color>
+            <color:#94A3B8>watchlist_items · portfolios</color>
+            <color:#94A3B8>portfolio_holdings · price_alerts</color>
+            <color:#94A3B8>alert_deliveries</color>
+        }
+    }
+
+    MarketDataConnector <|.. DemoMarketDataConnector
+    MarketDataConnector <|.. YFinanceMarketDataConnector
+}
+
+' ═══════════════════════════════════════
+' PACKAGE: Schemas
+' ═══════════════════════════════════════
+package "⬛  Schemas  —  Pydantic" <<Frame>> #1A2520 {
+
+    skinparam class {
+        BackgroundColor #162218
+        BorderColor #F59E0B
+        HeaderBackgroundColor #B45309
+        FontColor #FEF3C7
+        AttributeFontColor #FDE68A
+        StereotypeFontColor #FCD34D
+    }
+
+    together {
+        class AuthTokens <<schema>> #162218 {
+            + access_token : str
+            + refresh_token : str
+            + token_type : str = "bearer"
+        }
+
+        class LoginRequest <<schema>> #162218 {
+            + email : str
+            + password : str
+        }
+
+        class Portfolio <<schema>> #162218 {
+            + id : UUID
+            + name : str
+            + holdings : list[Holding]
+            + total_value : float | None
+            + created_at : datetime
+        }
+
+        class Holding <<schema>> #162218 {
+            + id : UUID
+            + symbol : str
+            + quantity : float
+            + current_price : float | None
+            + current_value : float | None
+            + created_at : datetime
+        }
+    }
+
+    together {
+        class Alert <<schema>> #162218 {
+            + id : UUID
+            + symbol : str
+            + operator : Literal["above","below"]
+            + threshold : float
+            + active : bool
+            + created_at : datetime
+        }
+
+        class Quote <<schema>> #162218 {
+            + instrument : InstrumentMatch
+            + price : Decimal | None
+            + previous_close : Decimal | None
+            + change : Decimal | None
+            + change_percent : Decimal | None
+            + volume : int | None
+            + as_of : datetime
+            + meta : DataMeta
+        }
+
+        class InstrumentMatch <<schema>> #162218 {
+            + id : UUID
+            + symbol : str
+            + name : str
+            + exchange : str | None
+            + currency : str | None
+        }
+
+        class Candle <<schema>> #162218 {
+            + timestamp : datetime
+            + open : Decimal
+            + high : Decimal
+            + low : Decimal
+            + close : Decimal
+            + volume : int | None
+        }
+
+        class NewsArticle <<schema>> #162218 {
+            + id : UUID
+            + headline : str
+            + publisher : str | None
+            + published_at : datetime
+            + source_url : AnyHttpUrl
+            + summary : str | None
+            + sentiment : str
+            + meta : DataMeta
+        }
+    }
+
+    Portfolio "1" *-[#F59E0B]- "0..*" Holding : contains >
+    Quote *-[#F59E0B]- InstrumentMatch : embeds >
+}
+
+' Cross-package dependencies omitted to keep layout compact.
+' Dependencies are documented in the class attribute bodies above.
+
+' Force vertical stacking of packages via hidden links
+Base -[hidden]down- AuthService
+AuthService -[hidden]down- MarketDataConnector
+MarketDataConnector -[hidden]down- AuthTokens
+
+' ═══════════════════════════════════════
+' Legend note
+' ═══════════════════════════════════════
+note as Legend
+<color:#F1F5F9><b>Legend</b></color>
+<color:#FCD34D>■</color> <color:#CBD5E1>«PK»  Primary Key</color>
+<color:#F87171>■</color> <color:#CBD5E1>«FK»  Foreign Key</color>
+<color:#7DD3FC>■</color> <color:#CBD5E1>Relationship / nav. property</color>
+——|>  Inheritance
+···|>  Realization
+—*—   Composition
+···>  Dependency
+end note
+
+@enduml

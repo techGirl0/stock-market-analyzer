@@ -1,0 +1,291 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 820" width="1100" height="820" font-family="'Segoe UI', Arial, sans-serif">
+  <!-- Background -->
+  <rect width="1100" height="820" fill="#f8f9fa" rx="8"/>
+
+  <!-- Title -->
+  <text x="550" y="38" text-anchor="middle" font-size="20" font-weight="bold" fill="#1a1a2e">Stock Market Analyzer — Entity Relationship Diagram</text>
+  <text x="550" y="58" text-anchor="middle" font-size="12" fill="#666">SQLite schema · revision 0001_initial_schema</text>
+
+  <!-- ══════════════════════════════════════════════════
+       TABLE: users  (top-center)
+  ════════════════════════════════════════════════════ -->
+  <g id="tbl-users">
+    <rect x="390" y="80" width="220" height="130" fill="white" stroke="#2563eb" stroke-width="2" rx="6"/>
+    <rect x="390" y="80" width="220" height="32" fill="#2563eb" rx="6"/>
+    <rect x="390" y="100" width="220" height="12" fill="#2563eb"/>
+    <text x="500" y="101" text-anchor="middle" font-size="13" font-weight="bold" fill="white">users</text>
+    <!-- columns -->
+    <line x1="390" y1="112" x2="610" y2="112" stroke="#e5e7eb"/>
+    <text x="400" y="128" font-size="11" fill="#374151">🔑 id</text>
+    <text x="600" y="128" text-anchor="end" font-size="10" fill="#6b7280">UUID PK</text>
+    <line x1="390" y1="134" x2="610" y2="134" stroke="#f3f4f6"/>
+    <text x="400" y="150" font-size="11" fill="#374151">email</text>
+    <text x="600" y="150" text-anchor="end" font-size="10" fill="#6b7280">TEXT UNIQUE</text>
+    <line x1="390" y1="156" x2="610" y2="156" stroke="#f3f4f6"/>
+    <text x="400" y="172" font-size="11" fill="#374151">password_hash</text>
+    <text x="600" y="172" text-anchor="end" font-size="10" fill="#6b7280">TEXT</text>
+    <line x1="390" y1="178" x2="610" y2="178" stroke="#f3f4f6"/>
+    <text x="400" y="194" font-size="11" fill="#374151">created_at</text>
+    <text x="600" y="194" text-anchor="end" font-size="10" fill="#6b7280">TEXT (UTC)</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       TABLE: refresh_tokens  (top-left)
+  ════════════════════════════════════════════════════ -->
+  <g id="tbl-refresh-tokens">
+    <rect x="30" y="80" width="220" height="152" fill="white" stroke="#7c3aed" stroke-width="2" rx="6"/>
+    <rect x="30" y="80" width="220" height="32" fill="#7c3aed" rx="6"/>
+    <rect x="30" y="100" width="220" height="12" fill="#7c3aed"/>
+    <text x="140" y="101" text-anchor="middle" font-size="13" font-weight="bold" fill="white">refresh_tokens</text>
+    <line x1="30" y1="112" x2="250" y2="112" stroke="#e5e7eb"/>
+    <text x="40" y="128" font-size="11" fill="#374151">🔑 token_id</text>
+    <text x="245" y="128" text-anchor="end" font-size="10" fill="#6b7280">UUID PK</text>
+    <line x1="30" y1="134" x2="250" y2="134" stroke="#f3f4f6"/>
+    <text x="40" y="150" font-size="11" fill="#374151">🔗 user_id</text>
+    <text x="245" y="150" text-anchor="end" font-size="10" fill="#6b7280">UUID FK</text>
+    <line x1="30" y1="156" x2="250" y2="156" stroke="#f3f4f6"/>
+    <text x="40" y="172" font-size="11" fill="#374151">token_hash</text>
+    <text x="245" y="172" text-anchor="end" font-size="10" fill="#6b7280">TEXT UNIQUE</text>
+    <line x1="30" y1="178" x2="250" y2="178" stroke="#f3f4f6"/>
+    <text x="40" y="194" font-size="11" fill="#374151">expires_at</text>
+    <text x="245" y="194" text-anchor="end" font-size="10" fill="#6b7280">TEXT (UTC)</text>
+    <line x1="30" y1="200" x2="250" y2="200" stroke="#f3f4f6"/>
+    <text x="40" y="216" font-size="11" fill="#374151">revoked</text>
+    <text x="245" y="216" text-anchor="end" font-size="10" fill="#6b7280">INTEGER</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       TABLE: watchlists  (left-middle)
+  ════════════════════════════════════════════════════ -->
+  <g id="tbl-watchlists">
+    <rect x="30" y="320" width="220" height="130" fill="white" stroke="#059669" stroke-width="2" rx="6"/>
+    <rect x="30" y="320" width="220" height="32" fill="#059669" rx="6"/>
+    <rect x="30" y="340" width="220" height="12" fill="#059669"/>
+    <text x="140" y="341" text-anchor="middle" font-size="13" font-weight="bold" fill="white">watchlists</text>
+    <line x1="30" y1="352" x2="250" y2="352" stroke="#e5e7eb"/>
+    <text x="40" y="368" font-size="11" fill="#374151">🔑 id</text>
+    <text x="245" y="368" text-anchor="end" font-size="10" fill="#6b7280">UUID PK</text>
+    <line x1="30" y1="374" x2="250" y2="374" stroke="#f3f4f6"/>
+    <text x="40" y="390" font-size="11" fill="#374151">🔗 user_id</text>
+    <text x="245" y="390" text-anchor="end" font-size="10" fill="#6b7280">UUID FK</text>
+    <line x1="30" y1="396" x2="250" y2="396" stroke="#f3f4f6"/>
+    <text x="40" y="412" font-size="11" fill="#374151">name</text>
+    <text x="245" y="412" text-anchor="end" font-size="10" fill="#6b7280">TEXT</text>
+    <line x1="30" y1="418" x2="250" y2="418" stroke="#f3f4f6"/>
+    <text x="40" y="434" font-size="11" fill="#374151">created_at</text>
+    <text x="245" y="434" text-anchor="end" font-size="10" fill="#6b7280">TEXT (UTC)</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       TABLE: watchlist_items  (left-bottom)
+  ════════════════════════════════════════════════════ -->
+  <g id="tbl-watchlist-items">
+    <rect x="30" y="560" width="220" height="130" fill="white" stroke="#059669" stroke-width="2" rx="6"/>
+    <rect x="30" y="560" width="220" height="32" fill="#059669" rx="6"/>
+    <rect x="30" y="580" width="220" height="12" fill="#059669"/>
+    <text x="140" y="581" text-anchor="middle" font-size="13" font-weight="bold" fill="white">watchlist_items</text>
+    <line x1="30" y1="592" x2="250" y2="592" stroke="#e5e7eb"/>
+    <text x="40" y="608" font-size="11" fill="#374151">🔑 id</text>
+    <text x="245" y="608" text-anchor="end" font-size="10" fill="#6b7280">UUID PK</text>
+    <line x1="30" y1="614" x2="250" y2="614" stroke="#f3f4f6"/>
+    <text x="40" y="630" font-size="11" fill="#374151">🔗 watchlist_id</text>
+    <text x="245" y="630" text-anchor="end" font-size="10" fill="#6b7280">UUID FK</text>
+    <line x1="30" y1="636" x2="250" y2="636" stroke="#f3f4f6"/>
+    <text x="40" y="652" font-size="11" fill="#374151">symbol</text>
+    <text x="245" y="652" text-anchor="end" font-size="10" fill="#6b7280">TEXT</text>
+    <line x1="30" y1="658" x2="250" y2="658" stroke="#f3f4f6"/>
+    <text x="40" y="674" font-size="11" fill="#374151">created_at</text>
+    <text x="245" y="674" text-anchor="end" font-size="10" fill="#6b7280">TEXT (UTC)</text>
+    <text x="40" y="692" font-size="9" fill="#9ca3af" font-style="italic">UNIQUE (watchlist_id, symbol)</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       TABLE: portfolios  (center-bottom)
+  ════════════════════════════════════════════════════ -->
+  <g id="tbl-portfolios">
+    <rect x="390" y="380" width="220" height="130" fill="white" stroke="#d97706" stroke-width="2" rx="6"/>
+    <rect x="390" y="380" width="220" height="32" fill="#d97706" rx="6"/>
+    <rect x="390" y="400" width="220" height="12" fill="#d97706"/>
+    <text x="500" y="401" text-anchor="middle" font-size="13" font-weight="bold" fill="white">portfolios</text>
+    <line x1="390" y1="412" x2="610" y2="412" stroke="#e5e7eb"/>
+    <text x="400" y="428" font-size="11" fill="#374151">🔑 id</text>
+    <text x="600" y="428" text-anchor="end" font-size="10" fill="#6b7280">UUID PK</text>
+    <line x1="390" y1="434" x2="610" y2="434" stroke="#f3f4f6"/>
+    <text x="400" y="450" font-size="11" fill="#374151">🔗 user_id</text>
+    <text x="600" y="450" text-anchor="end" font-size="10" fill="#6b7280">UUID FK</text>
+    <line x1="390" y1="456" x2="610" y2="456" stroke="#f3f4f6"/>
+    <text x="400" y="472" font-size="11" fill="#374151">name</text>
+    <text x="600" y="472" text-anchor="end" font-size="10" fill="#6b7280">TEXT</text>
+    <line x1="390" y1="478" x2="610" y2="478" stroke="#f3f4f6"/>
+    <text x="400" y="494" font-size="11" fill="#374151">created_at</text>
+    <text x="600" y="494" text-anchor="end" font-size="10" fill="#6b7280">TEXT (UTC)</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       TABLE: portfolio_holdings  (center-far-bottom)
+  ════════════════════════════════════════════════════ -->
+  <g id="tbl-portfolio-holdings">
+    <rect x="390" y="600" width="220" height="152" fill="white" stroke="#d97706" stroke-width="2" rx="6"/>
+    <rect x="390" y="600" width="220" height="32" fill="#d97706" rx="6"/>
+    <rect x="390" y="620" width="220" height="12" fill="#d97706"/>
+    <text x="500" y="621" text-anchor="middle" font-size="13" font-weight="bold" fill="white">portfolio_holdings</text>
+    <line x1="390" y1="632" x2="610" y2="632" stroke="#e5e7eb"/>
+    <text x="400" y="648" font-size="11" fill="#374151">🔑 id</text>
+    <text x="600" y="648" text-anchor="end" font-size="10" fill="#6b7280">UUID PK</text>
+    <line x1="390" y1="654" x2="610" y2="654" stroke="#f3f4f6"/>
+    <text x="400" y="670" font-size="11" fill="#374151">🔗 portfolio_id</text>
+    <text x="600" y="670" text-anchor="end" font-size="10" fill="#6b7280">UUID FK</text>
+    <line x1="390" y1="676" x2="610" y2="676" stroke="#f3f4f6"/>
+    <text x="400" y="692" font-size="11" fill="#374151">symbol</text>
+    <text x="600" y="692" text-anchor="end" font-size="10" fill="#6b7280">TEXT</text>
+    <line x1="390" y1="698" x2="610" y2="698" stroke="#f3f4f6"/>
+    <text x="400" y="714" font-size="11" fill="#374151">quantity</text>
+    <text x="600" y="714" text-anchor="end" font-size="10" fill="#6b7280">REAL &gt; 0</text>
+    <line x1="390" y1="720" x2="610" y2="720" stroke="#f3f4f6"/>
+    <text x="400" y="736" font-size="11" fill="#374151">created_at</text>
+    <text x="600" y="736" text-anchor="end" font-size="10" fill="#6b7280">TEXT (UTC)</text>
+    <text x="400" y="750" font-size="9" fill="#9ca3af" font-style="italic">UNIQUE (portfolio_id, symbol)</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       TABLE: price_alerts  (right-middle)
+  ════════════════════════════════════════════════════ -->
+  <g id="tbl-price-alerts">
+    <rect x="850" y="300" width="220" height="174" fill="white" stroke="#dc2626" stroke-width="2" rx="6"/>
+    <rect x="850" y="300" width="220" height="32" fill="#dc2626" rx="6"/>
+    <rect x="850" y="320" width="220" height="12" fill="#dc2626"/>
+    <text x="960" y="321" text-anchor="middle" font-size="13" font-weight="bold" fill="white">price_alerts</text>
+    <line x1="850" y1="332" x2="1070" y2="332" stroke="#e5e7eb"/>
+    <text x="860" y="348" font-size="11" fill="#374151">🔑 id</text>
+    <text x="1065" y="348" text-anchor="end" font-size="10" fill="#6b7280">UUID PK</text>
+    <line x1="850" y1="354" x2="1070" y2="354" stroke="#f3f4f6"/>
+    <text x="860" y="370" font-size="11" fill="#374151">🔗 user_id</text>
+    <text x="1065" y="370" text-anchor="end" font-size="10" fill="#6b7280">UUID FK</text>
+    <line x1="850" y1="376" x2="1070" y2="376" stroke="#f3f4f6"/>
+    <text x="860" y="392" font-size="11" fill="#374151">symbol</text>
+    <text x="1065" y="392" text-anchor="end" font-size="10" fill="#6b7280">TEXT</text>
+    <line x1="850" y1="398" x2="1070" y2="398" stroke="#f3f4f6"/>
+    <text x="860" y="414" font-size="11" fill="#374151">operator</text>
+    <text x="1065" y="414" text-anchor="end" font-size="10" fill="#6b7280">above|below</text>
+    <line x1="850" y1="420" x2="1070" y2="420" stroke="#f3f4f6"/>
+    <text x="860" y="436" font-size="11" fill="#374151">threshold</text>
+    <text x="1065" y="436" text-anchor="end" font-size="10" fill="#6b7280">REAL</text>
+    <line x1="850" y1="442" x2="1070" y2="442" stroke="#f3f4f6"/>
+    <text x="860" y="458" font-size="11" fill="#374151">active</text>
+    <text x="1065" y="458" text-anchor="end" font-size="10" fill="#6b7280">INTEGER</text>
+    <line x1="850" y1="464" x2="1070" y2="464" stroke="#f3f4f6"/>
+    <text x="860" y="480" font-size="11" fill="#374151">created_at</text>
+    <text x="1065" y="480" text-anchor="end" font-size="10" fill="#6b7280">TEXT (UTC)</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       TABLE: alert_deliveries  (right-bottom)
+  ════════════════════════════════════════════════════ -->
+  <g id="tbl-alert-deliveries">
+    <rect x="850" y="580" width="220" height="130" fill="white" stroke="#dc2626" stroke-width="2" rx="6"/>
+    <rect x="850" y="580" width="220" height="32" fill="#dc2626" rx="6"/>
+    <rect x="850" y="600" width="220" height="12" fill="#dc2626"/>
+    <text x="960" y="601" text-anchor="middle" font-size="13" font-weight="bold" fill="white">alert_deliveries</text>
+    <line x1="850" y1="612" x2="1070" y2="612" stroke="#e5e7eb"/>
+    <text x="860" y="628" font-size="11" fill="#374151">🔑 id</text>
+    <text x="1065" y="628" text-anchor="end" font-size="10" fill="#6b7280">UUID PK</text>
+    <line x1="850" y1="634" x2="1070" y2="634" stroke="#f3f4f6"/>
+    <text x="860" y="650" font-size="11" fill="#374151">🔗 alert_id</text>
+    <text x="1065" y="650" text-anchor="end" font-size="10" fill="#6b7280">UUID FK</text>
+    <line x1="850" y1="656" x2="1070" y2="656" stroke="#f3f4f6"/>
+    <text x="860" y="672" font-size="11" fill="#374151">observed_price</text>
+    <text x="1065" y="672" text-anchor="end" font-size="10" fill="#6b7280">REAL</text>
+    <line x1="850" y1="678" x2="1070" y2="678" stroke="#f3f4f6"/>
+    <text x="860" y="694" font-size="11" fill="#374151">delivered_at</text>
+    <text x="1065" y="694" text-anchor="end" font-size="10" fill="#6b7280">TEXT (UTC)</text>
+    <text x="860" y="707" font-size="9" fill="#9ca3af" font-style="italic">UNIQUE (alert_id, observed_price)</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       RELATIONSHIP LINES (crow's foot style)
+  ════════════════════════════════════════════════════ -->
+
+  <!-- users → refresh_tokens (1:N) -->
+  <!-- users left side x=390, y≈145  →  refresh_tokens right x=250, y≈148 -->
+  <line x1="390" y1="148" x2="250" y2="148" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <!-- crow foot (many) at right_tokens side -->
+  <line x1="258" y1="142" x2="250" y2="148" stroke="#7c3aed" stroke-width="1.5"/>
+  <line x1="258" y1="154" x2="250" y2="148" stroke="#7c3aed" stroke-width="1.5"/>
+  <line x1="264" y1="148" x2="258" y2="148" stroke="#7c3aed" stroke-width="1.5"/>
+  <!-- one side at users -->
+  <line x1="390" y1="142" x2="390" y2="154" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="310" y="142" font-size="10" fill="#7c3aed" font-style="italic">1 : N</text>
+
+  <!-- users → watchlists (1:N) -->
+  <!-- users bottom x=440, y=210  →  watchlists top x=140, y=320 routed via elbow -->
+  <polyline points="440,210 440,270 140,270 140,320" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="134" y1="314" x2="140" y2="320" stroke="#059669" stroke-width="1.5"/>
+  <line x1="146" y1="314" x2="140" y2="320" stroke="#059669" stroke-width="1.5"/>
+  <line x1="140" y1="313" x2="140" y2="320" stroke="#059669" stroke-width="1.5"/>
+  <line x1="434" y1="210" x2="446" y2="210" stroke="#059669" stroke-width="1.5"/>
+  <text x="265" y="262" font-size="10" fill="#059669" font-style="italic">1 : N</text>
+
+  <!-- watchlists → watchlist_items (1:N) -->
+  <line x1="140" y1="450" x2="140" y2="560" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="134" y1="554" x2="140" y2="560" stroke="#059669" stroke-width="1.5"/>
+  <line x1="146" y1="554" x2="140" y2="560" stroke="#059669" stroke-width="1.5"/>
+  <line x1="140" y1="554" x2="140" y2="560" stroke="#059669" stroke-width="1.5"/>
+  <line x1="134" y1="450" x2="146" y2="450" stroke="#059669" stroke-width="1.5"/>
+  <text x="148" y="510" font-size="10" fill="#059669" font-style="italic">1 : N</text>
+
+  <!-- users → portfolios (1:N) -->
+  <!-- users bottom x=500, y=210  →  portfolios top x=500, y=380 -->
+  <line x1="500" y1="210" x2="500" y2="380" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="494" y1="374" x2="500" y2="380" stroke="#d97706" stroke-width="1.5"/>
+  <line x1="506" y1="374" x2="500" y2="380" stroke="#d97706" stroke-width="1.5"/>
+  <line x1="500" y1="374" x2="500" y2="380" stroke="#d97706" stroke-width="1.5"/>
+  <line x1="494" y1="210" x2="506" y2="210" stroke="#d97706" stroke-width="1.5"/>
+  <text x="508" y="300" font-size="10" fill="#d97706" font-style="italic">1 : N</text>
+
+  <!-- portfolios → portfolio_holdings (1:N) -->
+  <line x1="500" y1="510" x2="500" y2="600" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="494" y1="594" x2="500" y2="600" stroke="#d97706" stroke-width="1.5"/>
+  <line x1="506" y1="594" x2="500" y2="600" stroke="#d97706" stroke-width="1.5"/>
+  <line x1="500" y1="594" x2="500" y2="600" stroke="#d97706" stroke-width="1.5"/>
+  <line x1="494" y1="510" x2="506" y2="510" stroke="#d97706" stroke-width="1.5"/>
+  <text x="508" y="560" font-size="10" fill="#d97706" font-style="italic">1 : N</text>
+
+  <!-- users → price_alerts (1:N) -->
+  <!-- users right x=610, y=145  →  price_alerts left x=850, y=368 routed via elbow -->
+  <polyline points="610,145 730,145 730,370 850,370" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="844" y1="364" x2="850" y2="370" stroke="#dc2626" stroke-width="1.5"/>
+  <line x1="844" y1="376" x2="850" y2="370" stroke="#dc2626" stroke-width="1.5"/>
+  <line x1="844" y1="370" x2="850" y2="370" stroke="#dc2626" stroke-width="1.5"/>
+  <line x1="610" y1="139" x2="610" y2="151" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="740" y="162" font-size="10" fill="#dc2626" font-style="italic">1 : N</text>
+
+  <!-- price_alerts → alert_deliveries (1:N) -->
+  <line x1="960" y1="474" x2="960" y2="580" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="954" y1="574" x2="960" y2="580" stroke="#dc2626" stroke-width="1.5"/>
+  <line x1="966" y1="574" x2="960" y2="580" stroke="#dc2626" stroke-width="1.5"/>
+  <line x1="960" y1="574" x2="960" y2="580" stroke="#dc2626" stroke-width="1.5"/>
+  <line x1="954" y1="474" x2="966" y2="474" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="968" y="532" font-size="10" fill="#dc2626" font-style="italic">1 : N</text>
+
+  <!-- ══════════════════════════════════════════════════
+       LEGEND
+  ════════════════════════════════════════════════════ -->
+  <rect x="660" y="80" width="175" height="150" fill="white" stroke="#d1d5db" stroke-width="1" rx="6"/>
+  <text x="747" y="100" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151">Legend</text>
+  <line x1="675" y1="108" x2="822" y2="108" stroke="#e5e7eb"/>
+  <text x="675" y="124" font-size="11" fill="#374151">🔑  Primary Key</text>
+  <text x="675" y="142" font-size="11" fill="#374151">🔗  Foreign Key</text>
+  <line x1="675" y1="155" x2="718" y2="155" stroke="#374151" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="723" y="159" font-size="11" fill="#374151">Relationship</text>
+  <line x1="675" y1="175" x2="699" y2="175" stroke="#374151" stroke-width="1.5"/>
+  <line x1="692" y1="169" x2="699" y2="175" stroke="#374151" stroke-width="1.5"/>
+  <line x1="692" y1="181" x2="699" y2="175" stroke="#374151" stroke-width="1.5"/>
+  <line x1="692" y1="175" x2="699" y2="175" stroke="#374151" stroke-width="1.5"/>
+  <text x="705" y="179" font-size="11" fill="#374151">Many side (crow's foot)</text>
+  <line x1="675" y1="196" x2="680" y2="196" stroke="#374151" stroke-width="1.5"/>
+  <line x1="675" y1="190" x2="675" y2="202" stroke="#374151" stroke-width="1.5"/>
+  <text x="705" y="200" font-size="11" fill="#374151">One side</text>
+
+  <!-- ON DELETE CASCADE note -->
+  <text x="550" y="798" text-anchor="middle" font-size="10" fill="#6b7280">All foreign keys use ON DELETE CASCADE. All timestamps stored as UTC ISO-8601 text.</text>
+</svg>
