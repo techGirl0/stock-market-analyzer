@@ -215,17 +215,15 @@ backend/app/
 
 ### 5.2 Architecturally Significant Design Packages
 
-The diagrams below are auto-generated from the source code (pyreverse + PlantUML) and show the MVC layer assignment of every class and module.
+The diagram below shows the full backend class structure, covering all four layers: Services, Models (SQLAlchemy ORM), Schemas (Pydantic), and Connectors.
 
-**Class diagram — MVC regions**
+![UML Class Diagram — full backend](Media/UML-class-diagram-full.png)
 
-Each class is coloured by its MVC role: orange = Controller (FastAPI routers), blue = View (Pydantic schemas), green shades = Model (entities, services, connectors).
-
-![Class diagram with MVC regions](Media/class-diagram-mvc.png)
+*Figure 5.2: UML class diagram of the WolfStreet Signal backend. Services (top), ORM models and Pydantic schemas (centre), connectors and database (right). Arrows show ownership, composition, and dependency relationships between classes.*
 
 **Package dependency diagram — MVC roles**
 
-Shows module-level dependencies coloured by the same MVC mapping.
+The auto-generated module-level dependency diagram, coloured by MVC role (orange = Controller, blue = View/Schema, green = Model).
 
 ![Package diagram with MVC roles](Media/package-diagram-mvc.png)
 
