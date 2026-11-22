@@ -1,0 +1,148 @@
+@startuml classes_WolfStreetSignal
+set namespaceSeparator none
+class "<color:red>app.connectors.market.ConnectorUnavailable</color>" as app.connectors.market.ConnectorUnavailable {
+}
+class "app.connectors.market.DemoMarketDataConnector" as app.connectors.market.DemoMarketDataConnector {
+  candles(symbol: str) -> list[Candle]
+  news(symbol: str) -> list[NewsArticle]
+  quote(symbol: str) -> Quote
+  search(query: str) -> list[InstrumentMatch]
+  validate(symbol: str) -> bool
+}
+class "app.connectors.market.MarketDataConnector" as app.connectors.market.MarketDataConnector {
+  candles(symbol: str) -> list[Candle]
+  news(symbol: str) -> list[NewsArticle]
+  quote(symbol: str) -> Quote
+  search(query: str) -> list[InstrumentMatch]
+  validate(symbol: str) -> bool
+}
+class "app.connectors.market.YFinanceMarketDataConnector" as app.connectors.market.YFinanceMarketDataConnector {
+  candles(symbol: str) -> list[Candle]
+  news(symbol: str) -> list[NewsArticle]
+  quote(symbol: str) -> Quote
+  search(query: str) -> list[InstrumentMatch]
+  validate(symbol: str) -> bool
+}
+class "app.models.base.Base" as app.models.base.Base {
+  metadata
+}
+class "app.models.refresh_token.RefreshToken" as app.models.refresh_token.RefreshToken {
+  expires_at : Mapped[datetime]
+  revoked : Mapped[bool]
+  token_hash : Mapped[str]
+  token_id : Mapped[UUID]
+  user : Mapped['User']
+  user_id : Mapped[UUID]
+}
+class "app.models.user.User" as app.models.user.User {
+  created_at : Mapped[datetime]
+  email : Mapped[str]
+  id : Mapped[UUID]
+  password_hash : Mapped[str]
+  refresh_tokens : Mapped[list['RefreshToken']]
+  watchlists : Mapped[list['Watchlist']]
+}
+class "app.models.watchlist.Watchlist" as app.models.watchlist.Watchlist {
+  created_at : Mapped[datetime]
+  id : Mapped[UUID]
+  items : Mapped[list['WatchlistItem']]
+  name : Mapped[str]
+  user : Mapped['User']
+  user_id : Mapped[UUID]
+}
+class "app.models.watchlist.WatchlistItem" as app.models.watchlist.WatchlistItem {
+  created_at : Mapped[datetime]
+  id : Mapped[UUID]
+  symbol : Mapped[str]
+  watchlist : Mapped['Watchlist']
+  watchlist_id : Mapped[UUID]
+}
+class "app.schemas.auth.AuthResponse" as app.schemas.auth.AuthResponse {
+  access_token : str
+  refresh_token : str
+  token_type : str
+}
+class "app.schemas.auth.Credentials" as app.schemas.auth.Credentials {
+  email
+  password : str
+}
+class "app.schemas.auth.RefreshRequest" as app.schemas.auth.RefreshRequest {
+  refresh_token : str
+}
+class "app.schemas.watchlists.Watchlist" as app.schemas.watchlists.Watchlist {
+  created_at : datetime
+  id : UUID
+  items : list[WatchlistItem]
+  name : str
+}
+class "app.schemas.watchlists.WatchlistCreate" as app.schemas.watchlists.WatchlistCreate {
+  name : str
+}
+class "app.schemas.watchlists.WatchlistItem" as app.schemas.watchlists.WatchlistItem {
+  created_at : datetime
+  id : UUID
+  symbol : str
+}
+class "app.schemas.watchlists.WatchlistItemCreate" as app.schemas.watchlists.WatchlistItemCreate {
+  symbol : str
+}
+class "app.schemas.watchlists.WatchlistItemRead" as app.schemas.watchlists.WatchlistItemRead {
+  created_at : datetime
+  id : UUID
+  symbol : str
+  watchlist_id : UUID
+}
+class "app.schemas.watchlists.WatchlistRead" as app.schemas.watchlists.WatchlistRead {
+  created_at : datetime
+  id : UUID
+  name : str
+  user_id : UUID
+}
+class "app.services.auth.AuthService" as app.services.auth.AuthService {
+  session
+  settings : Settings
+  delete_account(user_id: UUID) -> None
+  login(email: str, password: str) -> tuple[str, str]
+  logout(refresh: str) -> None
+  refresh(refresh: str) -> tuple[str, str]
+  register(email: str, password: str) -> tuple[str, str]
+}
+class "app.services.instruments.InstrumentService" as app.services.instruments.InstrumentService {
+  clock
+  connector
+  settings : NoneType
+  candles(symbol: str, start: datetime | None, end: datetime | None, interval: str, limit: int) -> Page[Candle]
+  history(symbol: str, start: datetime | None, end: datetime | None, interval: str, limit: int) -> HistoryResponse
+  news(symbol: str, limit: int) -> Page[NewsArticle]
+  quote(symbol: str) -> Quote
+  search(query: str, limit: int) -> Page[InstrumentMatch]
+}
+class "app.services.watchlists.WatchlistCreateRecord" as app.services.watchlists.WatchlistCreateRecord {
+  created_at : datetime
+  name : str
+  user_id : UUID
+}
+class "app.services.watchlists.WatchlistItemCreateRecord" as app.services.watchlists.WatchlistItemCreateRecord {
+  created_at : datetime
+  symbol : str
+  watchlist_id : UUID
+}
+class "app.services.watchlists.WatchlistService" as app.services.watchlists.WatchlistService {
+  instruments
+  items : FastCRUD[Any, Any, Any, Any, Any, Any]
+  session
+  watchlists : FastCRUD[Any, Any, Any, Any, Any, Any]
+  add(user_id: UUID, watchlist_id: UUID, payload: WatchlistItemCreate) -> WatchlistItem
+  create(user_id: UUID, payload: WatchlistCreate) -> Watchlist
+  delete(user_id: UUID, watchlist_id: UUID) -> None
+  get(user_id: UUID, watchlist_id: UUID) -> Watchlist
+  list(user_id: UUID, limit: int, offset: int) -> list[Watchlist]
+  remove(user_id: UUID, watchlist_id: UUID, item_id: UUID) -> None
+}
+app.models.refresh_token.RefreshToken --|> app.models.base.Base
+app.models.user.User --|> app.models.base.Base
+app.models.watchlist.Watchlist --|> app.models.base.Base
+app.models.watchlist.WatchlistItem --|> app.models.base.Base
+app.connectors.market.MarketDataConnector --o app.services.instruments.InstrumentService : connector
+app.services.instruments.InstrumentService --o app.services.watchlists.WatchlistService : instruments
+@enduml
