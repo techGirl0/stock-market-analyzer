@@ -9,7 +9,9 @@
   - [1.4 References](#14-references)
   - [1.5 Overview](#15-overview)
 - [2. Architectural Representation](#2-architectural-representation)
-  - [2.1 Backend Architecture (Layered MVC)](#21-backend-architecture-fastapi--layered-mvc)
+  - [2.1 Backend Architecture (FastAPI — Layered MVC)](#21-backend-architecture-fastapi--layered-mvc)
+  - [2.2 Frontend Architecture (Next.js — Planned)](#22-frontend-architecture-nextjs--planned)
+  - [2.3 MVC Mapping](#23-mvc-mapping)
 - [3. Architectural Goals and Constraints](#3-architectural-goals-and-constraints)
 - [4. Use-Case View](#4-use-case-view)
   - [4.1 Use-Case Realizations](#41-use-case-realizations)
@@ -18,6 +20,11 @@
   - [5.2 Architecturally Significant Design Packages](#52-architecturally-significant-design-packages)
 - [6. Process View](#6-process-view)
 - [7. Deployment View](#7-deployment-view)
+  - [7.1 Current Deployment](#71-current-deployment)
+  - [7.2 Planned Production Deployment](#72-planned-production-deployment)
+  - [7.3 Components](#73-components)
+  - [7.4 Startup Sequence (Docker Compose)](#74-startup-sequence-docker-compose)
+  - [7.5 Configuration (Environment-Driven)](#75-configuration-environment-driven)
 - [8. Implementation View](#8-implementation-view)
   - [8.1 Overview](#81-overview)
   - [8.2 Layers](#82-layers)
@@ -43,9 +50,9 @@ It defines the architectural design, framework choices, logical structure, deplo
 
 ### 1.2 Scope
 
-This document describes the architecture of the Stock Market Analyzer backend service, including the REST API, service layer, database schema, connector abstraction layer, and deployment strategy.
+This document describes the architecture of the Stock Market Analyzer in its **current implemented state**: a FastAPI REST backend with a standalone AI module, fully covering all SRS use cases planned for the December delivery (authentication, instruments, watchlists, portfolios, alerts, research brief, and AI chat).
 
-It focuses on the core backend components in `backend/app/` and the standalone `ai_module/`. The document does not cover planned frontend implementation details, third-party provider licensing specifics, or future infrastructure components (TimescaleDB, Kafka, Kubernetes) that are explicitly deferred in the SRS.
+The Next.js + React + TypeScript frontend is **planned** and is documented here as a first-class architectural component to establish the full-stack design before implementation begins. Features from the longer-term vision (news intelligence pipeline, advanced risk engine, volatility forecasting, Redis Streams, TimescaleDB, pgvector) are outside the current scope and not covered in this document.
 
 ### 1.3 Definitions, Acronyms and Abbreviations
 
@@ -53,6 +60,7 @@ It focuses on the core backend components in `backend/app/` and the standalone `
 |---|---|
 | API | Application Programming Interface |
 | REST | Representational State Transfer |
+| WS | WebSocket |
 | JWT | JSON Web Token |
 | ORM | Object Relational Mapper |
 | SPA | Single Page Application |
@@ -73,37 +81,30 @@ It focuses on the core backend components in `backend/app/` and the standalone `
 | [SQLAlchemy Documentation](https://docs.sqlalchemy.org/) | Ongoing | SQLAlchemy community |
 | [Alembic Documentation](https://alembic.sqlalchemy.org/) | Ongoing | SQLAlchemy community |
 | [Pydantic Documentation](https://docs.pydantic.dev/) | Ongoing | Pydantic community |
+| [Next.js Documentation](https://nextjs.org/docs) | Ongoing | Vercel |
 
 ### 1.5 Overview
 
-This document explains the layered architecture of the Stock Market Analyzer, emphasizing the strict separation of concerns between HTTP routing (controllers), application logic (services), external provider access (connectors), and data persistence (ORM models + raw SQLite). It provides a visual and conceptual breakdown of the architecture, UML class diagram, ERD, and deployment setup.
+This document describes the layered backend architecture (FastAPI REST, service layer, connector abstractions, dual-database persistence) and the planned Next.js frontend. Visual and conceptual breakdowns are provided for each view: logical, process, deployment, implementation, and data.
 
-Sections cover logical, process, deployment, implementation, and data views, with emphasis on the Provider Adapter pattern and the dual-database strategy (SQLAlchemy ORM for identity, raw SQLite for financial domain data).
+The key architectural elements are the **Provider Adapter pattern** (all external data sources and LLM providers are swappable via Protocol interfaces), the **dual-database strategy** (SQLAlchemy ORM for identity, raw SQLite for financial domain), and the **layered MVC decomposition** shared by both backend and planned frontend.
 
 ---
 
 ## 2. Architectural Representation
 
-The Stock Market Analyzer backend follows a **layered architecture** with four clearly separated tiers: **Controllers → Services → Connectors → Persistence**. This is a REST-focused adaptation of the classic MVC pattern where:
+The Stock Market Analyzer is built on a **MVC + service-layer architecture** with a clear technology split: **Python (FastAPI)** for the backend, **Next.js + TypeScript** for the planned frontend.
+
+### 2.1 Backend Architecture (FastAPI — Layered MVC)
+
+The FastAPI backend follows a **layered architecture** with four clearly separated tiers: **Controllers → Services → Connectors → Persistence**. This is a REST-focused adaptation of MVC where:
 
 - **Controllers** (FastAPI routers) handle request routing, parameter validation via Pydantic, and response serialization.
 - **Services** hold all application logic, orchestrate connectors, and interact with the persistence tier.
 - **Connectors** isolate external dependencies (market data providers, LLM providers) behind Protocol interfaces.
 - **Persistence** is split across two engines: SQLAlchemy async ORM (identity domain) and raw SQLite via `Database` (financial domain).
 
-All layers communicate through Pydantic schemas, which serve as the single source of truth for data contracts across the whole stack.
-
----
-
-### 2.1 Backend Architecture (FastAPI — Layered MVC)
-
-FastAPI, combined with Pydantic and SQLAlchemy, implements a layered variant of MVC where templates are replaced by JSON serialization:
-
-- **Model** — SQLAlchemy ORM models (`User`, `RefreshToken`, `Watchlist`, `WatchlistItem`) and raw SQLite tables (`portfolios`, `portfolio_holdings`, `price_alerts`, `alert_deliveries`).
-- **View** — FastAPI route handlers in `controllers/`; they accept and return Pydantic schemas.
-- **Controller/Service** — `services/` classes hold business logic, coordinating between persistence and connectors.
-
-The **Connector** layer is an additional abstraction not present in classic MVC. It wraps external providers (market data, LLM) behind `Protocol` interfaces, making them replaceable without touching any service code.
+All layers communicate through Pydantic schemas, which serve as the single source of truth for data contracts.
 
 ```
 HTTP Request
@@ -118,11 +119,11 @@ HTTP Request
   · orchestrates connectors and persistence
   · returns Pydantic schema
     │
-    ├──────────────────────┐
-    ▼                      ▼
- Connector             Persistence
- (Protocol interface)  · SQLAlchemy ORM (identity)
- · MarketDataConnector  · Database / raw SQLite (financial)
+    ├──────────────────────────┐
+    ▼                          ▼
+ Connector                 Persistence
+ (Protocol interface)      · SQLAlchemy ORM (identity domain)
+ · MarketDataConnector      · Database / raw SQLite (financial domain)
  · LLMConnector
     │
     ▼
@@ -130,25 +131,47 @@ HTTP Request
  (yfinance / Groq / Demo)
 ```
 
+### 2.2 Frontend Architecture (Next.js — Planned)
+
+The frontend will be a Next.js + React + TypeScript application consuming the FastAPI backend over REST (and WebSocket for live updates). It follows the same MVC decomposition on the client side:
+
+| MVC Concern | Frontend Role |
+|---|---|
+| **Model** | Typed API client, TanStack Query server-state stores, Zustand UI-state stores |
+| **View** | React components; charts for price history and analysis results |
+| **Controller** | Hooks, route handlers, Next.js page loaders |
+
+Business logic never lives in a React component. All computed values (risk scores, forecasts, sentiment) originate from the backend services — the frontend renders them.
+
+### 2.3 MVC Mapping
+
+| Concern | Backend (Implemented) | Frontend (Planned) |
+|---|---|---|
+| **Model** | ORM entities, domain objects | Typed API client, state stores |
+| **View** | Pydantic response schemas | React components, chart renderers |
+| **Controller** | FastAPI routers | Hooks, route handlers, page loaders |
+| **Service layer** | Auth, Watchlist, Portfolio, Alert, Instrument, Analysis, Research | Thin; formatting only |
+
 ---
 
 ## 3. Architectural Goals and Constraints
 
 ### Goals
 
-- Achieve strict separation of concerns across four layers so each can evolve, be tested, or be replaced independently.
-- Keep external providers (market data, LLM) fully interchangeable via the `Protocol`-based Connector pattern. Switching from `DemoMarketDataConnector` to `YFinanceMarketDataConnector` or any future licensed provider requires only a configuration change (`MARKET_DATA_PROVIDER` env var).
-- Ensure stateless API design with JWT authentication so the backend can scale horizontally.
-- Provide transparent, non-advisory financial analysis — all computed values carry explicit uncertainty metadata (`DataMeta`, `AnalysisMeta`) and disclaimers.
+- Achieve strict separation of concerns across four backend layers so each can evolve, be tested, or be replaced independently.
+- Keep external providers (market data, LLM) fully interchangeable via the `Protocol`-based Connector pattern.
+- Ensure stateless REST API design with JWT authentication so the backend can scale horizontally.
+- Provide transparent, non-advisory financial analysis — all computed values carry explicit uncertainty metadata and disclaimers.
+- Deliver a full-stack product: a Next.js frontend consumes the FastAPI backend over REST and WebSocket.
 - Support incremental delivery: identity and watchlist features are fully persistent (PostgreSQL via ORM); financial features (portfolios, alerts) are functional on SQLite and can migrate to PostgreSQL without service changes.
 
 ### Constraints
 
-- Python 3.13 with FastAPI; no frontend framework in scope for the current delivery period.
-- SQLite is the primary local persistence engine; PostgreSQL is used in CI and is targeted for production.
+- Python 3.13 with FastAPI (backend); Next.js + React + TypeScript (frontend, planned).
+- SQLite is the primary local persistence engine; PostgreSQL is the production target.
 - No real-money trading, personalized investment recommendations, or financial advice output — enforced at both the LLM connector level and the application layer.
 - Target environments: local development with Docker Compose; production deployment with Docker + Nginx.
-- Team size is small; frameworks and tooling are chosen to minimize operational overhead (no Kafka, Kubernetes, or ML infrastructure in the current delivery scope).
+- Team size is small; frameworks and tooling are chosen to minimize operational overhead.
 
 ---
 
@@ -156,21 +179,19 @@ HTTP Request
 
 This view illustrates the actors and use cases of the Stock Market Analyzer, showing which roles interact with which features.
 
-> **Note:** Use cases are grouped by domain. Deferred features (event-driven news feed, composite risk scoring, administration) are outside the current delivery scope and are not listed here.
-
 ![Use-Case Diagram](Media/UseCaseDiagram.jpg)
 
 ### 4.1 Use-Case Realizations
 
-| Domain | Use Cases |
-|---|---|
-| **Authentication** | [Register](UCs/ManagePortfilios.md) · Login · Logout · Refresh Token · Delete Account |
-| **Instruments** | [Search for a Stock](UCs/SearchForAStock.md) · View Quote · View Price History |
-| **Watchlists** | [Manage Watchlist](UCs/ManageWatchList.md) — Add Stock · Remove Stock · List Stocks |
-| **Portfolios** | [Manage Portfolios](UCs/ManagePortfilios.md) — Create · View · Add Holding |
-| **Alerts** | Manage Price Alerts — Create · Delete · List · Evaluate |
-| **Research** | [Research Brief](UCs/ResearrchBrief.md) · [Chat with AI](UCs/ChatwithAI.md) |
-| **Analysis** | Risk Score · Volatility Forecast |
+| Domain | Use Cases | Status |
+|---|---|---|
+| **Authentication** | Register · Login · Logout · Refresh Token · Delete Account | Implemented |
+| **Instruments** | Search for a Stock · View Quote · View Price History | Implemented |
+| **Watchlists** | Add Stock · Remove Stock · List Stocks | Implemented |
+| **Portfolios** | Create Portfolio · Add Holding · View Portfolio | Implemented |
+| **Alerts** | Create Alert · Delete Alert · List Alerts · Evaluate Alerts | Implemented |
+| **Research** | Research Brief · Chat with AI | Implemented |
+| **Analysis** | Risk Score · Volatility Forecast | Implemented |
 
 ---
 
@@ -193,6 +214,20 @@ backend/app/
 ```
 
 ### 5.2 Architecturally Significant Design Packages
+
+The diagrams below are auto-generated from the source code (pyreverse + PlantUML) and show the MVC layer assignment of every class and module.
+
+**Class diagram — MVC regions**
+
+Each class is coloured by its MVC role: orange = Controller (FastAPI routers), blue = View (Pydantic schemas), green shades = Model (entities, services, connectors).
+
+![Class diagram with MVC regions](Media/class-diagram-mvc.png)
+
+**Package dependency diagram — MVC roles**
+
+Shows module-level dependencies coloured by the same MVC mapping.
+
+![Package diagram with MVC roles](Media/package-diagram-mvc.png)
 
 ---
 
@@ -344,37 +379,61 @@ All requests pass through two layers of rate limiting before reaching any handle
 
 The Stock Market Analyzer uses a containerized single-host architecture managed with Docker Compose.
 
+### 7.1 Current Deployment
+
+```
+Client Browser
+      │  HTTP/HTTPS
+      ▼
+  Backend Container (port 8000)
+  FastAPI + Uvicorn
+      │
+      └── SQLite database file (backend/data/app.db)
+              · 4 ORM-managed tables (users, tokens, watchlists, watchlist_items)
+              · 4 raw SQLite tables (portfolios, holdings, alerts, deliveries)
+```
+
+The current setup requires no additional infrastructure: the backend runs as a single container and uses a local SQLite file. No Redis, no PostgreSQL, no worker containers.
+
+### 7.2 Planned Production Deployment
+
 ```
 Client Browser
       │  HTTPS
       ▼
   Nginx (reverse proxy, port 443)
       │
-      ├── / → Frontend (planned, port 3000)
+      ├── / → Next.js Frontend container (port 3000)
       └── /api → Backend Container (port 8000)
                       │
-                      ├── SQLite volume (local dev, /app/data/app.db)
-                      └── PostgreSQL container (port 5432) [CI + production]
+                      └── PostgreSQL (port 5432)
 ```
 
-**Components:**
+PostgreSQL replaces SQLite for all 8 tables. The SQLAlchemy ORM tables are migrated via Alembic; the raw SQLite tables are migrated through a planned migration step. Nginx handles TLS termination and path-based routing.
 
-| Component | Technology | Role |
+### 7.3 Components
+
+| Component | Technology | Status |
 |---|---|---|
-| Backend | Python 3.13 · FastAPI · Uvicorn | REST API service |
-| Database (dev) | SQLite (aiosqlite) | Local persistence, zero-config |
-| Database (prod) | PostgreSQL 17.5 | Production persistence managed via Alembic migrations |
-| Reverse proxy | Nginx | TLS termination, path-based routing |
-| Container runtime | Docker + Docker Compose | Service isolation and orchestration |
-| CI environment | GitHub Actions + PostgreSQL service | Automated test, lint, type-check, audit |
+| Backend | Python 3.13 · FastAPI · Uvicorn | Implemented |
+| AI module | Python · Streamlit (standalone) | Implemented |
+| Frontend | Next.js · React · TypeScript | Planned |
+| Database (dev) | SQLite (aiosqlite) | Implemented |
+| Database (prod) | PostgreSQL 17+ | Planned |
+| Reverse proxy | Nginx | Planned |
+| Container runtime | Docker + Docker Compose | Implemented |
+| CI environment | GitHub Actions + PostgreSQL service | Implemented |
 
-**Startup sequence (Docker container):**
+### 7.4 Startup Sequence (Docker Compose)
 
 ```
 docker compose up --build
     │
     ▼
-Alembic upgrade head   ← applies pending migrations to PostgreSQL
+PostgreSQL starts   ← health check before API starts
+    │
+    ▼
+Alembic upgrade head   ← applies pending migrations
     │
     ▼
 uvicorn app.main:app   ← starts FastAPI on 0.0.0.0:8000
@@ -383,12 +442,12 @@ uvicorn app.main:app   ← starts FastAPI on 0.0.0.0:8000
 Database.initialize()  ← idempotently creates SQLite tables (financial domain)
 ```
 
-**Configuration is entirely environment-driven:**
+### 7.5 Configuration (Environment-Driven)
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `MARKET_DATA_PROVIDER` | `demo` | Selects connector implementation |
-| `LLM_PROVIDER` | `disabled` | Selects LLM connector |
+| `MARKET_DATA_PROVIDER` | `demo` | Selects connector implementation (`demo` or `yfinance`) |
+| `LLM_PROVIDER` | `disabled` | Selects LLM connector (`disabled` or `groq`) |
 | `DATABASE_URL` | SQLite path | SQLAlchemy async engine target |
 | `DATABASE_PATH` | `backend/data/app.db` | Raw SQLite path for `Database` class |
 | `JWT_SECRET` | *(dev placeholder)* | HS256 signing key — must be overridden in production |
@@ -400,15 +459,17 @@ Database.initialize()  ← idempotently creates SQLite tables (financial domain)
 
 ### 8.1 Overview
 
-The implementation lives in a single repository with the following top-level layout:
+The implementation lives in a monorepo with the following top-level layout:
 
-| Directory | Contents |
-|---|---|
-| `backend/` | Main FastAPI application, Alembic migrations, tests, Dockerfile |
-| `ai_module/` | Standalone AI analysis prototype (separate venv) |
-| `documentation/` | SRS, SAD, UML diagrams, ERD, use cases, mockups, activity diagrams |
-| `features/` | Behave BDD feature files and step definitions |
-| `.github/workflows/` | GitHub Actions CI pipeline |
+| Directory | Contents | Status |
+|---|---|---|
+| `backend/` | Main FastAPI application, Alembic migrations, tests, Dockerfile | Implemented |
+| `ai_module/` | Standalone AI analysis prototype (separate venv) | Implemented |
+| `frontend/` | Next.js + React + TypeScript app | Planned |
+| `infra/` | Docker, docker-compose, GitHub Actions CI | Partial |
+| `documentation/` | SRS, SAD, UML diagrams, ERD, use cases, mockups | Implemented |
+| `features/` | Behave BDD feature files and step definitions | Implemented |
+| `.github/workflows/` | GitHub Actions CI pipeline | Implemented |
 
 **Class Diagram**
 
@@ -417,10 +478,6 @@ The full UML class diagram covering all models, services, connectors, and schema
 - PlantUML source: [`documentation/Media/UML-class-diagram.puml`](Media/UML-class-diagram.puml)
 - SVG render: [`documentation/Media/UML-class-diagram.svg`](Media/UML-class-diagram.svg)
 - draw.io file: [`documentation/Media/UML-class-diagram.drawio`](Media/UML-class-diagram.drawio)
-
-**Package Diagram**
-
-Auto-generated package dependency diagram: [`documentation/Media/UML-packages-diagram.svg`](Media/UML-packages-diagram.svg)
 
 ### 8.2 Layers
 
@@ -431,16 +488,17 @@ Auto-generated package dependency diagram: [`documentation/Media/UML-packages-di
 | **Provider Abstraction** | Protocol interfaces + connector implementations | Decouple services from external APIs; swap providers via config |
 | **Persistence — Identity** | SQLAlchemy async ORM + Alembic | User, token, watchlist data with schema versioning |
 | **Persistence — Financial** | Raw `sqlite3` via `Database` class | Portfolio, holding, alert, delivery data |
+| **Frontend** | Next.js · React · TypeScript *(planned)* | Rendering, routing, server-state management |
 | **Cross-cutting** | `core/` module | Config, security, rate limiting, error handling |
 
 ---
 
 ## 9. Data View
 
-The backend uses two persistence engines deliberately:
+The backend uses two persistence engines:
 
 - **SQLAlchemy ORM** manages the identity domain (users, tokens, watchlists) where schema migrations, type safety, and relational integrity are critical.
-- **Raw SQLite** via the `Database` class manages the financial domain (portfolios, holdings, alerts, deliveries) where the simpler API is sufficient and migration to PostgreSQL is a planned future step.
+- **Raw SQLite** via the `Database` class manages the financial domain (portfolios, holdings, alerts, deliveries) where the simpler API is sufficient. Migration to PostgreSQL is a planned next step.
 
 All foreign keys use `ON DELETE CASCADE`. All timestamps are stored in UTC.
 
@@ -457,7 +515,7 @@ The ERD covers all 8 tables. Tables in the same color group are owned by the sam
 
 ### 9.2 DB Model Overview
 
-The EER diagram showing all tables, columns, data types, keys, and foreign-key relationships:
+The EER diagram showing all current tables, columns, data types, keys, and foreign-key relationships:
 
 ![EER Model](Media/eer-model.svg)
 
@@ -491,7 +549,7 @@ No formal load testing has been conducted at this stage. The following targets a
 - **API response time** — target < 300 ms for read endpoints under normal load. Rate limiting (120 req/min global) caps worst-case load.
 - **Provider caching** — `InstrumentService` caches provider responses for `PROVIDER_CACHE_SECONDS` (default 60 s) with stale-data fallback up to `PROVIDER_MAX_STALE_SECONDS` (default 300 s), protecting against external provider latency and rate limits.
 - **Request budget** — `PROVIDER_REQUEST_BUDGET` (default 60 per 60 s) prevents runaway external API consumption.
-- **Idempotent workers** — the alert evaluation worker (`evaluate_alerts_once()`) uses a database-level UNIQUE constraint rather than application-level deduplication, making it safe to run concurrently or repeatedly.
+- **Idempotent workers** — the alert evaluation worker uses a database-level UNIQUE constraint rather than application-level deduplication, making it safe to run concurrently or repeatedly.
 - **Stateless API** — no server-side session state; horizontal scaling requires only a shared database.
 - **Async I/O** — all SQLAlchemy ORM queries use `AsyncSession` with `aiosqlite`/`asyncpg`; all external connector methods are `async def`, ensuring the event loop is not blocked.
 
@@ -525,10 +583,11 @@ The pipeline uses a live PostgreSQL 17.5 service container for integration tests
 
 | Priority | Area | Action |
 |---|---|---|
-| High | Test coverage — services | Add unit tests for `PortfolioService`, `AlertService`, `AnalysisService`, `ResearchService` |
-| High | BDD scenarios | Expand Behave feature coverage beyond `manage_watchlist` to all implemented use cases |
-| Medium | Alert delivery | Move alert evaluation to a persistent task scheduler (e.g. Celery + Redis) rather than a one-shot async function |
-| Medium | PostgreSQL migration | Migrate `portfolios`, `portfolio_holdings`, `price_alerts`, `alert_deliveries` from raw SQLite to Alembic-managed PostgreSQL tables |
-| Medium | Frontend | Implement the planned Next.js + React + TypeScript frontend described in the README |
-| Low | Static analysis | Integrate SonarCloud or equivalent for coverage tracking and code-smell reporting on CI |
-| Low | Performance baseline | Run k6 or Locust load tests against the Docker Compose stack to validate the < 300 ms target |
+| High | **Frontend** | Implement Next.js + React + TypeScript frontend: auth pages, ticker search, research brief, watchlist UI, portfolio view, alerts |
+| High | **WebSocket** | FastAPI WebSocket handler for live price updates; frontend integration |
+| High | **Test coverage** | Add unit tests for `PortfolioService`, `AlertService`, `AnalysisService`, `ResearchService` |
+| High | **BDD scenarios** | Expand Behave feature coverage beyond `manage_watchlist` to all implemented use cases |
+| Medium | **PostgreSQL migration** | Migrate `portfolios`, `portfolio_holdings`, `price_alerts`, `alert_deliveries` from raw SQLite to Alembic-managed PostgreSQL |
+| Medium | **Alert delivery** | Move alert evaluation to a persistent scheduled job rather than a one-shot async function |
+| Medium | **Performance baseline** | Run load tests (target: < 300 ms p95 for read endpoints) and document results |
+| Low | **Observability** | Structured JSON logging with correlation IDs; health endpoint expansion |
