@@ -414,13 +414,13 @@ The implementation lives in a single repository with the following top-level lay
 
 The full UML class diagram covering all models, services, connectors, and schemas is available in multiple formats:
 
-- PlantUML source: [`documentation/UML-class-diagram.puml`](UML-class-diagram.puml)
-- SVG render: [`documentation/UML-class-diagram.svg`](UML-class-diagram.svg)
-- draw.io file: [`documentation/UML-class-diagram.drawio`](UML-class-diagram.drawio)
+- PlantUML source: [`documentation/Media/UML-class-diagram.puml`](Media/UML-class-diagram.puml)
+- SVG render: [`documentation/Media/UML-class-diagram.svg`](Media/UML-class-diagram.svg)
+- draw.io file: [`documentation/Media/UML-class-diagram.drawio`](Media/UML-class-diagram.drawio)
 
 **Package Diagram**
 
-Auto-generated package dependency diagram: [`documentation/UML-packages-diagram.svg`](UML-packages-diagram.svg)
+Auto-generated package dependency diagram: [`documentation/Media/UML-packages-diagram.svg`](Media/UML-packages-diagram.svg)
 
 ### 8.2 Layers
 
@@ -459,7 +459,7 @@ The ERD covers all 8 tables. Tables in the same color group are owned by the sam
 
 The EER diagram showing all tables, columns, data types, keys, and foreign-key relationships:
 
-![EER Model](db/eer-model.svg)
+![EER Model](Media/eer-model.svg)
 
 **Key design decisions:**
 
