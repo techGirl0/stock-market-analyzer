@@ -1,0 +1,44 @@
+@startuml packages_WolfStreetSignal
+set namespaceSeparator none
+package "app.connectors.market" as app.connectors.market {
+}
+package "app.controllers.auth" as app.controllers.auth {
+}
+package "app.controllers.watchlists" as app.controllers.watchlists {
+}
+package "app.models.base" as app.models.base {
+}
+package "app.models.refresh_token" as app.models.refresh_token {
+}
+package "app.models.user" as app.models.user {
+}
+package "app.models.watchlist" as app.models.watchlist {
+}
+package "app.schemas.auth" as app.schemas.auth {
+}
+package "app.schemas.watchlists" as app.schemas.watchlists {
+}
+package "app.services.auth" as app.services.auth {
+}
+package "app.services.instruments" as app.services.instruments {
+}
+package "app.services.watchlists" as app.services.watchlists {
+}
+app.controllers.auth --> app.schemas.auth
+app.controllers.auth --> app.services.auth
+app.controllers.watchlists --> app.schemas.watchlists
+app.controllers.watchlists --> app.services.watchlists
+app.models.refresh_token --> app.models.base
+app.models.user --> app.models.base
+app.models.watchlist --> app.models.base
+app.services.auth --> app.models.refresh_token
+app.services.auth --> app.models.user
+app.services.instruments --> app.connectors.market
+app.services.watchlists --> app.models.watchlist
+app.services.watchlists --> app.schemas.watchlists
+app.services.watchlists --> app.services.instruments
+app.models.refresh_token ..> app.models.user
+app.models.user ..> app.models.refresh_token
+app.models.user ..> app.models.watchlist
+app.models.watchlist ..> app.models.user
+@enduml
