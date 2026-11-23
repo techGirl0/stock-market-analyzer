@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from app.connectors.llm import LLMConnector
 from app.connectors.market import MarketDataConnector
 from app.core.errors import BackendError
