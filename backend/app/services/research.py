@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
-from math import sqrt, exp
-from app.connectors.market import MarketDataConnector
+from math import sqrt
+
 from app.connectors.llm import LLMConnector
+from app.connectors.market import MarketDataConnector
 from app.core.errors import BackendError
-from app.schemas.research import BriefResponse, ChatMessage, ChatResponse
-from app.services.analysis import _compute_risk_score, _compute_scenarios, _fetch_beta, _resolve_days
+from app.schemas.research import BriefResponse, ChatMessage, ChatResponse, ExplainResponse
+from app.services.analysis import _compute_risk_score, _compute_scenarios, _fetch_beta
 
 DISCLAIMER = "General, evidence-based information only; not personalized investment advice."
 
@@ -19,8 +20,10 @@ class ResearchService:
         text = await self.llm.brief(symbol.upper(), context)
         return BriefResponse(
             ticker=symbol.upper(),
+            company_name=pipeline.get("name", symbol.upper()),
             brief_text=text,
             generated_at=datetime.now(timezone.utc),
+            fetched_at=pipeline.get("fetched_at", ""),
             disclaimer=DISCLAIMER,
         )
 
@@ -33,6 +36,39 @@ class ResearchService:
         return ChatResponse(
             reply=reply,
             messages=updated,
+            generated_at=datetime.now(timezone.utc),
+            disclaimer=DISCLAIMER,
+        )
+
+    async def explain_risk(self, symbol: str) -> ExplainResponse:
+        pipeline = await self._build_pipeline(symbol)
+        risk_lines = _risk_context(pipeline)
+        text = await self.llm.explain_risk(symbol.upper(), risk_lines)
+        return ExplainResponse(
+            ticker=symbol.upper(),
+            text=text,
+            generated_at=datetime.now(timezone.utc),
+            disclaimer=DISCLAIMER,
+        )
+
+    async def explain_volatility(self, symbol: str) -> ExplainResponse:
+        pipeline = await self._build_pipeline(symbol)
+        vol_lines = _volatility_context(pipeline)
+        text = await self.llm.explain_volatility(symbol.upper(), vol_lines)
+        return ExplainResponse(
+            ticker=symbol.upper(),
+            text=text,
+            generated_at=datetime.now(timezone.utc),
+            disclaimer=DISCLAIMER,
+        )
+
+    async def explain_scenarios(self, symbol: str) -> ExplainResponse:
+        pipeline = await self._build_pipeline(symbol)
+        scen_lines = _scenarios_context(pipeline)
+        text = await self.llm.explain_scenarios(symbol.upper(), scen_lines)
+        return ExplainResponse(
+            ticker=symbol.upper(),
+            text=text,
             generated_at=datetime.now(timezone.utc),
             disclaimer=DISCLAIMER,
         )
@@ -84,7 +120,16 @@ class ResearchService:
         news_items: list[dict] = []
         news_sentiment: float | None = None
         if headlines:
-            news_items = await self.llm.news_feed(normalized, headlines)
+            raw_feed = await self.llm.news_feed(normalized, headlines)
+            # Normalise to consistent keys: headline, sentiment, reason
+            news_items = [
+                {
+                    "headline": item.get("headline", item.get("title", "")),
+                    "sentiment": item.get("sentiment", "NEUTRAL"),
+                    "reason": item.get("reason", item.get("explanation", "")),
+                }
+                for item in raw_feed
+            ]
             news_sentiment = await self.llm.sentiment_score(normalized, headlines)
 
         # --- risk score ---
@@ -105,10 +150,29 @@ class ResearchService:
 
         current_price = float(quote.price) if quote.price is not None else (prices[-1] if prices else None)
 
+        # --- extra snapshot fields (market cap, P/E, day change) ---
+        # Quote schema carries change_percent; market_cap and pe_ratio are
+        # fetched opportunistically from yfinance when available.
+        day_change_pct = float(quote.change_percent) if quote.change_percent is not None else None
+        market_cap: int | None = None
+        pe_ratio: float | None = None
+        try:
+            import yfinance  # type: ignore
+            info = yfinance.Ticker(normalized).info
+            market_cap = info.get("marketCap")
+            pe_ratio = info.get("trailingPE")
+            if day_change_pct is None and info.get("regularMarketChangePercent") is not None:
+                day_change_pct = round(float(info["regularMarketChangePercent"]), 4)
+        except Exception:
+            pass
+
         return {
             "ticker": normalized,
             "name": quote.instrument.name,
             "current_price": current_price,
+            "day_change_pct": day_change_pct,
+            "market_cap": market_cap,
+            "pe_ratio": round(pe_ratio, 2) if pe_ratio is not None else None,
             "annual_vol_pct": round(annual_vol * 100, 2) if annual_vol is not None else None,
             "daily_vol_pct": round(daily_vol * 100, 4) if daily_vol is not None else None,
             "beta": round(beta, 3),
@@ -127,9 +191,23 @@ class ResearchService:
 
 def _format_pipeline_for_prompt(p: dict) -> str:
     """Build the full LLM context string from the assembled pipeline."""
+
+    def _fmt_cap(cap: int | None) -> str:
+        if cap is None:
+            return "unavailable"
+        if cap >= 1_000_000_000_000:
+            return f"${cap / 1_000_000_000_000:.2f}T"
+        if cap >= 1_000_000_000:
+            return f"${cap / 1_000_000_000:.2f}B"
+        return f"${cap / 1_000_000:.0f}M"
+
     lines = [
         f"## {p['name']} ({p['ticker']})",
         f"- Current price: ${p['current_price']}" if p.get("current_price") else "- Current price: unavailable",
+        f"- Day change: {p['day_change_pct']:+.2f}%" if p.get("day_change_pct") is not None
+        else "- Day change: unavailable",
+        f"- Market cap: {_fmt_cap(p.get('market_cap'))}",
+        f"- P/E ratio: {p['pe_ratio']}" if p.get("pe_ratio") is not None else "- P/E ratio: unavailable",
         f"- Data source: {p.get('source', 'unknown')}; fetched at {p.get('fetched_at', 'unknown')}",
         "",
     ]
@@ -204,4 +282,54 @@ def _format_pipeline_for_prompt(p: dict) -> str:
         lines.append("")
 
     lines.append("*All figures are statistical estimates. This is not financial advice.*")
+    return "\n".join(lines)
+
+
+def _risk_context(p: dict) -> str:
+    """Focused context block for the risk explanation."""
+    lines = [f"## Risk data for {p['ticker']}"]
+    if p.get("risk_score") is not None:
+        lines.append(f"- Composite risk score: {p['risk_score']}/10")
+        for k, v in p.get("risk_components", {}).items():
+            lines.append(f"  - {k}: {v}")
+    else:
+        lines.append("- Risk score: unavailable (insufficient price history)")
+    if p.get("beta") is not None:
+        lines.append(f"- Beta vs market: {p['beta']}")
+    if p.get("annual_vol_pct") is not None:
+        lines.append(f"- Annualized volatility: {p['annual_vol_pct']}%")
+    lines.append("*Statistical estimates only. Not financial advice.*")
+    return "\n".join(lines)
+
+
+def _volatility_context(p: dict) -> str:
+    """Focused context block for the volatility explanation."""
+    lines = [f"## Volatility data for {p['ticker']}"]
+    if p.get("annual_vol_pct") is not None:
+        lines.append(f"- Annualized volatility: {p['annual_vol_pct']}%")
+        lines.append(f"- Daily volatility: {p.get('daily_vol_pct', 'N/A')}%")
+        price = p.get("current_price")
+        if price:
+            lines.append(f"- Current price: ${price}")
+    else:
+        lines.append("- Volatility: unavailable (insufficient price history)")
+    lines.append("*Statistical estimates only. Not financial advice.*")
+    return "\n".join(lines)
+
+
+def _scenarios_context(p: dict) -> str:
+    """Focused context block for the scenarios explanation."""
+    lines = [f"## Scenario data for {p['ticker']}"]
+    price = p.get("current_price")
+    if price:
+        lines.append(f"- Current price: ${price}")
+    if p.get("scenarios"):
+        lines.append("- Model: lognormal, 7% assumed annual drift, actual volatility")
+        for s in p["scenarios"]:
+            lines.append(
+                f"  - {s.get('label', '?')}: bear ${s.get('bear')}  base ${s.get('base')}  bull ${s.get('bull')}"
+            )
+    else:
+        lines.append("- Scenarios: unavailable (insufficient price history)")
+    lines.append("*Illustrative ranges only, not predictions. Not financial advice.*")
     return "\n".join(lines)

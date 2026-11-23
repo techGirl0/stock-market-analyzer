@@ -56,11 +56,26 @@ class GroqLLMConnector:
 
     async def brief(self, ticker: str, context: str) -> str:
         prompt = (
-            f"Write a comprehensive 5-section educational research brief for {ticker} using ONLY this data:\n\n"
+            f"Using ONLY the data block below, write a friendly research brief for {ticker}.\n\n"
             f"{context}\n\n"
-            "Cover: (1) Company Overview, (2) Recent News & Sentiment, (3) Risk Assessment, "
-            "(4) Volatility & Price Ranges, (5) Scenario Analysis. "
-            "Be factual. Never give buy/sell/hold advice. End with a disclaimer."
+            "Write exactly these 5 sections:\n\n"
+            "## 1. Market Snapshot\n"
+            "Report price, day change, market cap, P/E ratio. Explain each number in brackets. "
+            "State whether data is real-time or delayed and include the fetched_at timestamp.\n\n"
+            "## 2. News and Sentiment\n"
+            "Summarise the headlines. State the aggregate sentiment (positive/neutral/negative). "
+            "Reference headlines by [1],[2] etc. Remind the reader that news does not predict price moves.\n\n"
+            "## 3. Risk Indicators\n"
+            "Report the composite risk score and each component. Explain what drove the score. "
+            "Use beta to describe how the stock moves relative to the market.\n\n"
+            "## 4. Forecast Scenarios\n"
+            "For each horizon (1 year, 3 years, 5 years) state the bear, base and bull prices with their "
+            "percentage change from today. Clearly state these are illustrative statistical ranges, "
+            "not predictions, and include the assumptions (7% drift, lognormal model).\n\n"
+            "## 5. Limitations\n"
+            "List what data is unavailable or approximate. State that all figures are statistical estimates "
+            "and that this is not financial advice.\n\n"
+            "End with a one-line disclaimer."
         )
         return self._complete([
             {"role": "system", "content": SYSTEM_PROMPT},
