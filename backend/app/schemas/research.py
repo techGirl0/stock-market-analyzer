@@ -5,8 +5,10 @@ from pydantic import BaseModel, Field
 
 class BriefResponse(BaseModel):
     ticker: str
+    company_name: str
     brief_text: str
     generated_at: datetime
+    fetched_at: str
     disclaimer: str
 
 class ChatMessage(BaseModel):

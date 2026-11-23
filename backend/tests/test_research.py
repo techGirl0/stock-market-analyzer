@@ -49,6 +49,8 @@ async def test_brief_complete():
     result = await _service().brief("AAPL")
     assert result.ticker == "AAPL"
     assert result.brief_text == "FAKE_BRIEF:AAPL"
+    assert result.company_name
+    assert result.fetched_at
     assert result.disclaimer
 
 
