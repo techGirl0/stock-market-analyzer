@@ -1,5 +1,7 @@
 from datetime import datetime
+
 from pydantic import BaseModel, Field
+
 
 class BriefResponse(BaseModel):
     ticker: str
@@ -18,5 +20,11 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     messages: list[ChatMessage]
+    generated_at: datetime
+    disclaimer: str
+
+class ExplainResponse(BaseModel):
+    ticker: str
+    text: str
     generated_at: datetime
     disclaimer: str

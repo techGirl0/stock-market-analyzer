@@ -8,18 +8,14 @@ exclude = [
     "app/controllers/alerts.py",
     "app/controllers/analysis.py",
     "app/controllers/portfolio.py",
-    "app/controllers/research.py",
     "app/dependencies_analysis.py",
     "app/dependencies_extra.py",
-    "app/dependencies_research.py",
     "app/schemas/alerts.py",
     "app/schemas/analysis.py",
     "app/schemas/portfolio.py",
-    "app/schemas/research.py",
     "app/services/alerts.py",
     "app/services/analysis.py",
     "app/services/portfolio.py",
-    "app/services/research.py",
     "app/workers/",
 ]
 
@@ -27,7 +23,7 @@ exclude = [
 python_version = "3.13"
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = "(?x)(^|[\\\\/])(connectors/llm|controllers/(alerts|analysis|portfolio|research)|dependencies_(analysis|extra|research)|schemas/(alerts|analysis|portfolio|research)|services/(alerts|analysis|portfolio|research)|workers)(\\.py|[\\\\/])"
+exclude = "(?x)(^|[\\\\/])(connectors/llm|controllers/(alerts|analysis|portfolio)|dependencies_(analysis|extra)|schemas/(alerts|analysis|portfolio)|services/(alerts|analysis|portfolio)|workers)(\\.py|[\\\\/])"
 
 [[tool.mypy.overrides]]
 module = [
@@ -35,33 +31,25 @@ module = [
     "app.controllers.alerts",
     "app.controllers.analysis",
     "app.controllers.portfolio",
-    "app.controllers.research",
     "app.dependencies_analysis",
     "app.dependencies_extra",
-    "app.dependencies_research",
     "app.schemas.alerts",
     "app.schemas.analysis",
     "app.schemas.portfolio",
-    "app.schemas.research",
     "app.services.alerts",
     "app.services.analysis",
     "app.services.portfolio",
-    "app.services.research",
     "connectors.llm",
     "controllers.alerts",
     "controllers.analysis",
     "controllers.portfolio",
-    "controllers.research",
     "dependencies_analysis",
     "dependencies_extra",
-    "dependencies_research",
     "schemas.alerts",
     "schemas.analysis",
     "schemas.portfolio",
-    "schemas.research",
     "services.alerts",
     "services.analysis",
     "services.portfolio",
-    "services.research",
 ]
 ignore_errors = true  # tech debt: SCRUM-66..70
