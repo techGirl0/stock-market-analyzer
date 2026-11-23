@@ -1,5 +1,9 @@
 # Architecture artifacts (SAD sections 2 and 5.2)
 
+The section text itself is in the
+[Software Architecture Document](../SoftwareArchitectureDocument.md).
+This folder holds the diagram sources and the script that generates them.
+
 | File | What it is |
 |------|------------|
 | `generate_class_diagram.py` | Script that regenerates every diagram in this folder from the code |
@@ -9,8 +13,6 @@
 | `class-diagram-mvc.png` → `../Media/class-diagram-mvc.png` | SAD 5.2 class diagram with Model / View / Controller regions |
 | `package-diagram-mvc.puml` | Module dependency diagram source (PlantUML) |
 | `package-diagram-mvc.png` → `../Media/package-diagram-mvc.png` | Module dependency diagram coloured by MVC role |
-| `sad-section-2-mvc.md` | SAD section 2 text: MVC type |
-| `sad-section-5.2-class-diagram.md` | SAD section 5.2 text: class diagram |
 
 ## How the class diagram is generated (no manual drawing)
 

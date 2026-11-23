@@ -8,10 +8,11 @@
   - [1.3 Definitions, Acronyms and Abbreviations](#13-definitions-acronyms-and-abbreviations)
   - [1.4 References](#14-references)
   - [1.5 Overview](#15-overview)
-- [2. Architectural Representation](#2-architectural-representation)
-  - [2.1 Backend Architecture (FastAPI — Layered MVC)](#21-backend-architecture-fastapi--layered-mvc)
-  - [2.2 Frontend Architecture (Next.js — Planned)](#22-frontend-architecture-nextjs--planned)
-  - [2.3 MVC Mapping](#23-mvc-mapping)
+- [2. Architectural Representation: MVC type](#2-architectural-representation-mvc-type)
+  - [2.1 Current state: the Streamlit prototype is not a clean MVC](#21-current-state-the-streamlit-prototype-is-not-a-clean-mvc)
+  - [2.2 Target design: Web MVC (Model 2, action-based)](#22-target-design-web-mvc-model-2-action-based-split-between-server-and-client)
+  - [2.3 Differences between the prototype and the target design](#23-differences-between-the-prototype-and-the-target-design)
+  - [2.4 Frontend MVC (Next.js — planned)](#24-frontend-mvc-nextjs--planned)
 - [3. Architectural Goals and Constraints](#3-architectural-goals-and-constraints)
 - [4. Use-Case View](#4-use-case-view)
   - [4.1 Use-Case Realizations](#41-use-case-realizations)
@@ -91,47 +92,82 @@ The key architectural elements are the **Provider Adapter pattern** (all externa
 
 ---
 
-## 2. Architectural Representation
+## 2. Architectural Representation: MVC type
 
-The Stock Market Analyzer is built on a **MVC + service-layer architecture** with a clear technology split: **Python (FastAPI)** for the backend, **Next.js + TypeScript** for the planned frontend.
+Wolf Street Signal has two code bases today. The project as a whole is moving
+from the first to the second:
 
-### 2.1 Backend Architecture (FastAPI — Layered MVC)
+1. **`ai_module/`**: a Streamlit prototype of the AI features (research brief,
+   risk score, volatility forecast, scenarios, AI chat).
+2. **`backend/`**: the FastAPI backend we are building as the real product. Its
+   first use case, *Manage Watchlist* (CRUD), runs on PostgreSQL. A Next.js
+   frontend for it is planned.
 
-The FastAPI backend follows a **layered architecture** with four clearly separated tiers: **Controllers → Services → Connectors → Persistence**. This is a REST-focused adaptation of MVC where:
+### 2.1 Current state: the Streamlit prototype is *not* a clean MVC
 
-- **Controllers** (FastAPI routers) handle request routing, parameter validation via Pydantic, and response serialization.
-- **Services** hold all application logic, orchestrate connectors, and interact with the persistence tier.
-- **Connectors** isolate external dependencies (market data providers, LLM providers) behind Protocol interfaces.
-- **Persistence** is split across two engines: SQLAlchemy async ORM (identity domain) and raw SQLite via `Database` (financial domain).
+We want to be honest here: the prototype was built for speed, not for a clean
+separation of concerns.
 
-All layers communicate through Pydantic schemas, which serve as the single source of truth for data contracts.
+| File | Intended MVC role | What it really does |
+|------|-------------------|---------------------|
+| `ai_module/app.py` | View **and** Controller (mixed) | Draws the UI with Streamlit widgets (`st.sidebar`, `st.button`, tabs, charts) **and** handles the user input in the same script: it reads the ticker, checks which feature was chosen, calls `run_pipeline()` and caches results in `st.session_state`. |
+| `ai_module/stock_data.py` | Model | Fetches market data from yfinance and computes the numbers: `run_pipeline()`, `validate_ticker()`, `_compute_risk_score()`, `_compute_scenarios()`. |
+| `ai_module/ai_engine.py` | Service (outside MVC) | Wraps the Groq LLM API and turns Model data into text: `generate_research_brief()`, `get_risk_explanation()`, `chat_with_ai()`, and so on. |
 
-```
-HTTP Request
-    │
-    ▼
- Controller (FastAPI Router)
-  · validates via Pydantic schema
-  · delegates to service via DI
-    │
-    ▼
- Service (Business Logic)
-  · orchestrates connectors and persistence
-  · returns Pydantic schema
-    │
-    ├──────────────────────────┐
-    ▼                          ▼
- Connector                 Persistence
- (Protocol interface)      · SQLAlchemy ORM (identity domain)
- · MarketDataConnector      · Database / raw SQLite (financial domain)
- · LLMConnector
-    │
-    ▼
- External Provider
- (yfinance / Groq / Demo)
-```
+This happens because Streamlit re-runs the whole script from top to bottom on
+every user interaction. There is no separate controller object or routing
+step, so view code and control flow end up in the same file. The prototype has
+a **separate Model**, but View and Controller are **merged**. That is close to
+the "Model 1 / page-centric" style, not a real MVC. Most of the code is plain
+functions, so a generated class diagram of `ai_module` would be almost empty.
 
-### 2.2 Frontend Architecture (Next.js — Planned)
+### 2.2 Target design: Web MVC (Model 2, action-based), split between server and client
+
+The FastAPI backend is our MVC design, and the class diagram in section 5.2 is
+generated from it.
+
+| MVC role | Where it lives | Technology | Example (Watchlist CRUD) |
+|----------|----------------|------------|--------------------------|
+| **Controller** | `backend/app/controllers/` | FastAPI `APIRouter` | `controllers/watchlists.py`: `POST /watchlists`, `GET /watchlists/{id}`, `POST /watchlists/{id}/items`, ... Each endpoint receives the request, gets the current user and the service through dependency injection, and delegates the work. It contains no business logic and no SQL. |
+| **Model**: entities | `backend/app/models/` | SQLAlchemy 2.0 ORM on PostgreSQL (Alembic migrations) | `User`, `Watchlist`, `WatchlistItem`, `RefreshToken` |
+| **Model**: business logic | `backend/app/services/` | Plain Python classes; `WatchlistService` uses **FastCRUD** | `WatchlistService` enforces ownership, normalises symbols, validates tickers and rejects duplicate symbols; `AuthService` handles registration and login |
+| **Model**: external data | `backend/app/connectors/` | Adapter interface (`MarketDataConnector`) with yfinance and demo implementations | Used by `InstrumentService` to check that a ticker exists |
+| **View** | `backend/app/schemas/` + Next.js frontend | Pydantic schemas = the JSON contract; Next.js/React render it | `WatchlistCreate`, `WatchlistItemCreate` (input) and `Watchlist`, `WatchlistItem` (output). The Next.js watchlist screens (SCRUM-103) will show this data. |
+
+**Which MVC type, and why:**
+
+- **Action-based (request-based) Web MVC, also called "Model 2".** Every HTTP
+  request is sent to exactly one controller action (a router function). The
+  action calls the Model and returns data that is turned into the response.
+  FastAPI, like Spring MVC or Django, works in this request → action → model →
+  response cycle. It is not component-based (like JSF, or Streamlit's widget
+  model).
+- **The View is split between server and client.** The server does not render
+  HTML. Its "view" is the Pydantic response model, which serialises the Model
+  to JSON and validates incoming data. The real presentation is rendered on
+  the client by Next.js. This is the usual MVC variant for a REST API with a
+  separate frontend.
+- **The Model has two layers: services and entities.** We do not let
+  controllers use the ORM directly. A service layer between them keeps the
+  rules (ownership checks, ticker validation, duplicate detection) in one
+  testable place, and FastCRUD gives the services the standard CRUD
+  operations. FastAPI does not generate CRUD itself, so we use this library.
+
+### 2.3 Differences between the prototype and the target design
+
+| Aspect | Streamlit prototype (`ai_module`) | FastAPI design (`backend`) |
+|--------|-----------------------------------|----------------------------|
+| View / Controller | Mixed in `app.py` | Separate: routers (Controller) vs. schemas + Next.js (View) |
+| Model | Functions in `stock_data.py`, no persistence | SQLAlchemy entities + services, persisted in PostgreSQL |
+| AI / LLM | Called directly from the UI script through `ai_engine.py` | Planned behind an adapter (`connectors/llm.py`), called by services; integration is tracked in SCRUM-107 |
+| Structure | Mostly functions | Classes, so pyreverse can produce a meaningful class diagram |
+| Testability | Hard to test separately from the UI | Services and routers are tested with pytest and behave |
+
+The prototype stays as a quick way to try out AI features. New use cases are
+built in the FastAPI MVC structure, and the AI features will move there behind
+the service and connector layers.
+
+### 2.4 Frontend MVC (Next.js — planned)
 
 The frontend will be a Next.js + React + TypeScript application consuming the FastAPI backend over REST (and WebSocket for live updates). It follows the same MVC decomposition on the client side:
 
@@ -142,15 +178,6 @@ The frontend will be a Next.js + React + TypeScript application consuming the Fa
 | **Controller** | Hooks, route handlers, Next.js page loaders |
 
 Business logic never lives in a React component. All computed values (risk scores, forecasts, sentiment) originate from the backend services — the frontend renders them.
-
-### 2.3 MVC Mapping
-
-| Concern | Backend (Implemented) | Frontend (Planned) |
-|---|---|---|
-| **Model** | ORM entities, domain objects | Typed API client, state stores |
-| **View** | Pydantic response schemas | React components, chart renderers |
-| **Controller** | FastAPI routers | Hooks, route handlers, page loaders |
-| **Service layer** | Auth, Watchlist, Portfolio, Alert, Instrument, Analysis, Research | Thin; formatting only |
 
 ---
 
@@ -215,17 +242,60 @@ backend/app/
 
 ### 5.2 Architecturally Significant Design Packages
 
-The diagram below shows the full backend class structure, covering all four layers: Models (SQLAlchemy ORM), Schemas (Pydantic), Services, and Connectors.
+#### Class diagram (generated from code, with MVC regions)
+
+![Class diagram with MVC regions](Media/class-diagram-mvc.png)
+
+*Figure 5.2: class diagram of the FastAPI backend for the Watchlist CRUD and
+Authentication use cases. It was generated from the source code with
+pyreverse (pylint 4.1.4) and rendered with PlantUML; nothing was drawn by
+hand. Source: [`architecture/class-diagram-mvc.puml`](architecture/class-diagram-mvc.puml).
+Regeneration steps: [`architecture/README.md`](architecture/README.md).*
+
+**MVC regions (colours in the diagram):**
+
+- **Controller (orange)**: `watchlists router` and `auth router` in
+  `app/controllers`. They map HTTP endpoints to handlers, for example
+  `POST /watchlists/{watchlist_id}/items → add_watchlist_item()`, and delegate
+  to the services.
+- **View (blue)**: the Pydantic schemas in `app/schemas` (`WatchlistCreate`,
+  `Watchlist`, `WatchlistItem`, `Credentials`, `AuthResponse`, ...). They form
+  the validated JSON contract that the Next.js frontend renders.
+- **Model (greens)**:
+  - the SQLAlchemy entities in `app/models` (`User`, `Watchlist`,
+    `WatchlistItem` and `RefreshToken`, all inheriting from `Base`);
+  - the services in `app/services`: `WatchlistService` (built on FastCRUD),
+    `AuthService` and `InstrumentService`;
+  - the market-data adapters in `app/connectors` (`MarketDataConnector` with
+    `YFinanceMarketDataConnector` and `DemoMarketDataConnector`).
+
+**How to read it:** dashed arrows go from a router to the schemas and services
+it uses. `WatchlistService` aggregates `InstrumentService`, which aggregates a
+`MarketDataConnector`; this is how a ticker is checked before it is added to a
+watchlist. The links between entities are shown as typed attributes (for
+example `User.watchlists : Mapped[list['Watchlist']]`). The table relations
+themselves are in the EER model in section 9.
+
+#### Package dependency diagram (generated, MVC roles)
+
+The module-level dependency diagram of the same code, also generated by
+pyreverse and coloured by MVC role (orange = Controller, blue = View/Schema,
+green = Model).
+
+![Package diagram with MVC roles](Media/package-diagram-mvc.png)
+
+*Figure 5.3: package diagram generated with pyreverse.*
+
+#### Full backend overview (hand-drawn)
+
+As an extra overview, the diagram below shows the whole backend across all
+four layers: Models (SQLAlchemy ORM), Schemas (Pydantic), Services, and
+Connectors. Unlike figures 5.2 and 5.3 it was drawn by hand
+([`Media/UML-class-diagram.drawio`](Media/UML-class-diagram.drawio)).
 
 ![UML Class Diagram — full backend](Media/UML-class-diagram-full.png)
 
-*Figure 5.2: UML class diagram of the WolfStreet Signal backend. ORM models (top), Pydantic schemas (centre), services (left), connectors and database (bottom). Arrows show ownership, composition, and dependency relationships between classes.*
-
-**Package dependency diagram — MVC roles**
-
-The auto-generated module-level dependency diagram, coloured by MVC role (orange = Controller, blue = View/Schema, green = Model).
-
-![Package diagram with MVC roles](Media/package-diagram-mvc.png)
+*Figure 5.4: UML class diagram of the WolfStreet Signal backend. ORM models (top), Pydantic schemas (centre), services (left), connectors and database (bottom). Arrows show ownership, composition, and dependency relationships between classes.*
 
 ---
 

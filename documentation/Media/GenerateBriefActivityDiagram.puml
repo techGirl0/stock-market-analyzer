@@ -1,0 +1,35 @@
+@startuml
+skinparam activity {
+BackgroundColor #FFFCE6
+BorderColor #E04B4B
+ArrowColor #E04B4B
+}
+skinparam conditionStyle diamond
+skinparam NoteBackgroundColor #FFFCE6
+skinparam NoteBorderColor #E04B4B
+
+|User|
+start
+:Click "Generate Brief" button;
+
+|UI|
+:Show loading feedback;
+:Request research brief;
+
+|System|
+:Orchestrate research agent;
+:Gather data via tools (quotes, news, risk, scenarios);
+
+if (Is all requested data available?) then (yes)
+:Generate complete brief;
+else (no)
+:Generate brief with missing data note;
+endif
+
+:Append tool citations and timestamps;
+
+|UI|
+:Display structured research brief;
+:Show sources and investment disclaimers;
+stop
+@enduml
