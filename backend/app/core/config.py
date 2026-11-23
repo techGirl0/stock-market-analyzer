@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///backend/data/app.db"
     llm_provider: str = "disabled"
     groq_api_key: str | None = None
-    groq_model: str = "qwen/qwen3-27b"
+    groq_model: str = "qwen/qwen3.8-27b"
     provider_cache_seconds: int = 60
     provider_max_stale_seconds: int = 300
     provider_request_budget: int = 60

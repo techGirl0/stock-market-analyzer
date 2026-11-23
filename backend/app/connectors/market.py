@@ -40,6 +40,7 @@ class DemoMarketDataConnector:
         "TSLA": ("Tesla, Inc.", "NASDAQ"),
         "AMZN": ("Amazon.com, Inc.", "NASDAQ"),
         "GOOGL": ("Alphabet Inc.", "NASDAQ"),
+        "NVDA": ("NVIDIA Corporation", "NASDAQ"),
     }
 
     def _instrument(self, symbol: str) -> InstrumentMatch:
