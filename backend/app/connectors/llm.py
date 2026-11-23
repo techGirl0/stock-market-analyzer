@@ -3,10 +3,21 @@ from typing import Protocol
 from app.core.errors import BackendError
 from app.schemas.research import ChatMessage
 
+SYSTEM_PROMPT = (
+    "You are a financial education assistant. You provide factual, evidence-based market "
+    "information using only the data supplied to you. You NEVER give personalized buy, sell, "
+    "or hold advice. You always remind users that statistics are uncertain and are not financial advice."
+)
+
 
 class LLMConnector(Protocol):
     async def brief(self, ticker: str, context: str) -> str: ...
     async def chat(self, ticker: str, context: str, messages: list[ChatMessage]) -> str: ...
+    async def sentiment_score(self, ticker: str, headlines: list[str]) -> float | None: ...
+    async def news_feed(self, ticker: str, headlines: list[str]) -> list[dict]: ...
+    async def explain_risk(self, ticker: str, context: str) -> str: ...
+    async def explain_volatility(self, ticker: str, context: str) -> str: ...
+    async def explain_scenarios(self, ticker: str, context: str) -> str: ...
 
 
 class DisabledLLMConnector:
@@ -17,6 +28,21 @@ class DisabledLLMConnector:
 
     async def chat(self, ticker: str, context: str, messages: list[ChatMessage]) -> str:
         return f"The backend has data for {ticker}. I cannot provide personalized buy, sell, or hold advice."
+
+    async def sentiment_score(self, ticker: str, headlines: list[str]) -> float | None:
+        return None
+
+    async def news_feed(self, ticker: str, headlines: list[str]) -> list[dict]:
+        return [{"headline": h, "sentiment": "NEUTRAL", "reason": "LLM disabled"} for h in headlines]
+
+    async def explain_risk(self, ticker: str, context: str) -> str:
+        return f"Risk explanation for {ticker} requires an LLM provider."
+
+    async def explain_volatility(self, ticker: str, context: str) -> str:
+        return f"Volatility explanation for {ticker} requires an LLM provider."
+
+    async def explain_scenarios(self, ticker: str, context: str) -> str:
+        return f"Scenario explanation for {ticker} requires an LLM provider."
 
 
 class GroqLLMConnector:
@@ -29,20 +55,112 @@ class GroqLLMConnector:
         self._model = model
 
     async def brief(self, ticker: str, context: str) -> str:
-        return self._complete(
-            ticker,
-            [{"role": "user", "content": f"Write a cited educational brief using only this data:\n{context}"}],
+        prompt = (
+            f"Write a comprehensive 5-section educational research brief for {ticker} using ONLY this data:\n\n"
+            f"{context}\n\n"
+            "Cover: (1) Company Overview, (2) Recent News & Sentiment, (3) Risk Assessment, "
+            "(4) Volatility & Price Ranges, (5) Scenario Analysis. "
+            "Be factual. Never give buy/sell/hold advice. End with a disclaimer."
         )
+        return self._complete([
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ])
 
     async def chat(self, ticker: str, context: str, messages: list[ChatMessage]) -> str:
-        prompt = [{"role": item.role, "content": item.content} for item in messages]
-        prompt.insert(0, {"role": "system", "content": f"Use only this data: {context}. Never give buy, sell, or hold advice."})
-        return self._complete(ticker, prompt)
+        system = f"{SYSTEM_PROMPT}\n\nUse only this market data:\n{context}"
+        history = [{"role": item.role, "content": item.content} for item in messages]
+        history.insert(0, {"role": "system", "content": system})
+        return self._complete(history)
 
-    def _complete(self, ticker: str, messages: list[dict[str, str]]) -> str:
+    async def sentiment_score(self, ticker: str, headlines: list[str]) -> float | None:
+        if not headlines:
+            return None
+        numbered = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(headlines))
+        prompt = (
+            f"Rate the overall market sentiment for {ticker} based on these headlines.\n\n"
+            f"{numbered}\n\n"
+            "Respond with a single decimal number between -1.0 (very negative) and +1.0 (very positive). "
+            "Output the number only, nothing else."
+        )
+        raw = self._complete([
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ], max_tokens=20)
+        try:
+            value = float(raw.strip())
+            return max(-1.0, min(1.0, value))
+        except ValueError:
+            return None
+
+    async def news_feed(self, ticker: str, headlines: list[str]) -> list[dict]:
+        if not headlines:
+            return []
+        numbered = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(headlines))
+        prompt = (
+            f"For each headline about {ticker}, reply with exactly one line per headline:\n"
+            f"<number>. <GOOD|BAD|NEUTRAL>: <one sentence reason>\n\n"
+            f"Headlines:\n{numbered}"
+        )
+        raw = self._complete([
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ], max_tokens=800)
+        results = []
+        for line in raw.strip().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            # strip leading "1. " numbering
+            if line and line[0].isdigit():
+                line = line.split(".", 1)[-1].strip()
+            sentiment, reason = _parse_sentiment(line)
+            # match back to original headline by position
+            idx = len(results)
+            headline = headlines[idx] if idx < len(headlines) else line
+            results.append({"headline": headline, "sentiment": sentiment, "reason": reason})
+        # fill any missing entries
+        for i in range(len(results), len(headlines)):
+            results.append({"headline": headlines[i], "sentiment": "NEUTRAL", "reason": "No classification returned."})
+        return results
+
+    async def explain_risk(self, ticker: str, context: str) -> str:
+        prompt = (
+            f"Using only this risk data for {ticker}:\n\n{context}\n\n"
+            "Write 2-3 plain English sentences explaining what the risk score means for a retail investor. "
+            "Never give buy/sell/hold advice."
+        )
+        return self._complete([
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ], max_tokens=300)
+
+    async def explain_volatility(self, ticker: str, context: str) -> str:
+        prompt = (
+            f"Using only this volatility data for {ticker}:\n\n{context}\n\n"
+            "Write 2-3 plain English sentences explaining what volatility means for this stock. "
+            "Never give buy/sell/hold advice."
+        )
+        return self._complete([
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ], max_tokens=300)
+
+    async def explain_scenarios(self, ticker: str, context: str) -> str:
+        prompt = (
+            f"Using only this scenario data for {ticker}:\n\n{context}\n\n"
+            "Write 2-3 plain English sentences explaining what these bear/base/bull scenarios mean "
+            "as illustrative statistical ranges, not predictions. Never give buy/sell/hold advice."
+        )
+        return self._complete([
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ], max_tokens=300)
+
+    def _complete(self, messages: list[dict[str, str]], max_tokens: int = 1200) -> str:
         try:
             response = self._client.chat.completions.create(
-                model=self._model, messages=messages, max_tokens=1200
+                model=self._model, messages=messages, max_tokens=max_tokens
             )
             text = response.choices[0].message.content
         except Exception as exc:
@@ -50,3 +168,14 @@ class GroqLLMConnector:
         if not text or any(word in text.lower() for word in ("you should buy", "you should sell", "hold this stock")):
             raise BackendError("llm_output_invalid", "The generated response failed safety validation.", 502)
         return text.strip()
+
+
+def _parse_sentiment(raw: str) -> tuple[str, str]:
+    """Parse 'GOOD: reason' or 'BAD: reason' or 'NEUTRAL: reason' from LLM output."""
+    upper = raw.upper()
+    for label in ("GOOD", "BAD", "NEUTRAL"):
+        if upper.startswith(label):
+            parts = raw.split(":", 1)
+            reason = parts[1].strip() if len(parts) > 1 else raw
+            return label, reason
+    return "NEUTRAL", raw

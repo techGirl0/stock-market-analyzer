@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.controllers import auth, health, instruments, watchlists
+from app.controllers import alerts, analysis, auth, health, instruments, portfolio, research, watchlists
 from app.core.config import get_settings
 from app.core.errors import (
     BackendError,
@@ -57,3 +57,7 @@ app.include_router(health.router, prefix=settings.api_prefix)
 app.include_router(instruments.router, prefix=settings.api_prefix)
 app.include_router(auth.router, prefix=settings.api_prefix)
 app.include_router(watchlists.router, prefix=settings.api_prefix)
+app.include_router(analysis.router, prefix=settings.api_prefix)
+app.include_router(research.router, prefix=settings.api_prefix)
+app.include_router(portfolio.router, prefix=settings.api_prefix)
+app.include_router(alerts.router, prefix=settings.api_prefix)

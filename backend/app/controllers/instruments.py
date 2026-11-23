@@ -3,8 +3,10 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 
 from app.dependencies import get_instrument_service
+from app.dependencies_extra import get_news_service
 from app.schemas.v1 import HistoryResponse, InstrumentMatch, Page, Quote
 from app.services.instruments import InstrumentService
+from app.services.news import NewsService
 
 router = APIRouter(prefix="/instruments", tags=["instruments"])
 
@@ -36,4 +38,13 @@ async def get_history(
     service: InstrumentService = Depends(get_instrument_service),
 ) -> HistoryResponse:
     return await service.history(symbol, start, end, interval, limit)
+
+
+@router.get("/{symbol}/news")
+async def get_news(
+    symbol: str,
+    limit: int = Query(default=10, ge=1, le=50),
+    service: NewsService = Depends(get_news_service),
+) -> list[dict]:
+    return await service.get_news(symbol, limit)
 
