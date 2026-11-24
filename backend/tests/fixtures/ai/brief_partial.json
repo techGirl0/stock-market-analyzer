@@ -1,0 +1,14 @@
+{
+  "ticker": "NEWCO",
+  "company_name": "NewCo Ltd.",
+  "brief_text": "## 1. Market Snapshot\nNEWCO trades at **$12.00**.\n## 4. Forecast Scenarios\nUnavailable — fewer than 21 trading days of history.\n## 5. Limitations\nPrice history too short for volatility or scenario calculation.",
+  "sources": [],
+  "as_of": "2026-11-23T11:34:25Z",
+  "generated_at": "2026-11-23T11:34:30Z",
+  "assumptions": [],
+  "limitations": [
+    "Price history < 21 days: volatility, risk score and scenarios unavailable",
+    "News data unavailable for this symbol"
+  ],
+  "disclaimer": "Statistical estimates only. Not personalized investment advice."
+}

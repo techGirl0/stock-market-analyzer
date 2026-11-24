@@ -1,0 +1,14 @@
+{
+  "ticker": "NEWCO",
+  "items": [],
+  "aggregate_sentiment_score": null,
+  "aggregate_sentiment_label": null,
+  "aggregate_confidence": "UNAVAILABLE",
+  "sources": [],
+  "as_of": "2026-11-23T11:34:25Z",
+  "generated_at": "2026-11-23T11:34:30Z",
+  "limitations": [
+    "No news articles available for this symbol"
+  ],
+  "disclaimer": "Statistical estimates only. Not personalized investment advice."
+}

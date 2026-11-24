@@ -3,14 +3,15 @@ from fastapi.responses import StreamingResponse
 
 from app.dependencies import get_current_user
 from app.dependencies_research import get_research_service
-from app.schemas.research import BriefResponse, ChatRequest, ChatResponse, ExplainResponse
+from app.schemas.ai import AiBriefResponse
+from app.schemas.research import ChatRequest, ChatResponse, ExplainResponse
 from app.services.research import ResearchService
 from app.utils.pdf import build_brief_pdf
 
 router = APIRouter(prefix="/instruments", tags=["research"])
 
 
-@router.post("/{symbol}/brief", response_model=BriefResponse)
+@router.post("/{symbol}/brief", response_model=AiBriefResponse)
 async def brief(
     symbol: str,
     _: object = Depends(get_current_user),
@@ -40,7 +41,7 @@ async def brief_pdf(
         ticker=result.ticker,
         company_name=result.company_name,
         brief_text=result.brief_text,
-        fetched_at=result.fetched_at,
+        fetched_at=result.as_of.isoformat(),
     )
     filename = f"{result.ticker}_research_brief.pdf"
     return StreamingResponse(
@@ -50,6 +51,7 @@ async def brief_pdf(
     )
 
 
+@router.post("/{symbol}/explain/risk", response_model=ExplainResponse)
 async def explain_risk(
     symbol: str,
     _: object = Depends(get_current_user),

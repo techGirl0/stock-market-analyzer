@@ -50,7 +50,10 @@ async def test_brief_complete():
     assert result.ticker == "AAPL"
     assert result.brief_text == "FAKE_BRIEF:AAPL"
     assert result.company_name
-    assert result.fetched_at
+    assert result.as_of
+    assert isinstance(result.sources, list)
+    assert isinstance(result.assumptions, list)
+    assert isinstance(result.limitations, list)
     assert result.disclaimer
 
 

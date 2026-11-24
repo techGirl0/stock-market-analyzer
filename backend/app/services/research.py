@@ -4,7 +4,8 @@ from math import sqrt
 from app.connectors.llm import LLMConnector
 from app.connectors.market import MarketDataConnector
 from app.core.errors import BackendError
-from app.schemas.research import BriefResponse, ChatMessage, ChatResponse, ExplainResponse
+from app.schemas.ai import AiBriefResponse
+from app.schemas.research import ChatMessage, ChatResponse, ExplainResponse
 from app.services.analysis import _compute_risk_score, _compute_scenarios, _fetch_beta
 
 DISCLAIMER = "General, evidence-based information only; not personalized investment advice."
@@ -14,16 +15,38 @@ class ResearchService:
     def __init__(self, market: MarketDataConnector, llm: LLMConnector) -> None:
         self.market, self.llm = market, llm
 
-    async def brief(self, symbol: str) -> BriefResponse:
+    async def brief(self, symbol: str) -> AiBriefResponse:
         pipeline = await self._build_pipeline(symbol)
         context = _format_pipeline_for_prompt(pipeline)
         text = await self.llm.brief(symbol.upper(), context)
-        return BriefResponse(
+        fetched_at_str = pipeline.get("fetched_at", "")
+        # Parse fetched_at back to datetime for the as_of field
+        try:
+            from datetime import datetime
+            as_of = datetime.fromisoformat(fetched_at_str) if fetched_at_str else datetime.now(timezone.utc)
+        except (ValueError, TypeError):
+            as_of = datetime.now(timezone.utc)
+        limitations: list[str] = []
+        if pipeline.get("annual_vol_pct") is None:
+            limitations.append("Price history < 21 days: volatility, risk score and scenarios unavailable")
+        if not pipeline.get("news_items"):
+            limitations.append("No news data available for this symbol")
+        if pipeline.get("market_cap") is None:
+            limitations.append("Market cap unavailable from provider")
+        if pipeline.get("pe_ratio") is None:
+            limitations.append("P/E ratio unavailable from provider")
+        return AiBriefResponse(
             ticker=symbol.upper(),
             company_name=pipeline.get("name", symbol.upper()),
             brief_text=text,
+            sources=[],
+            as_of=as_of,
             generated_at=datetime.now(timezone.utc),
-            fetched_at=pipeline.get("fetched_at", ""),
+            assumptions=[
+                "Scenario model: lognormal with 7% annual drift",
+                "Volatility held constant at trailing 30-day figure",
+            ] if pipeline.get("scenarios") else [],
+            limitations=limitations,
             disclaimer=DISCLAIMER,
         )
 

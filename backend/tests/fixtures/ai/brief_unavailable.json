@@ -1,0 +1,13 @@
+{
+  "ticker": "HALT",
+  "company_name": "Halted Corp.",
+  "brief_text": "Market data is currently unavailable for HALT. The instrument may be halted or delisted.",
+  "sources": [],
+  "as_of": "2026-11-23T11:34:25Z",
+  "generated_at": "2026-11-23T11:34:30Z",
+  "assumptions": [],
+  "limitations": [
+    "Market data unavailable from provider"
+  ],
+  "disclaimer": "Statistical estimates only. Not personalized investment advice."
+}
