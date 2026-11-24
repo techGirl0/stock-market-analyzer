@@ -36,6 +36,25 @@ class FakeLLMConnector:
         return f"FAKE_SCEN:{ticker}"
 
 
+# ---------------------------------------------------------------------------
+# Partial-data and no-news connectors for edge-case tests
+# ---------------------------------------------------------------------------
+
+class ShortHistoryDemoConnector(DemoMarketDataConnector):
+    """Returns only 5 candles — below the 21-candle threshold for vol/risk/scenarios."""
+
+    async def candles(self, symbol, *, start, end, interval):  # type: ignore[override]
+        full = await super().candles(symbol, start=start, end=end, interval=interval)
+        return full[:5]
+
+
+class NoNewsDemoConnector(DemoMarketDataConnector):
+    """Returns no news articles for any symbol."""
+
+    async def news(self, symbol, *, limit):  # type: ignore[override]
+        return []
+
+
 def _service() -> ResearchService:
     return ResearchService(DemoMarketDataConnector(), FakeLLMConnector())
 
@@ -52,9 +71,34 @@ async def test_brief_complete():
     assert result.company_name
     assert result.as_of
     assert isinstance(result.sources, list)
+    assert len(result.sources) >= 1
+    assert result.sources[0].publisher == "demo"
     assert isinstance(result.assumptions, list)
     assert isinstance(result.limitations, list)
     assert result.disclaimer
+
+
+@pytest.mark.asyncio
+async def test_brief_partial():
+    """Short price history triggers vol/risk/scenario unavailable limitations."""
+    svc = ResearchService(ShortHistoryDemoConnector(), FakeLLMConnector())
+    result = await svc.brief("AAPL")
+    assert result.ticker == "AAPL"
+    assert any("21 days" in lim or "volatility" in lim for lim in result.limitations)
+    assert result.assumptions == []
+    assert isinstance(result.sources, list)
+    assert len(result.sources) >= 1
+
+
+@pytest.mark.asyncio
+async def test_brief_unavailable_news():
+    """No news articles triggers the news limitation and produces only 1 source."""
+    svc = ResearchService(NoNewsDemoConnector(), FakeLLMConnector())
+    result = await svc.brief("AAPL")
+    assert result.ticker == "AAPL"
+    assert any("news" in lim.lower() for lim in result.limitations)
+    assert isinstance(result.sources, list)
+    assert len(result.sources) == 1  # only market data source; no news sources
 
 
 @pytest.mark.asyncio

@@ -4,7 +4,7 @@ from math import sqrt
 from app.connectors.llm import LLMConnector
 from app.connectors.market import MarketDataConnector
 from app.core.errors import BackendError
-from app.schemas.ai import AiBriefResponse
+from app.schemas.ai import AiBriefResponse, BriefSource
 from app.schemas.research import ChatMessage, ChatResponse, ExplainResponse
 from app.services.analysis import _compute_risk_score, _compute_scenarios, _fetch_beta
 
@@ -19,13 +19,45 @@ class ResearchService:
         pipeline = await self._build_pipeline(symbol)
         context = _format_pipeline_for_prompt(pipeline)
         text = await self.llm.brief(symbol.upper(), context)
+
+        # Output validation: strip lines with figures that don't match evidence
+        mismatches = _validate_brief_figures(text, pipeline)
+        if mismatches:
+            text = _remove_mismatch_lines(text, mismatches)
+            if not text.strip():
+                text = await self.llm.brief(symbol.upper(), context)
+
         fetched_at_str = pipeline.get("fetched_at", "")
-        # Parse fetched_at back to datetime for the as_of field
         try:
-            from datetime import datetime
             as_of = datetime.fromisoformat(fetched_at_str) if fetched_at_str else datetime.now(timezone.utc)
         except (ValueError, TypeError):
             as_of = datetime.now(timezone.utc)
+
+        # Build sources list from pipeline provenance
+        sources: list[BriefSource] = [
+            BriefSource(
+                index=1,
+                headline=f"{symbol.upper()} market data",
+                publisher=pipeline.get("source", "unknown"),
+                published_at=as_of,
+                source_url=None,
+            )
+        ]
+        for i, item in enumerate(pipeline.get("news_items", []), start=2):
+            pub_at: datetime | None = None
+            if item.get("published_at"):
+                try:
+                    pub_at = datetime.fromisoformat(item["published_at"])
+                except (ValueError, TypeError):
+                    pass
+            sources.append(BriefSource(
+                index=i,
+                headline=item.get("headline", ""),
+                publisher=item.get("publisher"),
+                published_at=pub_at,
+                source_url=item.get("source_url"),
+            ))
+
         limitations: list[str] = []
         if pipeline.get("annual_vol_pct") is None:
             limitations.append("Price history < 21 days: volatility, risk score and scenarios unavailable")
@@ -35,11 +67,12 @@ class ResearchService:
             limitations.append("Market cap unavailable from provider")
         if pipeline.get("pe_ratio") is None:
             limitations.append("P/E ratio unavailable from provider")
+
         return AiBriefResponse(
             ticker=symbol.upper(),
             company_name=pipeline.get("name", symbol.upper()),
             brief_text=text,
-            sources=[],
+            sources=sources,
             as_of=as_of,
             generated_at=datetime.now(timezone.utc),
             assumptions=[
@@ -144,14 +177,17 @@ class ResearchService:
         news_sentiment: float | None = None
         if headlines:
             raw_feed = await self.llm.news_feed(normalized, headlines)
-            # Normalise to consistent keys: headline, sentiment, reason
+            # Normalise to consistent keys; preserve provenance fields for sources
             news_items = [
                 {
-                    "headline": item.get("headline", item.get("title", "")),
-                    "sentiment": item.get("sentiment", "NEUTRAL"),
-                    "reason": item.get("reason", item.get("explanation", "")),
+                    "headline": llm_item.get("headline", llm_item.get("title", "")),
+                    "sentiment": llm_item.get("sentiment", "NEUTRAL"),
+                    "reason": llm_item.get("reason", llm_item.get("explanation", "")),
+                    "publisher": articles[idx].publisher if idx < len(articles) else None,
+                    "source_url": str(articles[idx].source_url) if idx < len(articles) else None,
+                    "published_at": articles[idx].published_at.isoformat() if idx < len(articles) else None,
                 }
-                for item in raw_feed
+                for idx, llm_item in enumerate(raw_feed)
             ]
             news_sentiment = await self.llm.sentiment_score(normalized, headlines)
 
@@ -356,3 +392,47 @@ def _scenarios_context(p: dict) -> str:
         lines.append("- Scenarios: unavailable (insufficient price history)")
     lines.append("*Illustrative ranges only, not predictions. Not financial advice.*")
     return "\n".join(lines)
+
+
+def _validate_brief_figures(text: str, pipeline: dict) -> list[str]:
+    """Return lines whose dollar figures can't be matched against pipeline evidence.
+
+    Only checks unambiguous numeric values: current_price and scenario prices.
+    Uses ±5% tolerance to absorb rounding differences.
+    Lines with no dollar figures are always considered valid.
+    """
+    import re
+
+    known_prices: list[float] = []
+    if pipeline.get("current_price") is not None:
+        known_prices.append(float(pipeline["current_price"]))
+    for s in pipeline.get("scenarios", []):
+        for key in ("bear", "base", "bull"):
+            if s.get(key) is not None:
+                known_prices.append(float(s[key]))
+
+    if not known_prices:
+        return []
+
+    dollar_re = re.compile(r"\$[\d,]+(?:\.\d+)?")
+    bad_lines: list[str] = []
+    for line in text.splitlines():
+        matches = dollar_re.findall(line)
+        if not matches:
+            continue
+        for m in matches:
+            value = float(m.replace("$", "").replace(",", ""))
+            # Allow small values (< 1) — likely percentages formatted oddly, skip
+            if value < 1:
+                continue
+            if not any(abs(value - kp) / max(kp, 0.01) <= 0.05 for kp in known_prices):
+                bad_lines.append(line)
+                break
+    return bad_lines
+
+
+def _remove_mismatch_lines(text: str, bad_lines: list[str]) -> str:
+    """Remove lines from text that appear in bad_lines."""
+    bad_set = set(bad_lines)
+    kept = [line for line in text.splitlines() if line not in bad_set]
+    return "\n".join(kept)
