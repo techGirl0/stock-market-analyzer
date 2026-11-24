@@ -245,15 +245,15 @@ def build_brief_pdf(
             # Format: [n] Headline — Publisher (date)
             date_str = published_at[:10] if published_at else ""
             meta = " — ".join(filter(None, [publisher, date_str]))
-            label = f"[{index}] {headline}"
+            src_label: str = f"[{index}] {headline}"
             if meta:
-                label += f"  ({meta})"
+                src_label += f"  ({meta})"
             pdf.set_font("Helvetica", "", 9)
             pdf.set_x(18)
             pdf.multi_cell(
                 pdf.w - pdf.l_margin - pdf.r_margin,
                 5,
-                _safe(label),
+                _safe(src_label),
                 new_x=XPos.LMARGIN,
                 new_y=YPos.NEXT,
             )
