@@ -1,5 +1,7 @@
 from typing import Protocol
 
+import asyncio
+
 from app.core.errors import BackendError
 from app.schemas.research import ChatMessage
 
@@ -56,28 +58,25 @@ class GroqLLMConnector:
 
     async def brief(self, ticker: str, context: str) -> str:
         prompt = (
-            f"Using ONLY the data block below, write a friendly research brief for {ticker}.\n\n"
+            f"Using ONLY the data block below, write a concise research brief for {ticker}.\n\n"
             f"{context}\n\n"
-            "Write exactly these 5 sections:\n\n"
+            "Write exactly these 5 sections. Be concise — 2-4 sentences per section maximum.\n\n"
             "## 1. Market Snapshot\n"
-            "Report price, day change, market cap, P/E ratio. Explain each number in brackets. "
-            "State whether data is real-time or delayed and include the fetched_at timestamp.\n\n"
+            "One sentence each: price, day change, market cap, P/E ratio. No explanations in brackets.\n\n"
             "## 2. News and Sentiment\n"
-            "Summarise the headlines. State the aggregate sentiment (positive/neutral/negative). "
-            "Reference headlines by [1],[2] etc. Remind the reader that news does not predict price moves.\n\n"
+            "One sentence summary. List headlines as bullets with [SENTIMENT] label. "
+            "One sentence: news does not predict price moves.\n\n"
             "## 3. Risk Indicators\n"
-            "Report the composite risk score and each component. Explain what drove the score. "
-            "Use beta to describe how the stock moves relative to the market.\n\n"
+            "State the risk score and label. List each component as a bullet (name: value). "
+            "One sentence explaining the main driver.\n\n"
             "## 4. Forecast Scenarios\n"
-            "For each horizon (1 year, 3 years, 5 years) state the bear, base and bull prices with their "
-            "percentage change from today. Clearly state these are illustrative statistical ranges, "
-            "not predictions, and include the assumptions (7% drift, lognormal model).\n\n"
+            "One sentence: these are illustrative ranges, not predictions (lognormal, 7% drift).\n"
+            "Then a markdown table with columns: Horizon | Bear Case | Base Case | Bull Case\n"
+            "Three rows: 1 Year, 3 Year, 5 Year. Format prices as $X.XX (Y%).\n\n"
             "## 5. Limitations\n"
-            "List what data is unavailable or approximate. State that all figures are statistical estimates "
-            "and that this is not financial advice.\n\n"
-            "End with a one-line disclaimer."
+            "3 bullet points: data gaps or approximations. Final line: not financial advice.\n"
         )
-        return self._complete([
+        return await self._acomplete([
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ])
@@ -86,7 +85,7 @@ class GroqLLMConnector:
         system = f"{SYSTEM_PROMPT}\n\nUse only this market data:\n{context}"
         history = [{"role": item.role, "content": item.content} for item in messages]
         history.insert(0, {"role": "system", "content": system})
-        return self._complete(history)
+        return await self._acomplete(history)
 
     async def sentiment_score(self, ticker: str, headlines: list[str]) -> float | None:
         if not headlines:
@@ -98,7 +97,7 @@ class GroqLLMConnector:
             "Respond with a single decimal number between -1.0 (very negative) and +1.0 (very positive). "
             "Output the number only, nothing else."
         )
-        raw = self._complete([
+        raw = await self._acomplete([
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ], max_tokens=20)
@@ -117,10 +116,10 @@ class GroqLLMConnector:
             f"<number>. <GOOD|BAD|NEUTRAL>: <one sentence reason>\n\n"
             f"Headlines:\n{numbered}"
         )
-        raw = self._complete([
+        raw = await self._acomplete([
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
-        ], max_tokens=800)
+        ], max_tokens=500)
         results = []
         for line in raw.strip().splitlines():
             line = line.strip()
@@ -145,7 +144,7 @@ class GroqLLMConnector:
             "Write 2-3 plain English sentences explaining what the risk score means for a retail investor. "
             "Never give buy/sell/hold advice."
         )
-        return self._complete([
+        return await self._acomplete([
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ], max_tokens=300)
@@ -156,7 +155,7 @@ class GroqLLMConnector:
             "Write 2-3 plain English sentences explaining what volatility means for this stock. "
             "Never give buy/sell/hold advice."
         )
-        return self._complete([
+        return await self._acomplete([
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ], max_tokens=300)
@@ -167,12 +166,12 @@ class GroqLLMConnector:
             "Write 2-3 plain English sentences explaining what these bear/base/bull scenarios mean "
             "as illustrative statistical ranges, not predictions. Never give buy/sell/hold advice."
         )
-        return self._complete([
+        return await self._acomplete([
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ], max_tokens=300)
 
-    def _complete(self, messages: list[dict[str, str]], max_tokens: int = 1200) -> str:
+    def _complete(self, messages: list[dict[str, str]], max_tokens: int = 900) -> str:
         try:
             response = self._client.chat.completions.create(
                 model=self._model, messages=messages, max_tokens=max_tokens
@@ -183,6 +182,10 @@ class GroqLLMConnector:
         if not text or any(word in text.lower() for word in ("you should buy", "you should sell", "hold this stock")):
             raise BackendError("llm_output_invalid", "The generated response failed safety validation.", 502)
         return text.strip()
+
+    async def _acomplete(self, messages: list[dict[str, str]], max_tokens: int = 900) -> str:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, lambda: self._complete(messages, max_tokens))
 
 
 def _parse_sentiment(raw: str) -> tuple[str, str]:

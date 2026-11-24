@@ -1,0 +1,44 @@
+{
+  "ticker": "AAPL",
+  "items": [
+    {
+      "index": 1,
+      "headline": "State Street XLK sold $71.4M of Apple",
+      "publisher": "Reuters",
+      "published_at": "2026-11-19T09:00:00Z",
+      "source_url": "https://example.com/xlk-aapl",
+      "summary": "ETF outflow from Apple position.",
+      "sentiment": "NEGATIVE",
+      "sentiment_confidence": "HIGH",
+      "reason": "Institutional selling indicates reduced conviction in the stock."
+    },
+    {
+      "index": 2,
+      "headline": "iShares S&P 500 Value ETF highlights Apple as top holding",
+      "publisher": "Bloomberg",
+      "published_at": "2026-11-19T08:00:00Z",
+      "source_url": "https://example.com/ive-aapl",
+      "summary": "Routine ETF composition disclosure.",
+      "sentiment": "NEUTRAL",
+      "sentiment_confidence": "HIGH",
+      "reason": "Routine ETF disclosure with no directional signal."
+    }
+  ],
+  "aggregate_sentiment_score": -0.2,
+  "aggregate_sentiment_label": "NEGATIVE",
+  "aggregate_confidence": "MEDIUM",
+  "sources": [
+    {
+      "label": "yfinance news feed",
+      "provider": "yfinance",
+      "as_of": "2026-11-23T11:34:25Z",
+      "delayed": true
+    }
+  ],
+  "as_of": "2026-11-23T11:34:25Z",
+  "generated_at": "2026-11-23T11:34:30Z",
+  "limitations": [
+    "Sentiment based on headlines only, not full article text"
+  ],
+  "disclaimer": "Statistical estimates only. Not personalized investment advice."
+}

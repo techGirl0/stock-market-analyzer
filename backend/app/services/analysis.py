@@ -154,10 +154,10 @@ def _compute_risk_score(
             + news_score * weights["news_sentiment"]
         )
         components: dict = {
-            "annualized_volatility_percent": round(annual_vol, 2),
-            "beta": round(beta, 3),
-            "position_52w": round(pos_52w, 3),
-            "news_sentiment": round(news_sentiment, 3),
+            "Annualized Volatility": f"{round(annual_vol, 2)}%",
+            "Beta vs Market": round(beta, 3),
+            "52-Week Position": f"{round(pos_52w * 100, 1)}%",
+            "News Sentiment": round(news_sentiment, 2),
         }
     else:
         # redistribute news weight across the other three
@@ -168,9 +168,9 @@ def _compute_risk_score(
             + pos_score * weights["position_52w"]
         )
         components = {
-            "annualized_volatility_percent": round(annual_vol, 2),
-            "beta": round(beta, 3),
-            "position_52w": round(pos_52w, 3),
+            "Annualized Volatility": f"{round(annual_vol, 2)}%",
+            "Beta vs Market": round(beta, 3),
+            "52-Week Position": f"{round(pos_52w * 100, 1)}%",
         }
 
     score = max(1, min(10, round(raw)))

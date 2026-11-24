@@ -1,0 +1,28 @@
+{
+  "ticker": "SMCO",
+  "score": 5,
+  "label": "MODERATE",
+  "components": [
+    {"label": "Annualized volatility", "value": "31.0%", "score": 6.2, "weight": 0.47, "confidence": "HIGH"},
+    {"label": "Beta vs market", "value": "0.9", "score": 2.7, "weight": 0.3, "confidence": "HIGH"},
+    {"label": "52-week position", "value": "55.0%", "score": 5.5, "weight": 0.23, "confidence": "HIGH"}
+  ],
+  "uncertainty_range": [4, 7],
+  "sources": [
+    {
+      "label": "yfinance daily close",
+      "provider": "yfinance",
+      "as_of": "2026-11-23T10:00:00Z",
+      "delayed": true
+    }
+  ],
+  "as_of": "2026-11-23T10:00:00Z",
+  "generated_at": "2026-11-23T11:34:30Z",
+  "assumptions": [
+    "News sentiment excluded: fewer than 3 headlines available"
+  ],
+  "limitations": [
+    "Sentiment component omitted — insufficient headlines; weights redistributed"
+  ],
+  "disclaimer": "Statistical estimates only. Not personalized investment advice."
+}
