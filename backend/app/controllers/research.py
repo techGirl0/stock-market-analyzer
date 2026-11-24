@@ -42,6 +42,7 @@ async def brief_pdf(
         company_name=result.company_name,
         brief_text=result.brief_text,
         fetched_at=result.as_of.isoformat(),
+        sources=[s.model_dump() for s in result.sources],
     )
     filename = f"{result.ticker}_research_brief.pdf"
     return StreamingResponse(

@@ -1,7 +1,13 @@
 import re
 
 
-def build_brief_pdf(ticker: str, company_name: str, brief_text: str, fetched_at: str) -> bytes:
+def build_brief_pdf(
+    ticker: str,
+    company_name: str,
+    brief_text: str,
+    fetched_at: str,
+    sources: list[dict] | None = None,
+) -> bytes:
     """Render a research brief as a styled PDF and return raw bytes."""
     try:
         from fpdf import FPDF
@@ -216,6 +222,54 @@ def build_brief_pdf(ticker: str, company_name: str, brief_text: str, fetched_at:
             pdf.ln(1)
 
         i += 1
+
+    # --- Sources section ---
+    if sources:
+        pdf.ln(6)
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.set_fill_color(*LIGHT_BLUE)
+        pdf.set_text_color(*BLUE)
+        pdf.set_x(18)
+        pdf.cell(0, 8, "Sources", fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        pdf.set_text_color(*DARK)
+        pdf.ln(2)
+        for src in sources:
+            index = src.get("index", "")
+            headline = _safe(src.get("headline", ""))
+            publisher = _safe(src.get("publisher") or "")
+            published_at = src.get("published_at", "")
+            # published_at may be a datetime object or ISO string
+            if hasattr(published_at, "isoformat"):
+                published_at = published_at.isoformat()
+            source_url = src.get("source_url") or ""
+            # Format: [n] Headline — Publisher (date)
+            date_str = published_at[:10] if published_at else ""
+            meta = " — ".join(filter(None, [publisher, date_str]))
+            label = f"[{index}] {headline}"
+            if meta:
+                label += f"  ({meta})"
+            pdf.set_font("Helvetica", "", 9)
+            pdf.set_x(18)
+            pdf.multi_cell(
+                pdf.w - pdf.l_margin - pdf.r_margin,
+                5,
+                _safe(label),
+                new_x=XPos.LMARGIN,
+                new_y=YPos.NEXT,
+            )
+            if source_url:
+                pdf.set_font("Helvetica", "I", 8)
+                pdf.set_text_color(70, 100, 200)
+                pdf.set_x(22)
+                pdf.multi_cell(
+                    pdf.w - pdf.l_margin - pdf.r_margin - 4,
+                    4.5,
+                    _safe(source_url),
+                    new_x=XPos.LMARGIN,
+                    new_y=YPos.NEXT,
+                )
+                pdf.set_text_color(*DARK)
+            pdf.ln(1)
 
     # --- Glossary page ---
     pdf.add_page()
