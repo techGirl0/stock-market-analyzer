@@ -10,6 +10,18 @@ from app.services.analysis import _compute_risk_score, _compute_scenarios, _fetc
 
 DISCLAIMER = "General, evidence-based information only; not personalized investment advice."
 
+_CHAT_HISTORY_MAX_CHARS = 12_000  # server-side total character budget for history
+
+
+def _trim_history(messages: list[ChatMessage], max_chars: int) -> list[ChatMessage]:
+    """Drop oldest turns (pairs) until total content fits within max_chars."""
+    total = sum(len(m.content) for m in messages)
+    trimmed = list(messages)
+    while total > max_chars and len(trimmed) >= 2:
+        removed = trimmed.pop(0)
+        total -= len(removed.content)
+    return trimmed
+
 
 class ResearchService:
     def __init__(self, market: MarketDataConnector, llm: LLMConnector) -> None:
@@ -85,8 +97,27 @@ class ResearchService:
 
     async def chat(self, symbol: str, messages: list[ChatMessage], user_message: str) -> ChatResponse:
         pipeline = await self._build_pipeline(symbol)
+
+        # AC 2: if no price data at all, don't call LLM — return a canned unavailable reply
+        if pipeline.get("current_price") is None:
+            unavailable_reply = (
+                f"Market price data for {symbol.upper()} is currently unavailable. "
+                "I cannot answer questions about this stock without current market data."
+            )
+            updated = [*messages, ChatMessage(role="user", content=user_message),
+                       ChatMessage(role="assistant", content=unavailable_reply)]
+            return ChatResponse(
+                reply=unavailable_reply,
+                messages=updated,
+                generated_at=datetime.now(timezone.utc),
+                disclaimer=DISCLAIMER,
+            )
+
         context = _format_pipeline_for_prompt(pipeline)
-        updated = [*messages, ChatMessage(role="user", content=user_message)]
+
+        # AC 3: trim history server-side before passing to LLM
+        trimmed = _trim_history(messages, _CHAT_HISTORY_MAX_CHARS)
+        updated = [*trimmed, ChatMessage(role="user", content=user_message)]
         reply = await self.llm.chat(symbol.upper(), context, updated)
         updated.append(ChatMessage(role="assistant", content=reply))
         return ChatResponse(

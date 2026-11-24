@@ -1,6 +1,5 @@
-from typing import Protocol
-
 import asyncio
+from typing import Protocol
 
 from app.core.errors import BackendError
 from app.schemas.research import ChatMessage
@@ -9,6 +8,17 @@ SYSTEM_PROMPT = (
     "You are a financial education assistant. You provide factual, evidence-based market "
     "information using only the data supplied to you. You NEVER give personalized buy, sell, "
     "or hold advice. You always remind users that statistics are uncertain and are not financial advice."
+)
+
+CHAT_CAPABILITY_PREAMBLE = (
+    "You can answer questions about: current price, day change, market cap, P/E ratio, "
+    "annualised volatility, beta, 52-week range, news headlines and sentiment, composite risk score, "
+    "and illustrative forecast scenarios for the selected stock. "
+    "You cannot answer questions about: other stocks not in the data block, macroeconomic forecasts, "
+    "tax or legal advice, guaranteed price targets, or whether to buy, sell or hold. "
+    "When a question asks about something not in the data block, say so clearly. "
+    "When you use a figure, state which data item it comes from (e.g. 'According to the market data...'). "
+    "When data is marked unavailable, say it is unavailable instead of estimating."
 )
 
 
@@ -29,7 +39,10 @@ class DisabledLLMConnector:
         return f"Research data for {ticker} is available from the backend. {context}"
 
     async def chat(self, ticker: str, context: str, messages: list[ChatMessage]) -> str:
-        return f"The backend has data for {ticker}. I cannot provide personalized buy, sell, or hold advice."
+        return (
+            f"I can answer questions about {ticker}'s price, volatility, risk and forecast scenarios "
+            "using the available market data. I cannot provide personalized buy, sell, or hold advice."
+        )
 
     async def sentiment_score(self, ticker: str, headlines: list[str]) -> float | None:
         return None
@@ -82,7 +95,11 @@ class GroqLLMConnector:
         ])
 
     async def chat(self, ticker: str, context: str, messages: list[ChatMessage]) -> str:
-        system = f"{SYSTEM_PROMPT}\n\nUse only this market data:\n{context}"
+        system = (
+            f"{SYSTEM_PROMPT}\n\n"
+            f"{CHAT_CAPABILITY_PREAMBLE}\n\n"
+            f"Use only this market data for {ticker}:\n{context}"
+        )
         history = [{"role": item.role, "content": item.content} for item in messages]
         history.insert(0, {"role": "system", "content": system})
         return await self._acomplete(history)
