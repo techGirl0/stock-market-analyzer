@@ -64,7 +64,6 @@ def build_brief_pdf(ticker: str, company_name: str, brief_text: str, fetched_at:
         HEADER_BG = (26, 35, 126)
         HEADER_FG = (255, 255, 255)
         ROW_ALT = (240, 243, 255)
-        BORDER = (200, 205, 220)
         DARK = (30, 30, 30)
 
         for i, row in enumerate(rows):
@@ -112,7 +111,6 @@ def build_brief_pdf(ticker: str, company_name: str, brief_text: str, fetched_at:
     BLUE = (26, 35, 126)
     LIGHT_BLUE = (230, 235, 255)
     DARK = (30, 30, 30)
-    GREY = (120, 120, 120)
 
     class BriefPDF(FPDF):
         def footer(self) -> None:
