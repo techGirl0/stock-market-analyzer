@@ -89,88 +89,47 @@ class AiBriefResponse(BaseModel):
 
     model_config = {
         "json_schema_extra": {
-            "examples": {
-                "complete": {
-                    "summary": "Full data available",
-                    "value": {
-                        "ticker": "AAPL",
-                        "company_name": "Apple Inc.",
-                        "brief_text": (
-                            "## 1. Market Snapshot\nAAPL trades at **$342.56** (-1.90% today) [1].\n"
-                            "## 2. News and Sentiment\nSentiment is neutral (score -0.2). "
-                            "XLK sold $71.4M of AAPL [2].\n"
-                            "## 3. Risk Indicators\nComposite risk: **6/10** (moderate).\n"
-                            "## 4. Forecast Scenarios\n1-year base: $356, bear: $236, bull: $537.\n"
-                            "## 5. Limitations\nP/E and market cap sourced from delayed feed."
-                        ),
-                        "sources": [
-                            {
-                                "index": 1,
-                                "headline": "AAPL price",
-                                "publisher": "yfinance",
-                                "published_at": "2026-11-23T11:34:25Z",
-                                "source_url": None,
-                            },
-                            {
-                                "index": 2,
-                                "headline": "State Street XLK sold $71.4M of AAPL",
-                                "publisher": "Reuters",
-                                "published_at": "2026-11-19T09:00:00Z",
-                                "source_url": "https://example.com/xlk-aapl",
-                            },
-                        ],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "assumptions": [
-                            "Scenario model: lognormal with 7% annual drift",
-                            "Volatility held constant at trailing 30-day figure",
-                        ],
-                        "limitations": [
-                            "Market cap and P/E from delayed feed",
-                            "News sentiment based on headlines only, not full articles",
-                        ],
-                        "disclaimer": DISCLAIMER,
-                    },
+            "examples": [
+                {
+                    "ticker": "AAPL",
+                    "company_name": "Apple Inc.",
+                    "brief_text": (
+                        "## 1. Market Snapshot\nAAPL trades at **$342.56** (-1.90% today) [1].\n"
+                        "## 2. News and Sentiment\nSentiment is neutral (score -0.2). "
+                        "XLK sold $71.4M of AAPL [2].\n"
+                        "## 3. Risk Indicators\nComposite risk: **6/10** (moderate).\n"
+                        "## 4. Forecast Scenarios\n1-year base: $356, bear: $236, bull: $537.\n"
+                        "## 5. Limitations\nP/E and market cap sourced from delayed feed."
+                    ),
+                    "sources": [
+                        {
+                            "index": 1,
+                            "headline": "AAPL price",
+                            "publisher": "yfinance",
+                            "published_at": "2026-11-23T11:34:25Z",
+                            "source_url": None,
+                        },
+                        {
+                            "index": 2,
+                            "headline": "State Street XLK sold $71.4M of AAPL",
+                            "publisher": "Reuters",
+                            "published_at": "2026-11-19T09:00:00Z",
+                            "source_url": "https://example.com/xlk-aapl",
+                        },
+                    ],
+                    "as_of": "2026-11-23T11:34:25Z",
+                    "generated_at": "2026-11-23T11:34:30Z",
+                    "assumptions": [
+                        "Scenario model: lognormal with 7% annual drift",
+                        "Volatility held constant at trailing 30-day figure",
+                    ],
+                    "limitations": [
+                        "Market cap and P/E from delayed feed",
+                        "News sentiment based on headlines only, not full articles",
+                    ],
+                    "disclaimer": DISCLAIMER,
                 },
-                "partial": {
-                    "summary": "Insufficient price history for scenarios",
-                    "value": {
-                        "ticker": "NEWCO",
-                        "company_name": "NewCo Ltd.",
-                        "brief_text": (
-                            "## 1. Market Snapshot\nNEWCO trades at **$12.00**.\n"
-                            "## 4. Forecast Scenarios\nUnavailable — fewer than 21 trading days of history.\n"
-                            "## 5. Limitations\nPrice history too short for volatility or scenario calculation."
-                        ),
-                        "sources": [],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "assumptions": [],
-                        "limitations": [
-                            "Price history < 21 days: volatility, risk score and scenarios unavailable",
-                            "News data unavailable for this symbol",
-                        ],
-                        "disclaimer": DISCLAIMER,
-                    },
-                },
-                "unavailable": {
-                    "summary": "Market data provider returned no data",
-                    "value": {
-                        "ticker": "HALT",
-                        "company_name": "Halted Corp.",
-                        "brief_text": (
-                            "Market data is currently unavailable for HALT."
-                            " The instrument may be halted or delisted."
-                        ),
-                        "sources": [],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "assumptions": [],
-                        "limitations": ["Market data unavailable from provider"],
-                        "disclaimer": DISCLAIMER,
-                    },
-                },
-            }
+            ]
         }
     }
 
@@ -211,96 +170,43 @@ class AiRiskResponse(BaseModel):
 
     model_config = {
         "json_schema_extra": {
-            "examples": {
-                "complete": {
-                    "summary": "Full data, score computed",
-                    "value": {
-                        "ticker": "AAPL",
-                        "score": 6,
-                        "label": "MODERATE",
-                        "components": [
-                            {
-                                "label": "Annualized volatility", "value": "24.95%",
-                                "score": 5.0, "weight": 0.4, "confidence": "HIGH",
-                            },
-                            {
-                                "label": "Beta vs market", "value": "1.089",
-                                "score": 5.3, "weight": 0.25, "confidence": "HIGH",
-                            },
-                            {
-                                "label": "52-week position", "value": "87.6%",
-                                "score": 8.8, "weight": 0.2, "confidence": "HIGH",
-                            },
-                            {
-                                "label": "News sentiment", "value": "-0.2 (Negative)",
-                                "score": 6.0, "weight": 0.15, "confidence": "MEDIUM",
-                            },
-                        ],
-                        "uncertainty_range": [5, 7],
-                        "sources": [
-                            {
-                                "label": "yfinance daily close", "provider": "yfinance",
-                                "as_of": "2026-11-23T11:34:25Z", "delayed": True,
-                            }
-                        ],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "assumptions": ["Beta estimated from trailing 1-year daily returns vs SPY"],
-                        "limitations": ["News sentiment based on headlines only"],
-                        "disclaimer": DISCLAIMER,
-                    },
+            "examples": [
+                {
+                    "ticker": "AAPL",
+                    "score": 6,
+                    "label": "MODERATE",
+                    "components": [
+                        {
+                            "label": "Annualized volatility", "value": "24.95%",
+                            "score": 5.0, "weight": 0.4, "confidence": "HIGH",
+                        },
+                        {
+                            "label": "Beta vs market", "value": "1.089",
+                            "score": 5.3, "weight": 0.25, "confidence": "HIGH",
+                        },
+                        {
+                            "label": "52-week position", "value": "87.6%",
+                            "score": 8.8, "weight": 0.2, "confidence": "HIGH",
+                        },
+                        {
+                            "label": "News sentiment", "value": "-0.2 (Negative)",
+                            "score": 6.0, "weight": 0.15, "confidence": "MEDIUM",
+                        },
+                    ],
+                    "uncertainty_range": [5, 7],
+                    "sources": [
+                        {
+                            "label": "yfinance daily close", "provider": "yfinance",
+                            "as_of": "2026-11-23T11:34:25Z", "delayed": True,
+                        }
+                    ],
+                    "as_of": "2026-11-23T11:34:25Z",
+                    "generated_at": "2026-11-23T11:34:30Z",
+                    "assumptions": ["Beta estimated from trailing 1-year daily returns vs SPY"],
+                    "limitations": ["News sentiment based on headlines only"],
+                    "disclaimer": DISCLAIMER,
                 },
-                "low_confidence": {
-                    "summary": "Score computed but sentiment data unreliable",
-                    "value": {
-                        "ticker": "SMCO",
-                        "score": 5,
-                        "label": "MODERATE",
-                        "components": [
-                            {
-                                "label": "Annualized volatility", "value": "31.0%",
-                                "score": 6.2, "weight": 0.47, "confidence": "HIGH",
-                            },
-                            {
-                                "label": "Beta vs market", "value": "0.9",
-                                "score": 2.7, "weight": 0.3, "confidence": "HIGH",
-                            },
-                            {
-                                "label": "52-week position", "value": "55.0%",
-                                "score": 5.5, "weight": 0.23, "confidence": "HIGH",
-                            },
-                        ],
-                        "uncertainty_range": [4, 7],
-                        "sources": [
-                            {
-                                "label": "yfinance daily close", "provider": "yfinance",
-                                "as_of": "2026-11-23T10:00:00Z", "delayed": True,
-                            }
-                        ],
-                        "as_of": "2026-11-23T10:00:00Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "assumptions": ["News sentiment excluded: fewer than 3 headlines available"],
-                        "limitations": ["Sentiment component omitted — insufficient headlines; weights redistributed"],
-                        "disclaimer": DISCLAIMER,
-                    },
-                },
-                "unavailable": {
-                    "summary": "Insufficient price history",
-                    "value": {
-                        "ticker": "NEWCO",
-                        "score": None,
-                        "label": None,
-                        "components": [],
-                        "uncertainty_range": None,
-                        "sources": [],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "assumptions": [],
-                        "limitations": ["Fewer than 21 daily observations — risk score cannot be computed"],
-                        "disclaimer": DISCLAIMER,
-                    },
-                },
-            }
+            ]
         }
     }
 
@@ -344,68 +250,50 @@ class AiForecastResponse(BaseModel):
 
     model_config = {
         "json_schema_extra": {
-            "examples": {
-                "complete": {
-                    "summary": "Full 1/3/5 year scenarios",
-                    "value": {
-                        "ticker": "AAPL",
-                        "current_price": 342.56,
-                        "scenarios": [
-                            {
-                                "horizon": {"label": "1y", "trading_days": 252},
-                                "percentile_5": 236.27, "percentile_50": 356.14, "percentile_95": 536.83,
-                                "pct_change_5": -31.03, "pct_change_50": 3.96, "pct_change_95": 56.71,
-                            },
-                            {
-                                "horizon": {"label": "3y", "trading_days": 756},
-                                "percentile_5": 189.11, "percentile_50": 384.94, "percentile_95": 783.56,
-                                "pct_change_5": -44.80, "pct_change_50": 12.37, "pct_change_95": 128.74,
-                            },
-                            {
-                                "horizon": {"label": "5y", "trading_days": 1260},
-                                "percentile_5": 166.21, "percentile_50": 416.07, "percentile_95": 1041.52,
-                                "pct_change_5": -51.48, "pct_change_50": 21.46, "pct_change_95": 204.04,
-                            },
-                        ],
-                        "confidence": "MEDIUM",
-                        "sources": [
-                            {
-                                "label": "yfinance daily close (1y)", "provider": "yfinance",
-                                "as_of": "2026-11-23T11:34:25Z", "delayed": True,
-                            }
-                        ],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "assumptions": [
-                            "Lognormal price model",
-                            "Assumed annual drift: 7% (long-run equity average)",
-                            "Volatility held constant at trailing 30-day annualized figure: 24.95%",
-                            "Percentile bounds: 5th (bear), 50th (base), 95th (bull)",
-                        ],
-                        "limitations": [
-                            "Drift assumption of 7% may not reflect company-specific outlook",
-                            "Volatility assumed constant — real volatility varies over time",
-                            "Scenarios are illustrative ranges, not predictions",
-                        ],
-                        "disclaimer": DISCLAIMER,
-                    },
+            "examples": [
+                {
+                    "ticker": "AAPL",
+                    "current_price": 342.56,
+                    "scenarios": [
+                        {
+                            "horizon": {"label": "1y", "trading_days": 252},
+                            "percentile_5": 236.27, "percentile_50": 356.14, "percentile_95": 536.83,
+                            "pct_change_5": -31.03, "pct_change_50": 3.96, "pct_change_95": 56.71,
+                        },
+                        {
+                            "horizon": {"label": "3y", "trading_days": 756},
+                            "percentile_5": 189.11, "percentile_50": 384.94, "percentile_95": 783.56,
+                            "pct_change_5": -44.80, "pct_change_50": 12.37, "pct_change_95": 128.74,
+                        },
+                        {
+                            "horizon": {"label": "5y", "trading_days": 1260},
+                            "percentile_5": 166.21, "percentile_50": 416.07, "percentile_95": 1041.52,
+                            "pct_change_5": -51.48, "pct_change_50": 21.46, "pct_change_95": 204.04,
+                        },
+                    ],
+                    "confidence": "MEDIUM",
+                    "sources": [
+                        {
+                            "label": "yfinance daily close (1y)", "provider": "yfinance",
+                            "as_of": "2026-11-23T11:34:25Z", "delayed": True,
+                        }
+                    ],
+                    "as_of": "2026-11-23T11:34:25Z",
+                    "generated_at": "2026-11-23T11:34:30Z",
+                    "assumptions": [
+                        "Lognormal price model",
+                        "Assumed annual drift: 7% (long-run equity average)",
+                        "Volatility held constant at trailing 30-day annualized figure: 24.95%",
+                        "Percentile bounds: 5th (bear), 50th (base), 95th (bull)",
+                    ],
+                    "limitations": [
+                        "Drift assumption of 7% may not reflect company-specific outlook",
+                        "Volatility assumed constant — real volatility varies over time",
+                        "Scenarios are illustrative ranges, not predictions",
+                    ],
+                    "disclaimer": DISCLAIMER,
                 },
-                "unavailable": {
-                    "summary": "Insufficient price history",
-                    "value": {
-                        "ticker": "NEWCO",
-                        "current_price": 12.0,
-                        "scenarios": [],
-                        "confidence": "UNAVAILABLE",
-                        "sources": [],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "assumptions": [],
-                        "limitations": ["Fewer than 21 daily observations — scenarios cannot be computed"],
-                        "disclaimer": DISCLAIMER,
-                    },
-                },
-            }
+            ]
         }
     }
 
@@ -452,100 +340,47 @@ class AiNewsResponse(BaseModel):
 
     model_config = {
         "json_schema_extra": {
-            "examples": {
-                "complete": {
-                    "summary": "5 headlines, negative aggregate",
-                    "value": {
-                        "ticker": "AAPL",
-                        "items": [
-                            {
-                                "index": 1,
-                                "headline": "State Street XLK sold $71.4M of Apple",
-                                "publisher": "Reuters",
-                                "published_at": "2026-11-19T09:00:00Z",
-                                "source_url": "https://example.com/xlk-aapl",
-                                "summary": "ETF outflow from Apple position.",
-                                "sentiment": "NEGATIVE",
-                                "sentiment_confidence": "HIGH",
-                                "reason": "Institutional selling indicates reduced conviction in the stock.",
-                            },
-                            {
-                                "index": 2,
-                                "headline": "iShares S&P 500 Value ETF highlights Apple as top holding",
-                                "publisher": "Bloomberg",
-                                "published_at": "2026-11-19T08:00:00Z",
-                                "source_url": "https://example.com/ive-aapl",
-                                "summary": "Routine ETF composition disclosure.",
-                                "sentiment": "NEUTRAL",
-                                "sentiment_confidence": "HIGH",
-                                "reason": "Routine ETF disclosure with no directional signal.",
-                            },
-                        ],
-                        "aggregate_sentiment_score": -0.2,
-                        "aggregate_sentiment_label": "NEGATIVE",
-                        "aggregate_confidence": "MEDIUM",
-                        "sources": [
-                            {
-                                "label": "yfinance news feed", "provider": "yfinance",
-                                "as_of": "2026-11-23T11:34:25Z", "delayed": True,
-                            }
-                        ],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "limitations": ["Sentiment based on headlines only, not full article text"],
-                        "disclaimer": DISCLAIMER,
-                    },
+            "examples": [
+                {
+                    "ticker": "AAPL",
+                    "items": [
+                        {
+                            "index": 1,
+                            "headline": "State Street XLK sold $71.4M of Apple",
+                            "publisher": "Reuters",
+                            "published_at": "2026-11-19T09:00:00Z",
+                            "source_url": "https://example.com/xlk-aapl",
+                            "summary": "ETF outflow from Apple position.",
+                            "sentiment": "NEGATIVE",
+                            "sentiment_confidence": "HIGH",
+                            "reason": "Institutional selling indicates reduced conviction in the stock.",
+                        },
+                        {
+                            "index": 2,
+                            "headline": "iShares S&P 500 Value ETF highlights Apple as top holding",
+                            "publisher": "Bloomberg",
+                            "published_at": "2026-11-19T08:00:00Z",
+                            "source_url": "https://example.com/ive-aapl",
+                            "summary": "Routine ETF composition disclosure.",
+                            "sentiment": "NEUTRAL",
+                            "sentiment_confidence": "HIGH",
+                            "reason": "Routine ETF disclosure with no directional signal.",
+                        },
+                    ],
+                    "aggregate_sentiment_score": -0.2,
+                    "aggregate_sentiment_label": "NEGATIVE",
+                    "aggregate_confidence": "MEDIUM",
+                    "sources": [
+                        {
+                            "label": "yfinance news feed", "provider": "yfinance",
+                            "as_of": "2026-11-23T11:34:25Z", "delayed": True,
+                        }
+                    ],
+                    "as_of": "2026-11-23T11:34:25Z",
+                    "generated_at": "2026-11-23T11:34:30Z",
+                    "limitations": ["Sentiment based on headlines only, not full article text"],
+                    "disclaimer": DISCLAIMER,
                 },
-                "low_confidence": {
-                    "summary": "Only 1 headline, low confidence",
-                    "value": {
-                        "ticker": "SMCO",
-                        "items": [
-                            {
-                                "index": 1,
-                                "headline": "SmallCo reports Q3 results",
-                                "publisher": None,
-                                "published_at": "2026-11-20T14:00:00Z",
-                                "source_url": None,
-                                "summary": None,
-                                "sentiment": "NEUTRAL",
-                                "sentiment_confidence": "LOW",
-                                "reason": "Insufficient context in headline to determine directional sentiment.",
-                            }
-                        ],
-                        "aggregate_sentiment_score": 0.0,
-                        "aggregate_sentiment_label": "NEUTRAL",
-                        "aggregate_confidence": "LOW",
-                        "sources": [
-                            {
-                                "label": "yfinance news feed", "provider": "yfinance",
-                                "as_of": "2026-11-23T10:00:00Z", "delayed": True,
-                            }
-                        ],
-                        "as_of": "2026-11-23T10:00:00Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "limitations": [
-                            "Only 1 headline available — aggregate score has low confidence",
-                            "No publisher or URL available for this article",
-                        ],
-                        "disclaimer": DISCLAIMER,
-                    },
-                },
-                "unavailable": {
-                    "summary": "No news data for this symbol",
-                    "value": {
-                        "ticker": "NEWCO",
-                        "items": [],
-                        "aggregate_sentiment_score": None,
-                        "aggregate_sentiment_label": None,
-                        "aggregate_confidence": "UNAVAILABLE",
-                        "sources": [],
-                        "as_of": "2026-11-23T11:34:25Z",
-                        "generated_at": "2026-11-23T11:34:30Z",
-                        "limitations": ["No news articles available for this symbol"],
-                        "disclaimer": DISCLAIMER,
-                    },
-                },
-            }
+            ]
         }
     }
