@@ -149,7 +149,7 @@ class YFinanceMarketDataConnector:
 
     async def search(self, query: str, *, limit: int) -> list[InstrumentMatch]:
         url = "https://query2.finance.yahoo.com/v1/finance/search"
-        params = {"q": query, "quotesCount": limit, "newsCount": 0, "listsCount": 0}
+        params = {"q": query, "quotesCount": str(limit), "newsCount": "0", "listsCount": "0"}
         headers = {"User-Agent": "stock-market-analyzer/1.0"}
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
