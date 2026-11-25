@@ -165,6 +165,7 @@ class YFinanceMarketDataConnector:
         now = datetime.now(timezone.utc)
         current = info.get("currentPrice") or info.get("regularMarketPrice")
         previous = info.get("previousClose")
+        raw_pe = info.get("trailingPE")
         return Quote(
             instrument=InstrumentMatch(
                 id=uuid5(UUID("00000000-0000-0000-0000-000000000001"), normalized),
@@ -183,6 +184,8 @@ class YFinanceMarketDataConnector:
             ),
             volume=info.get("regularMarketVolume"),
             as_of=now,
+            market_cap=info.get("marketCap"),
+            pe_ratio=Decimal(str(round(float(raw_pe), 2))) if raw_pe is not None else None,
             meta=DataMeta(
                 source="yfinance",
                 fetched_at=now,

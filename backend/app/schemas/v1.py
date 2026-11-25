@@ -43,6 +43,8 @@ class Quote(BaseModel):
     change_percent: Decimal | None = None
     volume: int | None = None
     as_of: datetime | None = None
+    market_cap: int | None = None
+    pe_ratio: Decimal | None = None
     meta: DataMeta
 
 
