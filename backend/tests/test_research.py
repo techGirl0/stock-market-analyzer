@@ -177,10 +177,12 @@ async def test_chat_history_preserved():
 
 @pytest.mark.asyncio
 async def test_chat_out_of_scope_response():
-    """LLM correctly declines out-of-scope questions without crashing."""
+    """Out-of-scope / advice-seeking questions return the platform refusal, not an LLM reply."""
     svc = ResearchService(DemoMarketDataConnector(), OutOfScopeFakeLLM())
     result = await svc.chat("AAPL", [], "Should I invest my savings in crypto?")
-    assert "scope" in result.reply.lower() or "only" in result.reply.lower()
+    # Triggers the advice-request guard — ADVICE_REFUSAL is returned, LLM never called
+    from app.services.research import ADVICE_REFUSAL
+    assert result.reply == ADVICE_REFUSAL
     assert result.disclaimer
 
 
@@ -242,6 +244,115 @@ async def test_explain_scenarios():
     result = await _service().explain_scenarios("NVDA")
     assert result.ticker == "NVDA"
     assert result.text == "FAKE_SCEN:NVDA"
+
+
+# ---------------------------------------------------------------------------
+# Guardrail tests — advice refusal, injection, output filter
+# ---------------------------------------------------------------------------
+
+class EchoUserFakeLLM(FakeLLMConnector):
+    """Returns the last user message content verbatim — lets tests inspect what reached the LLM."""
+
+    async def chat(self, ticker: str, context: str, messages: list) -> str:
+        return messages[-1].content
+
+
+class AdvicePhraseFakeLLM(FakeLLMConnector):
+    """Returns LLM text containing a blocked advice phrase — tests the output filter."""
+
+    def __init__(self, response: str) -> None:
+        self._response = response
+
+    async def brief(self, ticker: str, context: str) -> str:
+        return self._response
+
+    async def chat(self, ticker: str, context: str, messages: list) -> str:
+        return self._response
+
+
+# --- AC 2: advice-seeking prompts return fixed refusal, LLM never called ---
+
+@pytest.mark.asyncio
+async def test_chat_advice_buy_returns_refusal():
+    svc = ResearchService(DemoMarketDataConnector(), EchoUserFakeLLM())
+    result = await svc.chat("AAPL", [], "Should I buy AAPL right now?")
+    from app.services.research import ADVICE_REFUSAL
+    assert result.reply == ADVICE_REFUSAL
+    assert "decision is yours" in result.reply
+    assert result.disclaimer
+
+
+@pytest.mark.asyncio
+async def test_chat_advice_sell_returns_refusal():
+    svc = ResearchService(DemoMarketDataConnector(), EchoUserFakeLLM())
+    result = await svc.chat("AAPL", [], "Should I sell my shares now?")
+    from app.services.research import ADVICE_REFUSAL
+    assert result.reply == ADVICE_REFUSAL
+
+
+@pytest.mark.asyncio
+async def test_chat_advice_invest_returns_refusal():
+    svc = ResearchService(DemoMarketDataConnector(), EchoUserFakeLLM())
+    result = await svc.chat("MSFT", [], "Should I invest in Microsoft?")
+    from app.services.research import ADVICE_REFUSAL
+    assert result.reply == ADVICE_REFUSAL
+
+
+# --- AC 3: user input is sanitised before reaching the LLM ---
+
+@pytest.mark.asyncio
+async def test_chat_url_stripped_from_user_message():
+    """URLs in user messages are replaced with [link removed] before the LLM sees them."""
+    svc = ResearchService(DemoMarketDataConnector(), EchoUserFakeLLM())
+    result = await svc.chat("AAPL", [], "Check this site https://evil.com/payload and tell me more")
+    assert "https://" not in result.reply
+    assert "[link removed]" in result.reply
+
+
+@pytest.mark.asyncio
+async def test_chat_html_stripped_from_user_message():
+    """HTML tags in user messages are stripped before the LLM sees them."""
+    svc = ResearchService(DemoMarketDataConnector(), EchoUserFakeLLM())
+    result = await svc.chat("AAPL", [], "<script>alert(1)</script>What is the price?")
+    assert "<script>" not in result.reply
+    assert "alert" in result.reply  # text content preserved, tags stripped
+
+
+# --- AC 1: output filter replaces blocked sentences, never crashes ---
+
+def test_output_filter_replaces_buy_sentence():
+    from app.connectors.llm import _FILTER_REPLACEMENT, _filter_output
+    text = "The stock has good fundamentals. You should buy AAPL today. The P/E is 25."
+    filtered = _filter_output(text)
+    assert "you should buy" not in filtered.lower()
+    assert _FILTER_REPLACEMENT in filtered
+    assert "P/E is 25" in filtered  # clean sentence preserved
+
+
+def test_output_filter_replaces_price_target():
+    from app.connectors.llm import _FILTER_REPLACEMENT, _filter_output
+    text = "The price target of $600 looks realistic given current momentum."
+    filtered = _filter_output(text)
+    assert "price target of" not in filtered.lower()
+    assert _FILTER_REPLACEMENT in filtered
+
+
+def test_output_filter_passes_normal_sentence():
+    from app.connectors.llm import _filter_output
+    text = "The annualised volatility is 34% and the beta is 1.1. This is not financial advice."
+    assert _filter_output(text) == text
+
+
+# --- AC 2 + normal: a plain market question still reaches the LLM ---
+
+@pytest.mark.asyncio
+async def test_chat_normal_question_reaches_llm():
+    """A factual question bypasses the advice guard and returns the LLM reply."""
+    svc = ResearchService(DemoMarketDataConnector(), EchoUserFakeLLM())
+    result = await svc.chat("AAPL", [], "What is the current P/E ratio?")
+    # EchoUserFakeLLM echoes the sanitised user message — LLM was reached
+    assert "P/E ratio" in result.reply
+    assert result.disclaimer
 
 
 # ---------------------------------------------------------------------------

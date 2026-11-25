@@ -1,4 +1,5 @@
 import asyncio
+import re
 from typing import Protocol
 
 from app.core.errors import BackendError
@@ -20,6 +21,60 @@ CHAT_CAPABILITY_PREAMBLE = (
     "When you use a figure, state which data item it comes from (e.g. 'According to the market data...'). "
     "When data is marked unavailable, say it is unavailable instead of estimating."
 )
+
+_BLOCKED_PHRASES = (
+    "you should buy",
+    "you should sell",
+    "you should hold",
+    "i recommend buy",
+    "i recommend sell",
+    "i would buy",
+    "i would sell",
+    "consider buying",
+    "consider selling",
+    "is a buy",
+    "is a sell",
+    "price target of",
+    "price target is",
+    "guaranteed",
+    "will definitely",
+    "will certainly",
+    "will reach $",
+)
+
+_FILTER_REPLACEMENT = (
+    "This platform provides factual data only and does not give buy, sell or hold recommendations."
+)
+
+
+def _sanitise_output(text: str) -> str:
+    """Strip bare URLs and HTML tags from LLM output."""
+    text = re.sub(r"https?://\S+", "", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    return text.strip()
+
+
+def _filter_output(text: str) -> str:
+    """Replace any sentence containing a blocked advice phrase with a neutral substitute."""
+    lower = text.lower()
+    if not any(phrase in lower for phrase in _BLOCKED_PHRASES):
+        return text
+    # Split on newlines first, then on sentence boundaries within each line
+    result_lines: list[str] = []
+    for line in text.splitlines():
+        # Split on ". " to catch mid-paragraph sentences; keep delimiter
+        parts = re.split(r"(?<=\.)\s+", line)
+        cleaned_parts: list[str] = []
+        replaced = False
+        for part in parts:
+            if any(phrase in part.lower() for phrase in _BLOCKED_PHRASES):
+                if not replaced:
+                    cleaned_parts.append(_FILTER_REPLACEMENT)
+                    replaced = True
+            else:
+                cleaned_parts.append(part)
+        result_lines.append(" ".join(cleaned_parts))
+    return "\n".join(result_lines)
 
 
 class LLMConnector(Protocol):
@@ -196,8 +251,10 @@ class GroqLLMConnector:
             text = response.choices[0].message.content
         except Exception as exc:
             raise BackendError("llm_unavailable", "The language model is temporarily unavailable.", 503) from exc
-        if not text or any(word in text.lower() for word in ("you should buy", "you should sell", "hold this stock")):
-            raise BackendError("llm_output_invalid", "The generated response failed safety validation.", 502)
+        if not text:
+            raise BackendError("llm_output_invalid", "The language model returned an empty response.", 502)
+        text = _sanitise_output(text)
+        text = _filter_output(text)
         return text.strip()
 
     async def _acomplete(self, messages: list[dict[str, str]], max_tokens: int = 900) -> str:
