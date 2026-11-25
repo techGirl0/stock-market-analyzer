@@ -121,7 +121,10 @@ The team shares the project decisions and progress on the
   - SCRUM rules and setup up of JIRA 
 - [Week 7: Mid reflecation](https://wolfstreeetsignalblog.wordpress.com/2026/11/17/week-7-a-small-reflections/)
   - Reflecation about what is made and what can be improved
-
+  - [Week 7: Mid reflecation](https://wolfstreeetsignalblog.wordpress.com/2026/11/17/week-7-a-small-reflections/)
+  - Reflecation about what is made and what can be improved
+  -- [Week 8: Mid reflecatio](https://wolfstreeetsignalblog.wordpress.com/2026/11/22/framework-choice-and-crud-generation-from-architecture-to-features-in-wolfstreet-signal/)
+  -  Framework Choice and CRUD Generation
 ## Status
 
 The repository currently contains the requirements and design documentation
