@@ -71,6 +71,8 @@ class ResearchService:
             ))
 
         limitations: list[str] = []
+        if pipeline.get("availability") == "stale":
+            limitations.append("Price data is stale — may not reflect the current market price")
         if pipeline.get("annual_vol_pct") is None:
             limitations.append("Price history < 21 days: volatility, risk score and scenarios unavailable")
         if not pipeline.get("news_items"):
@@ -79,6 +81,16 @@ class ResearchService:
             limitations.append("Market cap unavailable from provider")
         if pipeline.get("pe_ratio") is None:
             limitations.append("P/E ratio unavailable from provider")
+        # AC 4: flag low-confidence sentiment
+        low_conf_items = [
+            item for item in pipeline.get("news_items", [])
+            if item.get("sentiment_confidence") is not None and item["sentiment_confidence"] < 0.5
+        ]
+        if low_conf_items:
+            n = len(low_conf_items)
+            limitations.append(
+                f"News sentiment confidence is low for {n} headline(s) — treat sentiment score with caution"
+            )
 
         return AiBriefResponse(
             ticker=symbol.upper(),
@@ -217,6 +229,8 @@ class ResearchService:
                     "publisher": articles[idx].publisher if idx < len(articles) else None,
                     "source_url": str(articles[idx].source_url) if idx < len(articles) else None,
                     "published_at": articles[idx].published_at.isoformat() if idx < len(articles) else None,
+                    "sentiment_confidence": float(str(articles[idx].sentiment_confidence))
+                        if idx < len(articles) and articles[idx].sentiment_confidence is not None else None,
                 }
                 for idx, llm_item in enumerate(raw_feed)
             ]
@@ -240,21 +254,9 @@ class ResearchService:
 
         current_price = float(quote.price) if quote.price is not None else (prices[-1] if prices else None)
 
-        # --- extra snapshot fields (market cap, P/E, day change) ---
-        # Quote schema carries change_percent; market_cap and pe_ratio are
-        # fetched opportunistically from yfinance when available.
         day_change_pct = float(quote.change_percent) if quote.change_percent is not None else None
-        market_cap: int | None = None
-        pe_ratio: float | None = None
-        try:
-            import yfinance  # type: ignore
-            info = yfinance.Ticker(normalized).info
-            market_cap = info.get("marketCap")
-            pe_ratio = info.get("trailingPE")
-            if day_change_pct is None and info.get("regularMarketChangePercent") is not None:
-                day_change_pct = round(float(info["regularMarketChangePercent"]), 4)
-        except Exception:
-            pass
+        market_cap: int | None = quote.market_cap
+        pe_ratio: float | None = float(quote.pe_ratio) if quote.pe_ratio is not None else None
 
         return {
             "ticker": normalized,
@@ -275,6 +277,9 @@ class ResearchService:
             "risk_components": risk_components,
             "scenarios": scenarios,
             "source": quote.meta.source,
+            "delayed": quote.meta.delayed,
+            "availability": quote.meta.availability,
+            "data_as_of": quote.as_of.isoformat() if quote.as_of else quote.meta.fetched_at.isoformat(),
             "fetched_at": quote.meta.fetched_at.isoformat(),
         }
 
@@ -293,12 +298,22 @@ def _format_pipeline_for_prompt(p: dict) -> str:
 
     lines = [
         f"## {p['name']} ({p['ticker']})",
-        f"- Current price: ${p['current_price']}" if p.get("current_price") else "- Current price: unavailable",
+    ]
+
+    # AC 3: real-time/delayed flag and as_of timestamp on the price line
+    price_line = f"- Current price: ${p['current_price']}" if p.get("current_price") else "- Current price: unavailable"
+    if p.get("availability") == "stale":
+        price_line = price_line.replace("Current price", "Last known price (STALE — may not reflect current market)")
+    if p.get("delayed"):
+        price_line += " (delayed data)"
+    data_as_of = p.get("data_as_of") or p.get("fetched_at", "unknown")
+    lines += [
+        price_line,
         f"- Day change: {p['day_change_pct']:+.2f}%" if p.get("day_change_pct") is not None
         else "- Day change: unavailable",
         f"- Market cap: {_fmt_cap(p.get('market_cap'))}",
         f"- P/E ratio: {p['pe_ratio']}" if p.get("pe_ratio") is not None else "- P/E ratio: unavailable",
-        f"- Data source: {p.get('source', 'unknown')}; fetched at {p.get('fetched_at', 'unknown')}",
+        f"- Data source: {p.get('source', 'unknown')}; as of {data_as_of}",
         "",
     ]
 
@@ -349,7 +364,18 @@ def _format_pipeline_for_prompt(p: dict) -> str:
     if p.get("news_items"):
         lines.append("### Recent Headlines")
         for item in p["news_items"][:5]:
-            lines.append(f"- [{item.get('sentiment', 'NEUTRAL')}] {item.get('headline', '')}")
+            pub = item.get("publisher") or ""
+            pub_date = (item.get("published_at") or "")[:10]
+            source_url = item.get("source_url") or ""
+            meta_parts = " — ".join(filter(None, [pub, pub_date]))
+            conf = item.get("sentiment_confidence")
+            conf_note = " (low confidence)" if conf is not None and conf < 0.5 else ""
+            headline_line = f"- [{item.get('sentiment', 'NEUTRAL')}{conf_note}] {item.get('headline', '')}"
+            if meta_parts:
+                headline_line += f"  |  {meta_parts}"
+            if source_url:
+                headline_line += f"  |  {source_url}"
+            lines.append(headline_line)
         lines.append("")
 
     # Risk score

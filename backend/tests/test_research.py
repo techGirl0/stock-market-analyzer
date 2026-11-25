@@ -66,6 +66,21 @@ class NoPriceDemoConnector(DemoMarketDataConnector):
         return []
 
 
+class StaleQuoteDemoConnector(DemoMarketDataConnector):
+    """Returns a quote with availability=stale — simulates delayed/stale market data."""
+
+    async def quote(self, symbol):  # type: ignore[override]
+        from app.schemas.v1 import Availability, DataMeta
+        q = await super().quote(symbol)
+        stale_meta = DataMeta(
+            source="demo",
+            fetched_at=q.meta.fetched_at,
+            availability=Availability.stale,
+            delayed=True,
+        )
+        return q.model_copy(update={"meta": stale_meta})
+
+
 class OutOfScopeFakeLLM(FakeLLMConnector):
     """Returns a canned out-of-scope reply for chat."""
 
@@ -120,6 +135,15 @@ async def test_brief_unavailable_news():
     assert any("news" in lim.lower() for lim in result.limitations)
     assert isinstance(result.sources, list)
     assert len(result.sources) == 1  # only market data source; no news sources
+
+
+@pytest.mark.asyncio
+async def test_brief_stale():
+    """Stale quote availability triggers a stale limitation and labels the data."""
+    svc = ResearchService(StaleQuoteDemoConnector(), FakeLLMConnector())
+    result = await svc.brief("AAPL")
+    assert result.ticker == "AAPL"
+    assert any("stale" in lim.lower() for lim in result.limitations)
 
 
 @pytest.mark.asyncio
