@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Protocol, cast
 from uuid import UUID, uuid5
 
+import httpx
 from pydantic import AnyHttpUrl
 
 from app.schemas.v1 import (
@@ -147,9 +148,35 @@ class YFinanceMarketDataConnector:
         self._yfinance = yfinance
 
     async def search(self, query: str, *, limit: int) -> list[InstrumentMatch]:
-        # yfinance does not provide a stable symbol-search API. Keep this
-        # explicit rather than pretending a quote lookup is a search result.
-        return []
+        url = "https://query2.finance.yahoo.com/v1/finance/search"
+        params = {"q": query, "quotesCount": limit, "newsCount": 0, "listsCount": 0}
+        headers = {"User-Agent": "stock-market-analyzer/1.0"}
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(url, params=params, headers=headers)
+                resp.raise_for_status()
+                quotes = resp.json().get("quotes", [])
+        except Exception:
+            return []
+        results: list[InstrumentMatch] = []
+        for item in quotes:
+            symbol = item.get("symbol")
+            if not symbol:
+                continue
+            try:
+                symbol = normalize_symbol(symbol)
+            except ValueError:
+                continue
+            results.append(
+                InstrumentMatch(
+                    id=uuid5(UUID("00000000-0000-0000-0000-000000000001"), symbol),
+                    symbol=symbol,
+                    name=item.get("longname") or item.get("shortname") or symbol,
+                    exchange=item.get("exchange"),
+                    currency=item.get("currency"),
+                )
+            )
+        return results[:limit]
 
     async def validate(self, symbol: str) -> bool:
         normalized = normalize_symbol(symbol)
