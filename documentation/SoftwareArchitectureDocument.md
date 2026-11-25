@@ -14,6 +14,7 @@
   - [2.3 Differences between the prototype and the target design](#23-differences-between-the-prototype-and-the-target-design)
   - [2.4 Frontend MVC (Next.js — planned)](#24-frontend-mvc-nextjs--planned)
 - [3. Architectural Goals and Constraints](#3-architectural-goals-and-constraints)
+  - [Technology Stack](#technology-stack)
 - [4. Use-Case View](#4-use-case-view)
   - [4.1 Use-Case Realizations](#41-use-case-realizations)
 - [5. Logical View](#5-logical-view)
@@ -27,17 +28,11 @@
   - [7.4 Startup Sequence (Docker Compose)](#74-startup-sequence-docker-compose)
   - [7.5 Configuration (Environment-Driven)](#75-configuration-environment-driven)
 - [8. Implementation View](#8-implementation-view)
-  - [8.1 Overview](#81-overview)
-  - [8.2 Layers](#82-layers)
 - [9. Data View](#9-data-view)
   - [9.1 Entity Relationship Diagram](#91-entity-relationship-diagram)
   - [9.2 DB Model Overview](#92-db-model-overview)
 - [10. Size and Performance](#10-size-and-performance)
-  - [10.1 Size](#101-size)
-  - [10.2 Performance](#102-performance)
 - [11. Quality](#11-quality)
-  - [11.1 CI Pipeline Results](#111-ci-pipeline-results)
-  - [11.2 Planned Improvements](#112-planned-improvements)
 
 ---
 
@@ -183,6 +178,20 @@ Business logic never lives in a React component. All computed values (risk score
 
 ## 3. Architectural Goals and Constraints
 
+### Technology Stack
+
+The full technology stack is documented in [SRS Section 2.3](SoftwareRequirementsSpecification.md#23-technology-stack). The key framework and infrastructure choices that shape this architecture are summarised below.
+
+| Layer | Technology | Role |
+|---|---|---|
+| **Backend framework** | Python 3.13 · FastAPI · Uvicorn · Pydantic | REST API, request routing, data validation |
+| **ORM / migrations** | SQLAlchemy 2.0 (async) · Alembic | Identity-domain persistence and schema versioning |
+| **Frontend (planned)** | Next.js · React · TypeScript | SPA client consuming the REST API |
+| **AI prototype** | Python · Streamlit | Standalone AI analysis and chat interface |
+| **Databases** | SQLite (dev) · PostgreSQL (prod) | Persistence for identity and financial data |
+| **Containerisation** | Docker · Docker Compose | Local development and production deployment |
+| **CI** | GitHub Actions | Automated lint, type-check, test, and audit |
+
 ### Goals
 
 - Achieve strict separation of concerns across four backend layers so each can evolve, be tested, or be replaced independently.
@@ -204,7 +213,7 @@ Business logic never lives in a React component. All computed values (risk score
 
 ## 4. Use-Case View
 
-This view illustrates the actors and use cases of the Stock Market Analyzer, showing which roles interact with which features.
+This view illustrates the actors and use cases of the Stock Market Analyzer, showing which roles interact with which features. It is derived from and consistent with the [Use-Case Diagram in SRS Section 2.2](SoftwareRequirementsSpecification.md#22-use-case-diagram).
 
 ![Use-Case Diagram](Media/UseCaseDiagram.jpg)
 
@@ -227,6 +236,16 @@ This view illustrates the actors and use cases of the Stock Market Analyzer, sho
 ### 5.1 Overview
 
 The backend is organized as a single-module FastAPI application with a clear directory-per-layer structure. Each layer interacts only with the layer directly below it; cross-layer jumps do not exist in production code.
+
+#### FastAPI Framework Architecture
+
+The diagram below, taken from the [official FastAPI documentation](https://fastapi.tiangolo.com/tutorial/bigger-applications/), shows the modular package structure FastAPI recommends for larger applications — the same layer-separation pattern our backend follows.
+
+![FastAPI Bigger Applications — package structure](https://fastapi.tiangolo.com/img/tutorial/bigger-applications/package.drawio.svg)
+
+*Source: [fastapi.tiangolo.com — Bigger Applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/)*
+
+#### Our Backend Directory Structure
 
 ```
 backend/app/
@@ -407,39 +426,7 @@ A self-contained Python module (`ai_engine.py`, `stock_data.py`, `app.py`) devel
 
 ## 6. Process View
 
-This section describes runtime behavior through activity diagrams grouped by feature area.
-
-| Feature | Activity Diagrams |
-|---|---|
-| [Search for a Stock](UCs/SearchForAStock.md) | Instrument search, quote loading, history loading, news loading, no-results flow |
-| [Manage Watchlist](UCs/ManageWatchList.md) | Add stock, remove stock, list watchlist, authentication guard |
-| [Research Brief](UCs/ResearrchBrief.md) | Market context assembly, LLM brief generation, disclaimer injection |
-| [Chat with AI](UCs/ChatwithAI.md) | Multi-turn conversation, context assembly, refusal on advisory content |
-| [Manage Portfolios](UCs/ManagePortfilios.md) | Portfolio creation, holding addition, live price enrichment |
-
-**Alert Evaluation Worker (`workers/alerts.py`)**
-
-The alert evaluation process runs outside the HTTP request cycle. `evaluate_alerts_once()` fetches all active alerts, checks the current quote for each symbol, and records a delivery in `alert_deliveries`. The `UNIQUE(alert_id, observed_price)` constraint makes the entire evaluation loop idempotent — the same price crossing can only be recorded once.
-
-```
-Scheduler triggers evaluate_alerts_once()
-    │
-    ▼
-Fetch active price_alerts rows
-    │
-    for each alert:
-    ├── market.quote(symbol)
-    ├── check operator + threshold
-    ├── if triggered: INSERT INTO alert_deliveries
-    │       └── UNIQUE constraint → no duplicate delivery
-    └── return triggered count
-```
-
-**Rate Limiting**
-
-All requests pass through two layers of rate limiting before reaching any handler:
-- Global fixed-window limiter (120 req/min per IP) applied in the `request_id_middleware`.
-- Stricter auth-specific limiter (30 req/min per IP) applied inside each auth endpoint.
+*Not applicable for this project scope.*
 
 ---
 
@@ -525,39 +512,7 @@ Database.initialize()  ← idempotently creates SQLite tables (financial domain)
 
 ## 8. Implementation View
 
-### 8.1 Overview
-
-The implementation lives in a monorepo with the following top-level layout:
-
-| Directory | Contents | Status |
-|---|---|---|
-| `backend/` | Main FastAPI application, Alembic migrations, tests, Dockerfile | Implemented |
-| `ai_module/` | Standalone AI analysis prototype (separate venv) | Implemented |
-| `frontend/` | Next.js + React + TypeScript app | Planned |
-| `infra/` | Docker, docker-compose, GitHub Actions CI | Partial |
-| `documentation/` | SRS, SAD, UML diagrams, ERD, use cases, mockups | Implemented |
-| `features/` | Behave BDD feature files and step definitions | Implemented |
-| `.github/workflows/` | GitHub Actions CI pipeline | Implemented |
-
-**Class Diagram**
-
-The full UML class diagram covering all models, services, connectors, and schemas is available in multiple formats:
-
-- PlantUML source: [`documentation/Media/UML-class-diagram.puml`](Media/UML-class-diagram.puml)
-- SVG render: [`documentation/Media/UML-class-diagram.svg`](Media/UML-class-diagram.svg)
-- draw.io file: [`documentation/Media/UML-class-diagram.drawio`](Media/UML-class-diagram.drawio)
-
-### 8.2 Layers
-
-| Layer | Technology | Role |
-|---|---|---|
-| **HTTP / Presentation** | FastAPI routers + Pydantic schemas | Parameter validation, response serialization, authentication guards |
-| **Business Logic** | Service classes (plain Python) | Domain rules, orchestration, error raising |
-| **Provider Abstraction** | Protocol interfaces + connector implementations | Decouple services from external APIs; swap providers via config |
-| **Persistence — Identity** | SQLAlchemy async ORM + Alembic | User, token, watchlist data with schema versioning |
-| **Persistence — Financial** | Raw `sqlite3` via `Database` class | Portfolio, holding, alert, delivery data |
-| **Frontend** | Next.js · React · TypeScript *(planned)* | Rendering, routing, server-state management |
-| **Cross-cutting** | `core/` module | Config, security, rate limiting, error handling |
+*Not applicable for this project scope.*
 
 ---
 
@@ -599,63 +554,10 @@ The EER diagram showing all current tables, columns, data types, keys, and forei
 
 ## 10. Size and Performance
 
-### 10.1 Size
-
-| Metric | Value |
-|---|---|
-| **Backend source files** | ~25 Python modules in `backend/app/` |
-| **Test files** | 4 test modules, 302 lines total |
-| **BDD feature files** | 9 Behave feature files in `features/` |
-| **DB tables** | 8 (4 ORM-managed, 4 raw SQLite) |
-| **API endpoints** | ~25 routes across 8 routers |
-| **Dependencies** | 14 production packages (`requirements.txt`) |
-
-### 10.2 Performance
-
-No formal load testing has been conducted at this stage. The following targets and strategies are in place:
-
-- **API response time** — target < 300 ms for read endpoints under normal load. Rate limiting (120 req/min global) caps worst-case load.
-- **Provider caching** — `InstrumentService` caches provider responses for `PROVIDER_CACHE_SECONDS` (default 60 s) with stale-data fallback up to `PROVIDER_MAX_STALE_SECONDS` (default 300 s), protecting against external provider latency and rate limits.
-- **Request budget** — `PROVIDER_REQUEST_BUDGET` (default 60 per 60 s) prevents runaway external API consumption.
-- **Idempotent workers** — the alert evaluation worker uses a database-level UNIQUE constraint rather than application-level deduplication, making it safe to run concurrently or repeatedly.
-- **Stateless API** — no server-side session state; horizontal scaling requires only a shared database.
-- **Async I/O** — all SQLAlchemy ORM queries use `AsyncSession` with `aiosqlite`/`asyncpg`; all external connector methods are `async def`, ensuring the event loop is not blocked.
+*Not applicable for this project scope.*
 
 ---
 
 ## 11. Quality
 
-### 11.1 CI Pipeline Results
-
-The GitHub Actions CI pipeline runs on every pull request and push to `main`. It executes the following checks in order:
-
-| Check | Tool | Scope |
-|---|---|---|
-| Linting | `ruff check` | `backend/app/`, `backend/tests/` |
-| Type checking | `mypy` | `backend/app/` |
-| Unit + integration tests | `pytest` | `backend/tests/` (4 modules, PostgreSQL) |
-| BDD acceptance tests | `behave` | `features/manage_watchlist.feature` |
-| Dependency audit | `pip-audit` | `backend/requirements.txt` |
-| Secret scanning | `gitleaks` | Full repository history |
-
-The pipeline uses a live PostgreSQL 17.5 service container for integration tests, so tests run against the same database engine as production.
-
-**Test coverage areas:**
-
-- `test_auth.py` — registration, login, token refresh, logout, duplicate email, password validation.
-- `test_instruments.py` — search, quote, history with both demo connector and error cases.
-- `test_watchlists.py` — CRUD operations, per-user isolation, duplicate symbol constraint.
-- `test_postgres_models.py` — ORM model creation and foreign-key cascade behavior against real PostgreSQL.
-
-### 11.2 Planned Improvements
-
-| Priority | Area | Action |
-|---|---|---|
-| High | **Frontend** | Implement Next.js + React + TypeScript frontend: auth pages, ticker search, research brief, watchlist UI, portfolio view, alerts |
-| High | **WebSocket** | FastAPI WebSocket handler for live price updates; frontend integration |
-| High | **Test coverage** | Add unit tests for `PortfolioService`, `AlertService`, `AnalysisService`, `ResearchService` |
-| High | **BDD scenarios** | Expand Behave feature coverage beyond `manage_watchlist` to all implemented use cases |
-| Medium | **PostgreSQL migration** | Migrate `portfolios`, `portfolio_holdings`, `price_alerts`, `alert_deliveries` from raw SQLite to Alembic-managed PostgreSQL |
-| Medium | **Alert delivery** | Move alert evaluation to a persistent scheduled job rather than a one-shot async function |
-| Medium | **Performance baseline** | Run load tests (target: < 300 ms p95 for read endpoints) and document results |
-| Low | **Observability** | Structured JSON logging with correlation IDs; health endpoint expansion |
+*Not applicable for this project scope.*
