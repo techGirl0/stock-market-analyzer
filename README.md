@@ -115,16 +115,17 @@ The team shares the project decisions and progress on the
 - [Week 4: Search and watchlist use cases](https://wolfstreeetsignalblog.wordpress.com/2026/10/27/week-4-search-and-watchlist-use-cases/)
   - Detailed user journeys, alternative flows, activity diagrams, and
     mockups for the first two feature areas.
- - [Week 5: Cucumber Test and Ai usage](https://wolfstreeetsignalblog.wordpress.com/2026/11/02/testing-smarter-not-harder-how-ai-was-used-to-create-cucumber-test-scenarios/)
-  - Explanation of how AI was used for creating tests and what Cucmber tests are used for
+- [Week 5: Cucumber tests and AI usage](https://wolfstreeetsignalblog.wordpress.com/2026/11/02/testing-smarter-not-harder-how-ai-was-used-to-create-cucumber-test-scenarios/)
+  - How AI was used to create test scenarios and what Cucumber tests are
+    used for.
 - [Week 6: SCRUM setup](https://wolfstreeetsignalblog.wordpress.com/2026/11/09/week-6-running-wolfstreet-signal-as-a-scrum-project-with-jira-rup-and-our-first-elaboration-sprint/)
-  - SCRUM rules and setup up of JIRA 
-- [Week 7: Mid reflecation](https://wolfstreeetsignalblog.wordpress.com/2026/11/17/week-7-a-small-reflections/)
-  - Reflecation about what is made and what can be improved
-  - [Week 7: Mid reflecation](https://wolfstreeetsignalblog.wordpress.com/2026/11/17/week-7-a-small-reflections/)
-  - Reflecation about what is made and what can be improved
-  -- [Week 8: Mid reflecatio](https://wolfstreeetsignalblog.wordpress.com/2026/11/22/framework-choice-and-crud-generation-from-architecture-to-features-in-wolfstreet-signal/)
-  -  Framework Choice and CRUD Generation
+  - SCRUM rules and Jira setup.
+- [Week 7: Mid-project reflection](https://wolfstreeetsignalblog.wordpress.com/2026/11/17/week-7-a-small-reflections/)
+  - Reflection on what has been built so far and what can be improved.
+- [Week 8: Framework choice and CRUD generation](https://wolfstreeetsignalblog.wordpress.com/2026/11/22/framework-choice-and-crud-generation-from-architecture-to-features-in-wolfstreet-signal/)
+  - From architecture to features: the framework decision and generated CRUD
+    code.
+
 ## Status
 
 The repository currently contains the requirements and design documentation
