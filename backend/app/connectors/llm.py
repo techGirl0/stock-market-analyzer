@@ -1,9 +1,18 @@
 import asyncio
+import logging
 import re
+import time
 from typing import Protocol
 
 from app.core.errors import BackendError
 from app.schemas.research import ChatMessage
+
+logger = logging.getLogger(__name__)
+
+_MAX_PROMPT_CHARS = 24_000  # ~6 k tokens at 4 chars/token; well within Groq context limits
+_GROQ_TIMEOUT = 30.0        # seconds; Groq free tier is fast but can queue
+_GROQ_MAX_RETRIES = 2       # total attempts = 1 initial + 2 retries
+_GROQ_BACKOFF_BASE = 1.0    # seconds; doubles each retry (1 s, 2 s)
 
 SYSTEM_PROMPT = (
     "You are a financial education assistant. You provide factual, evidence-based market "
@@ -243,14 +252,64 @@ class GroqLLMConnector:
             {"role": "user", "content": prompt},
         ], max_tokens=300)
 
-    def _complete(self, messages: list[dict[str, str]], max_tokens: int = 900) -> str:
-        try:
-            response = self._client.chat.completions.create(
-                model=self._model, messages=messages, max_tokens=max_tokens
-            )
-            text = response.choices[0].message.content
-        except Exception as exc:
-            raise BackendError("llm_unavailable", "The language model is temporarily unavailable.", 503) from exc
+    def _truncate_messages(self, messages: list[dict[str, str]]) -> list[dict[str, str]]:
+        """Trim the oldest non-system messages until total chars fit within _MAX_PROMPT_CHARS."""
+        total = sum(len(m.get("content", "")) for m in messages)
+        if total <= _MAX_PROMPT_CHARS:
+            return messages
+        result = list(messages)
+        for i in range(len(result) - 1, -1, -1):
+            if result[i].get("role") == "system":
+                continue
+            removed = result.pop(i)
+            total -= len(removed.get("content", ""))
+            if total <= _MAX_PROMPT_CHARS:
+                break
+        return result
+
+    def _complete(self, messages: list[dict[str, str]], max_tokens: int = 900, request_id: str = "") -> str:
+        messages = self._truncate_messages(messages)
+        last_exc: Exception | None = None
+        for attempt in range(1 + _GROQ_MAX_RETRIES):
+            try:
+                response = self._client.chat.completions.create(
+                    model=self._model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    timeout=_GROQ_TIMEOUT,
+                )
+                text = response.choices[0].message.content
+                break
+            except Exception as exc:
+                last_exc = exc
+                exc_type = type(exc).__name__
+                is_rate_limit = "ratelimit" in exc_type.lower() or "429" in str(exc)
+                logger.error(
+                    "LLM provider error (attempt %d/%d) request_id=%s type=%s: %s",
+                    attempt + 1, 1 + _GROQ_MAX_RETRIES, request_id, exc_type,
+                    # never log the full repr — may contain key fragments
+                    exc_type,
+                )
+                if is_rate_limit:
+                    raise BackendError(
+                        "llm_rate_limited",
+                        "The language model rate limit was reached. Please retry in a moment.",
+                        429,
+                    ) from None
+                if attempt < _GROQ_MAX_RETRIES:
+                    time.sleep(_GROQ_BACKOFF_BASE * (2 ** attempt))
+                    continue
+                raise BackendError(
+                    "llm_unavailable",
+                    "The language model is temporarily unavailable.",
+                    503,
+                ) from None
+        else:
+            raise BackendError(
+                "llm_unavailable",
+                "The language model is temporarily unavailable.",
+                503,
+            ) from last_exc
         if not text:
             raise BackendError("llm_output_invalid", "The language model returned an empty response.", 502)
         text = _sanitise_output(text)

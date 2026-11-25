@@ -387,3 +387,94 @@ def test_missing_groq_key_returns_503():
             get_research_service()
     assert exc_info.value.status_code == 503
     assert exc_info.value.code == "llm_unavailable"
+
+
+# ---------------------------------------------------------------------------
+# LLM connector reliability: timeout, retry, rate-limit, key hygiene
+# ---------------------------------------------------------------------------
+
+def test_groq_rate_limit_maps_to_429():
+    """A 429-style provider error must surface as BackendError 429, not 503."""
+    from unittest.mock import MagicMock
+
+    from app.connectors.llm import GroqLLMConnector
+
+    connector = GroqLLMConnector.__new__(GroqLLMConnector)
+    connector._model = "fake-model"
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.side_effect = Exception("RateLimitError 429 too many requests")
+    connector._client = mock_client
+
+    with pytest.raises(BackendError) as exc_info:
+        connector._complete([{"role": "user", "content": "hi"}])
+    assert exc_info.value.status_code == 429
+    assert exc_info.value.code == "llm_rate_limited"
+
+
+def test_groq_transient_error_retries_then_503():
+    """A transient provider error retries up to _GROQ_MAX_RETRIES times then raises 503."""
+    from unittest.mock import MagicMock, patch
+
+    from app.connectors.llm import _GROQ_MAX_RETRIES, GroqLLMConnector
+
+    connector = GroqLLMConnector.__new__(GroqLLMConnector)
+    connector._model = "fake-model"
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.side_effect = ConnectionError("transient")
+    connector._client = mock_client
+
+    with patch("app.connectors.llm.time.sleep"):
+        with pytest.raises(BackendError) as exc_info:
+            connector._complete([{"role": "user", "content": "hi"}])
+
+    assert exc_info.value.status_code == 503
+    assert mock_client.chat.completions.create.call_count == 1 + _GROQ_MAX_RETRIES
+
+
+def test_groq_prompt_size_capped():
+    """Oversized prompts are truncated before the API call."""
+    from unittest.mock import MagicMock
+
+    from app.connectors.llm import _MAX_PROMPT_CHARS, GroqLLMConnector
+
+    connector = GroqLLMConnector.__new__(GroqLLMConnector)
+    connector._model = "fake-model"
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.return_value = MagicMock(
+        choices=[MagicMock(message=MagicMock(content="ok"))]
+    )
+    connector._client = mock_client
+
+    system = {"role": "system", "content": "system prompt"}
+    oversized = {"role": "user", "content": "x" * (_MAX_PROMPT_CHARS + 5000)}
+    connector._complete([system, oversized])
+
+    sent = mock_client.chat.completions.create.call_args[1]["messages"]
+    total = sum(len(m.get("content", "")) for m in sent)
+    assert total <= _MAX_PROMPT_CHARS
+
+
+def test_groq_auth_error_does_not_leak_key():
+    """An auth error from Groq must not include the API key in the BackendError message."""
+    from unittest.mock import MagicMock, patch
+
+    from app.connectors.llm import GroqLLMConnector
+
+    fake_key = "gsk_supersecret_key_abc123"
+
+    connector = GroqLLMConnector.__new__(GroqLLMConnector)
+    connector._model = "fake-model"
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.side_effect = Exception(
+        f"AuthenticationError: Invalid API key: {fake_key}"
+    )
+    connector._client = mock_client
+
+    with patch("app.connectors.llm.time.sleep"):
+        with pytest.raises(BackendError) as exc_info:
+            connector._complete([{"role": "user", "content": "hi"}], request_id="req-test")
+
+    err = exc_info.value
+    assert fake_key not in err.message
+    assert fake_key not in str(err.details)
+    assert fake_key not in err.code
