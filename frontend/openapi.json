@@ -1767,8 +1767,7 @@
               "$ref": "#/components/schemas/BriefSource"
             },
             "type": "array",
-            "title": "Sources",
-            "description": "Evidence items referenced in brief_text."
+            "title": "Sources"
           },
           "as_of": {
             "type": "string",
@@ -1786,16 +1785,14 @@
               "type": "string"
             },
             "type": "array",
-            "title": "Assumptions",
-            "description": "Modelling assumptions used (e.g. drift rate for scenarios)."
+            "title": "Assumptions"
           },
           "limitations": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Limitations",
-            "description": "Data gaps or approximations present in this brief."
+            "title": "Limitations"
           },
           "disclaimer": {
             "type": "string",
@@ -1811,41 +1808,7 @@
           "as_of",
           "generated_at"
         ],
-        "title": "AiBriefResponse",
-        "description": "Full AI-generated research brief for a single symbol.",
-        "examples": [
-          {
-            "as_of": "2026-11-23T11:34:25Z",
-            "assumptions": [
-              "Scenario model: lognormal with 7% annual drift",
-              "Volatility held constant at trailing 30-day figure"
-            ],
-            "brief_text": "## 1. Market Snapshot\nAAPL trades at **$342.56** (-1.90% today) [1].\n## 2. News and Sentiment\nSentiment is neutral (score -0.2). XLK sold $71.4M of AAPL [2].\n## 3. Risk Indicators\nComposite risk: **6/10** (moderate).\n## 4. Forecast Scenarios\n1-year base: $356, bear: $236, bull: $537.\n## 5. Limitations\nP/E and market cap sourced from delayed feed.",
-            "company_name": "Apple Inc.",
-            "disclaimer": "Statistical estimates only. Not personalized investment advice.",
-            "generated_at": "2026-11-23T11:34:30Z",
-            "limitations": [
-              "Market cap and P/E from delayed feed",
-              "News sentiment based on headlines only, not full articles"
-            ],
-            "sources": [
-              {
-                "headline": "AAPL price",
-                "index": 1,
-                "published_at": "2026-11-23T11:34:25Z",
-                "publisher": "yfinance"
-              },
-              {
-                "headline": "State Street XLK sold $71.4M of AAPL",
-                "index": 2,
-                "published_at": "2026-11-19T09:00:00Z",
-                "publisher": "Reuters",
-                "source_url": "https://example.com/xlk-aapl"
-              }
-            ],
-            "ticker": "AAPL"
-          }
-        ]
+        "title": "AiBriefResponse"
       },
       "Alert": {
         "properties": {
@@ -2041,8 +2004,7 @@
           "index",
           "headline"
         ],
-        "title": "BriefSource",
-        "description": "One cited evidence item inside a brief."
+        "title": "BriefSource"
       },
       "Candle": {
         "properties": {
@@ -2757,6 +2719,9 @@
           "components": {
             "additionalProperties": {
               "anyOf": [
+                {
+                  "type": "string"
+                },
                 {
                   "type": "number"
                 },
