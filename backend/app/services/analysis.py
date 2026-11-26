@@ -7,7 +7,14 @@ from app.connectors.market import MarketDataConnector
 from app.core.constants import DISCLAIMER
 from app.schemas.analysis import AnalysisMeta, ForecastResponse, RiskProfile
 from app.schemas.v1 import Availability
-from app.services.finance import compute_risk_score, compute_scenarios, fetch_beta, resolve_horizon_days
+from app.services.finance import (
+    compute_avg_dollar_volume,
+    compute_max_drawdown,
+    compute_risk_score,
+    compute_scenarios,
+    fetch_beta,
+    resolve_horizon_days,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +35,18 @@ class AnalysisService:
             availability=Availability.available if len(candles) >= 21 else Availability.unavailable,
             calculated_at=now,
             calculation_version="risk-v2",
-            assumptions=["At least 21 daily observations are required."],
+            assumptions=[
+                "At least 21 daily observations are required.",
+                "Window: one year of daily closes (252 trading days).",
+                "Beta benchmark: the broad market index (yfinance beta), fallback 1.0.",
+            ],
             disclaimer=DISCLAIMER,
         )
         if len(candles) < 21:
             return RiskProfile(score=None, components={}, meta=meta)
 
         prices = [float(c.close) for c in candles]
+        volumes = [c.volume for c in candles]
         returns = [prices[i] / prices[i - 1] - 1 for i in range(1, len(prices))]
         mean = sum(returns) / len(returns)
         variance = sum((v - mean) ** 2 for v in returns) / (len(returns) - 1)
@@ -63,6 +75,13 @@ class AnalysisService:
             beta=beta,
             pos_52w=pos_52w,
             news_sentiment=news_sentiment,
+        )
+        # Display-only risk indicators (SCRUM-70): reported alongside the
+        # composite score but not part of its weighted formula.
+        components["Maximum Drawdown"] = f"{round(compute_max_drawdown(prices) * 100, 1)}%"
+        liquidity = compute_avg_dollar_volume(prices, volumes)
+        components["Liquidity (Avg Daily $ Volume)"] = (
+            f"${liquidity:,.0f}" if liquidity is not None else "Unavailable"
         )
 
         return RiskProfile(score=score, components=components, meta=meta)

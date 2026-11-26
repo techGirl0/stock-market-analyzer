@@ -1477,7 +1477,9 @@ export interface operations {
     risk_api_v1_instruments__symbol__risk_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 symbol: string;
             };
@@ -1510,7 +1512,9 @@ export interface operations {
             query?: {
                 horizon?: string;
             };
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 symbol: string;
             };

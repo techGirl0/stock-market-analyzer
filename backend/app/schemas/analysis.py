@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import Literal
+
 from pydantic import BaseModel
+
 from app.schemas.v1 import Availability
+
 
 class AnalysisMeta(BaseModel):
     availability: Availability

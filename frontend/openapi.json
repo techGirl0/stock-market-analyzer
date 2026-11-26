@@ -909,6 +909,22 @@
               "type": "string",
               "title": "Symbol"
             }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
           }
         ],
         "responses": {
@@ -958,9 +974,25 @@
             "required": false,
             "schema": {
               "type": "string",
-              "pattern": "^(5d|10d|20d|1y|3y|5y)$",
+              "pattern": "^(1w|1m|3m|5d|10d|20d|1y|3y|5y)$",
               "default": "20d",
               "title": "Horizon"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
             }
           }
         ],

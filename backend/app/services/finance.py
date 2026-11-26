@@ -6,6 +6,9 @@ logger = logging.getLogger(__name__)
 MU = 0.07  # assumed annual drift (lognormal model)
 
 _HORIZON_DAYS = {
+    "1w": 5,
+    "1m": 21,
+    "3m": 63,
     "1y": 252,
     "3y": 756,
     "5y": 1260,
@@ -131,3 +134,33 @@ async def fetch_beta(symbol: str) -> float:
     except Exception:
         logger.warning("Beta fetch failed for %s, defaulting to 1.0", symbol)
     return 1.0
+
+
+def compute_max_drawdown(prices: list[float]) -> float:
+    """Maximum peak-to-trough decline over the window, as a negative fraction.
+
+    Returns 0.0 for a monotonically rising series. Deterministic.
+    """
+    if len(prices) < 2:
+        return 0.0
+    peak = prices[0]
+    max_dd = 0.0
+    for price in prices[1:]:
+        if price > peak:
+            peak = price
+        elif peak > 0:
+            dd = price / peak - 1.0
+            if dd < max_dd:
+                max_dd = dd
+    return max_dd
+
+
+def compute_avg_dollar_volume(prices: list[float], volumes: list[int | None]) -> float | None:
+    """Average daily traded dollar volume over the window (liquidity proxy).
+
+    Returns None when the window has no usable volume data. Deterministic.
+    """
+    dollars = [p * v for p, v in zip(prices, volumes) if v is not None and v > 0]
+    if not dollars:
+        return None
+    return sum(dollars) / len(dollars)

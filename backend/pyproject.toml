@@ -6,13 +6,10 @@ select = ["E", "F", "I"]
 exclude = [
     "app/connectors/llm.py",
     "app/controllers/alerts.py",
-    "app/controllers/analysis.py",
     "app/controllers/portfolio.py",
     "app/schemas/alerts.py",
-    "app/schemas/analysis.py",
     "app/schemas/portfolio.py",
     "app/services/alerts.py",
-    "app/services/analysis.py",
     "app/services/portfolio.py",
     "app/workers/",
 ]
@@ -21,29 +18,23 @@ exclude = [
 python_version = "3.13"
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = "(?x)(^|[\\\\/])(connectors/llm|controllers/(alerts|analysis|portfolio)|schemas/(alerts|analysis|portfolio)|services/(alerts|analysis|portfolio)|workers)(\\.py|[\\\\/])"
+exclude = "(?x)(^|[\\\\/])(connectors/llm|controllers/(alerts|portfolio)|schemas/(alerts|portfolio)|services/(alerts|portfolio)|workers)(\\.py|[\\\\/])"
 
 [[tool.mypy.overrides]]
 module = [
     "app.connectors.llm",
     "app.controllers.alerts",
-    "app.controllers.analysis",
     "app.controllers.portfolio",
     "app.schemas.alerts",
-    "app.schemas.analysis",
     "app.schemas.portfolio",
     "app.services.alerts",
-    "app.services.analysis",
     "app.services.portfolio",
     "connectors.llm",
     "controllers.alerts",
-    "controllers.analysis",
     "controllers.portfolio",
     "schemas.alerts",
-    "schemas.analysis",
     "schemas.portfolio",
     "services.alerts",
-    "services.analysis",
     "services.portfolio",
 ]
-ignore_errors = true  # tech debt: SCRUM-66..70
+ignore_errors = true  # tech debt: SCRUM-66..70 (analysis files cleared in SCRUM-70)
