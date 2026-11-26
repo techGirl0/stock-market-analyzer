@@ -9,7 +9,6 @@ from app.connectors.llm import DisabledLLMConnector, GroqLLMConnector, LLMConnec
 from app.connectors.market import DemoMarketDataConnector, MarketDataConnector, YFinanceMarketDataConnector
 from app.core.config import get_settings
 from app.core.database import get_session
-from app.core.db import Database
 from app.core.errors import BackendError
 from app.core.security import decode_access_token
 from app.models.user import User
@@ -33,11 +32,6 @@ def get_market_connector() -> MarketDataConnector:
 @lru_cache
 def get_instrument_service() -> InstrumentService:
     return InstrumentService(get_market_connector(), get_settings())
-
-
-@lru_cache
-def get_database() -> Database:
-    return Database(get_settings().database_path)
 
 
 def get_llm_connector() -> LLMConnector:
@@ -84,8 +78,11 @@ async def get_portfolio_service(
     return PortfolioService(session, instruments)
 
 
-def get_alert_service() -> AlertService:
-    return AlertService(get_database(), get_market_connector())
+async def get_alert_service(
+    session: AsyncSession = Depends(get_session),
+    instruments: InstrumentService = Depends(get_instrument_service),
+) -> AlertService:
+    return AlertService(session, instruments)
 
 
 def get_news_service() -> NewsService:

@@ -45,6 +45,9 @@ jobs:
       - run: python -m behave features/manage_watchlist.feature
         env:
           PYTHONPATH: backend
+      - run: python -m behave features/manage_portfolio.feature
+        env:
+          PYTHONPATH: backend
       - run: pip-audit -r backend/requirements.txt
 
   secret-scan:
