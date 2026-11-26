@@ -29,6 +29,7 @@ CLAUDE.md
 CLAUDE.local.md
 context.md
 .mcp.json
+CONTRIBUTING.md
 
 *.db
 backend/**/data/
