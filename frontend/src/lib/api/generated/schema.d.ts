@@ -426,7 +426,8 @@ export interface paths {
         get: operations["get_portfolio_api_v1_portfolios__portfolio_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Portfolio */
+        delete: operations["delete_portfolio_api_v1_portfolios__portfolio_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -444,6 +445,23 @@ export interface paths {
         /** Add Holding */
         post: operations["add_holding_api_v1_portfolios__portfolio_id__holdings_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portfolios/{portfolio_id}/holdings/{holding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Holding */
+        delete: operations["remove_holding_api_v1_portfolios__portfolio_id__holdings__holding_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -742,6 +760,10 @@ export interface components {
             current_price?: number | null;
             /** Current Value */
             current_value?: number | null;
+            /** Price Source */
+            price_source?: string | null;
+            /** Price As Of */
+            price_as_of?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -808,6 +830,8 @@ export interface components {
             holdings: components["schemas"]["Holding"][];
             /** Total Value */
             total_value?: number | null;
+            /** Value As Of */
+            value_as_of?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1843,6 +1867,37 @@ export interface operations {
             };
         };
     };
+    delete_portfolio_api_v1_portfolios__portfolio_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                portfolio_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_holding_api_v1_portfolios__portfolio_id__holdings_post: {
         parameters: {
             query?: never;
@@ -1868,6 +1923,38 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Holding"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_holding_api_v1_portfolios__portfolio_id__holdings__holding_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                portfolio_id: string;
+                holding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
