@@ -1,0 +1,35 @@
+.term {
+  position: relative;
+  border-bottom: 1px dotted #555;
+  cursor: help;
+}
+
+.term:focus-visible {
+  outline: 3px solid #4d90fe;
+  outline-offset: 2px;
+}
+
+.tooltip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 10;
+  width: max-content;
+  max-width: min(18rem, 80vw);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #fff;
+  background: #1a1a1a;
+  border-radius: 4px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.term:hover .tooltip,
+.term:focus .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
