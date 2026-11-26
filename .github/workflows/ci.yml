@@ -42,10 +42,8 @@ jobs:
         run: |
           PYTHONPATH=backend python -c "from app.main import app; import json; json.dump(app.openapi(), open('openapi.current.json', 'w'), indent=2)"
           diff frontend/openapi.json openapi.current.json
-      - run: python -m behave features/manage_watchlist.feature
-        env:
-          PYTHONPATH: backend
-      - run: python -m behave features/manage_portfolio.feature
+      - name: BDD acceptance suite (all features)
+        run: python -m behave features/
         env:
           PYTHONPATH: backend
       - run: pip-audit -r backend/requirements.txt

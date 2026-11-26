@@ -37,3 +37,15 @@ class WatchlistRead(BaseModel):
     user_id: UUID
     name: str
     created_at: datetime
+
+
+class WatchlistCreateRecord(BaseModel):
+    user_id: UUID
+    name: str
+    created_at: datetime
+
+
+class WatchlistItemCreateRecord(BaseModel):
+    watchlist_id: UUID
+    symbol: str
+    created_at: datetime

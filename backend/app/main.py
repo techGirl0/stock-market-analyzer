@@ -10,10 +10,11 @@ from app.core.config import get_settings
 from app.core.errors import (
     BackendError,
     backend_error_handler,
+    error_body,
     unhandled_error_handler,
     validation_error_handler,
 )
-from app.core.rate_limit import FixedWindowLimiter
+from app.core.rate_limit import FixedWindowLimiter, client_key
 
 settings = get_settings()
 api_limiter = FixedWindowLimiter(settings.api_rate_limit, 60)
@@ -36,18 +37,11 @@ async def request_id_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or str(uuid4())
     request.state.request_id = request_id
     try:
-        api_limiter.check(request.client.host if request.client else "unknown")
+        api_limiter.check(client_key(request))
     except BackendError as exc:
         return JSONResponse(
             status_code=exc.status_code,
-            content={
-                "error": {
-                    "code": exc.code,
-                    "message": exc.message,
-                    "request_id": request_id,
-                    "details": exc.details,
-                }
-            },
+            content=error_body(exc.code, exc.message, request_id, exc.details),
         )
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id

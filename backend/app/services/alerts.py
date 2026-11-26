@@ -6,14 +6,15 @@ from typing import Any, List
 from uuid import UUID
 
 from fastcrud import FastCRUD
-from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import BackendError
 from app.models.alert import AlertDelivery as AlertDeliveryModel
 from app.models.alert import PriceAlert as PriceAlertModel
-from app.schemas.alerts import Alert, AlertRead, DeliveryCreateRecord, DeliveryRead
+from app.schemas.alerts import Alert, AlertCreateRecord, AlertRead, DeliveryCreateRecord, DeliveryRead
+from app.services.crud import create_record
 from app.services.instruments import InstrumentService
 
 logger = logging.getLogger(__name__)
@@ -48,16 +49,11 @@ class AlertService:
         return [Alert.model_validate(item) for item in result["data"]]
 
     async def create(self, user_id: UUID, symbol: str, operator: str, threshold: float) -> Alert:
-        normalized = symbol.strip().upper()
-        try:
-            await self.instruments.quote(normalized)
-        except BackendError as exc:
-            if exc.code == "ticker_not_found":
-                raise BackendError("ticker_not_found", f'Ticker "{normalized}" was not found.', 404) from exc
-            raise
-        record = await self.alerts.create(
-            db=self.session,
-            object=AlertCreateRecord(
+        normalized = await self.instruments.verify_symbol(symbol)
+        record = await create_record(
+            self.alerts,
+            self.session,
+            AlertCreateRecord(
                 user_id=user_id,
                 symbol=normalized,
                 operator=operator,
@@ -65,11 +61,8 @@ class AlertService:
                 active=True,
                 created_at=_default_clock(),
             ),
-            schema_to_select=AlertRead,
+            AlertRead,
         )
-        await self.session.commit()
-        if record is None:
-            raise BackendError("internal_error", "Alert could not be created.", 500)
         return Alert.model_validate(record)
 
     async def delete(self, user_id: UUID, alert_id: UUID) -> None:
@@ -153,12 +146,11 @@ class AlertService:
                 )
                 await self.session.commit()
                 triggered += 1
-            except Exception as exc:
+            except IntegrityError:
+                # Already notified at this price; the unique constraint makes
+                # re-evaluation idempotent.
                 await self.session.rollback()
-                if "uq_alert_deliveries_alert_triggered_price" in str(exc) or "UNIQUE constraint" in str(exc):
-                    continue  # already notified at this price; idempotent no-op
-                logger.error("Alert delivery failed for alert_id=%s type=%s", record.id, type(exc).__name__)
-                raise
+                continue
         return triggered
 
     async def _quote_with_retry(
@@ -188,12 +180,3 @@ class AlertService:
         logger.warning("alert_id=%s symbol=%s: provider failed after %d attempts; skipped",
                        alert.id, alert.symbol, max_attempts)
         return None
-
-
-class AlertCreateRecord(BaseModel):
-    user_id: UUID
-    symbol: str
-    operator: str
-    threshold: float
-    active: bool
-    created_at: datetime

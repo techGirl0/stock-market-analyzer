@@ -12,6 +12,12 @@ class AnalysisMeta(BaseModel):
     assumptions: list[str]
     disclaimer: str
 
+class Scenario(BaseModel):
+    label: str
+    bear: float
+    base: float
+    bull: float
+
 class RiskProfile(BaseModel):
     score: int | None
     components: dict[str, str | float | None]

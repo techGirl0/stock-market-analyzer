@@ -11,19 +11,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND_DIR="$(cd "$FRONTEND_DIR/../backend" && pwd)"
-SPEC_FILE="$FRONTEND_DIR/openapi.json"
+SPEC_FILE="openapi.json"
 
 echo "→ Exporting OpenAPI spec from FastAPI..."
+cd "$FRONTEND_DIR"
 PYTHONPATH="$BACKEND_DIR" python3 -c "
 from app.main import app
 import json
 with open('$SPEC_FILE', 'w') as f:
     json.dump(app.openapi(), f, indent=2)
-print('  Saved to $SPEC_FILE')
+print('  Saved to $FRONTEND_DIR/$SPEC_FILE')
 "
 
 echo "→ Generating TypeScript types..."
-cd "$FRONTEND_DIR"
 npx openapi-typescript "$SPEC_FILE" -o src/lib/api/generated/schema.d.ts
 
 echo "✓ Done. Commit openapi.json and src/lib/api/generated/schema.d.ts."

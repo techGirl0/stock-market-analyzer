@@ -75,6 +75,6 @@ them in either of these ways:
   `User.watchlists : Mapped[list['Watchlist']]`). `package-diagram-mvc.png`
   shows the module dependencies, and the EER model (SAD section 9) shows the
   table relations.
-- `ai_module/` (the Streamlit prototype) is mostly functions, not classes, so
-  pyreverse gives a nearly empty diagram for it. It is covered in the SAD
-  section 2 text instead.
+- `ai_module/` (the Streamlit prototype, removed 2026-11-26) was mostly
+  functions, not classes, so pyreverse gave a nearly empty diagram for it. It
+  is covered in the SAD section 2 text instead.

@@ -3,19 +3,8 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
-exclude = [
-    "app/connectors/llm.py",
-]
 
 [tool.mypy]
 python_version = "3.13"
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = "(?x)(^|[\\\\/])(connectors/llm)(\\.py|[\\\\/])"
-
-[[tool.mypy.overrides]]
-module = [
-    "app.connectors.llm",
-    "connectors.llm",
-]
-ignore_errors = true  # tech debt: SCRUM-115 (all other exclusions cleared in SCRUM-67/68/70)

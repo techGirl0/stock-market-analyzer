@@ -30,9 +30,11 @@ class _FakeClient:
 
 @pytest.fixture()
 def groq_connector() -> GroqLLMConnector:
-    connector = GroqLLMConnector(api_key=FAKE_KEY, model="qwen/test")
-    connector._client = _FakeClient(RuntimeError("connection refused to api.groq.com"))  # type: ignore[assignment]
-    return connector
+    return GroqLLMConnector(
+        api_key=FAKE_KEY,
+        model="qwen/test",
+        client=_FakeClient(RuntimeError("connection refused to api.groq.com")),
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -57,12 +59,16 @@ async def test_llm_key_never_logged_or_returned(groq_connector, caplog):
 
 
 @pytest.mark.asyncio
-async def test_llm_key_never_logged_on_rate_limit(groq_connector, caplog):
-    groq_connector._client = _FakeClient(RuntimeError("RateLimitError 429 quota exceeded"))  # type: ignore[assignment]
+async def test_llm_key_never_logged_on_rate_limit(caplog):
+    connector = GroqLLMConnector(
+        api_key=FAKE_KEY,
+        model="qwen/test",
+        client=_FakeClient(RuntimeError("RateLimitError 429 quota exceeded")),
+    )
 
     with caplog.at_level(logging.DEBUG, logger="app.connectors.llm"):
         with pytest.raises(BackendError) as exc_info:
-            await groq_connector.chat("AAPL", "price 100", [])
+            await connector.chat("AAPL", "price 100", [])
 
     assert FAKE_KEY not in caplog.text
     assert FAKE_KEY not in str(exc_info.value)

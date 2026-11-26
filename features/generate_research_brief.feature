@@ -4,7 +4,8 @@ Feature: Generate Research Brief
   In order to view a consolidated summary of its market snapshot, risk, and forecasts.
 
   Background:
-    Given I am on the homepage
+    Given I am signed in with username "USER" and password "PASSWORD"
+    And I am on the homepage
 
   Scenario: Successfully generate research brief (Happy Path)
     Given I am on the "stock dashboard" page for "NVDA"

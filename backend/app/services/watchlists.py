@@ -3,7 +3,6 @@ from typing import Any
 from uuid import UUID
 
 from fastcrud import FastCRUD
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import BackendError
@@ -12,11 +11,14 @@ from app.models.watchlist import WatchlistItem as WatchlistItemModel
 from app.schemas.watchlists import (
     Watchlist,
     WatchlistCreate,
+    WatchlistCreateRecord,
     WatchlistItem,
     WatchlistItemCreate,
+    WatchlistItemCreateRecord,
     WatchlistItemRead,
     WatchlistRead,
 )
+from app.services.crud import create_record, create_unique
 from app.services.instruments import InstrumentService
 
 
@@ -44,18 +46,16 @@ class WatchlistService:
         return await self._read(record)
 
     async def create(self, user_id: UUID, payload: WatchlistCreate) -> Watchlist:
-        record = await self.watchlists.create(
-            db=self.session,
-            object=WatchlistCreateRecord(
+        record = await create_record(
+            self.watchlists,
+            self.session,
+            WatchlistCreateRecord(
                 user_id=user_id,
                 name=payload.name,
                 created_at=datetime.now(timezone.utc),
             ),
-            schema_to_select=WatchlistRead,
+            WatchlistRead,
         )
-        await self.session.commit()
-        if record is None:
-            raise BackendError("internal_error", "Watchlist could not be created.", 500)
         return await self._read(record)
 
     async def delete(self, user_id: UUID, watchlist_id: UUID) -> None:
@@ -69,31 +69,18 @@ class WatchlistService:
 
     async def add(self, user_id: UUID, watchlist_id: UUID, payload: WatchlistItemCreate) -> WatchlistItem:
         await self._owned_watchlist(user_id, watchlist_id)
-        normalized = payload.symbol.strip().upper()
-        try:
-            await self.instruments.quote(normalized)
-        except BackendError as exc:
-            if exc.code == "ticker_not_found":
-                raise BackendError("ticker_not_found", f'Ticker "{normalized}" was not found.', 404) from exc
-            raise
-        try:
-            record = await self.items.create(
-                db=self.session,
-                object=WatchlistItemCreateRecord(
-                    watchlist_id=watchlist_id,
-                    symbol=normalized,
-                    created_at=datetime.now(timezone.utc),
-                ),
-                schema_to_select=WatchlistItemRead,
-            )
-            await self.session.commit()
-        except Exception as exc:
-            await self.session.rollback()
-            if "uq_watchlist_items_watchlist_symbol" in str(exc) or "UNIQUE constraint" in str(exc):
-                raise BackendError("resource_conflict", "This symbol is already in the watchlist.", 409) from exc
-            raise
-        if record is None:
-            raise BackendError("internal_error", "Watchlist item could not be created.", 500)
+        normalized = await self.instruments.verify_symbol(payload.symbol)
+        record = await create_unique(
+            self.items,
+            self.session,
+            WatchlistItemCreateRecord(
+                watchlist_id=watchlist_id,
+                symbol=normalized,
+                created_at=datetime.now(timezone.utc),
+            ),
+            WatchlistItemRead,
+            "This symbol is already in the watchlist.",
+        )
         return WatchlistItem.model_validate(record)
 
     async def remove(self, user_id: UUID, watchlist_id: UUID, item_id: UUID) -> None:
@@ -129,21 +116,9 @@ class WatchlistService:
             sort_columns="created_at",
             sort_orders="asc",
         )
-        return Watchlist(
-            id=watchlist.id,
-            name=watchlist.name,
-            created_at=watchlist.created_at,
-            items=[WatchlistItem.model_validate(item) for item in result["data"]],
+        return Watchlist.model_validate(
+            {
+                **watchlist.model_dump(exclude={"user_id"}),
+                "items": [WatchlistItem.model_validate(item) for item in result["data"]],
+            }
         )
-
-
-class WatchlistCreateRecord(BaseModel):
-    user_id: UUID
-    name: str
-    created_at: datetime
-
-
-class WatchlistItemCreateRecord(BaseModel):
-    watchlist_id: UUID
-    symbol: str
-    created_at: datetime

@@ -2,7 +2,14 @@ from collections import defaultdict
 from threading import Lock
 from time import monotonic
 
+from fastapi import Request
+
 from app.core.errors import BackendError
+
+
+def client_key(request: Request) -> str:
+    """Key for per-IP rate limiting; stable for clients without a socket."""
+    return request.client.host if request.client else "unknown"
 
 
 class FixedWindowLimiter:
@@ -26,6 +33,11 @@ class FixedWindowLimiter:
                     {"retry_after_seconds": max(1, int(self.window_seconds - (now - started)))},
                 )
             self._hits[key] = (started, count + 1)
+
+    def reset(self) -> None:
+        """Forget all hits (used by the BDD suite between scenarios)."""
+        with self._lock:
+            self._hits.clear()
 
 
 auth_limiter = FixedWindowLimiter(limit=30, window_seconds=60)

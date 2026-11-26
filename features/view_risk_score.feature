@@ -4,7 +4,8 @@ Feature: View Composite Risk Score
   In order to understand how risky the stock is without needing financial knowledge
 
   Background:
-    Given I am on the homepage
+    Given I am signed in with username "USER" and password "PASSWORD"
+    And I am on the homepage
 
   Scenario: Successfully view risk score (Happy Path)
     Given I am on the "stock dashboard" page for "AAPL"

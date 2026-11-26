@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Protocol, cast
@@ -16,6 +17,13 @@ from app.schemas.v1 import (
     normalize_symbol,
 )
 
+logger = logging.getLogger(__name__)
+
+# Deterministic namespaces so the same symbol always maps to the same
+# instrument/news id across providers and runs. Tests import these.
+INSTRUMENT_NS = UUID("00000000-0000-0000-0000-000000000001")
+NEWS_NS = UUID("00000000-0000-0000-0000-000000000002")
+
 
 class ConnectorUnavailable(Exception):
     """Raised when an external provider cannot supply data."""
@@ -28,8 +36,8 @@ class MarketDataConnector(Protocol):
     async def candles(
         self, symbol: str, *, start: datetime, end: datetime, interval: str
     ) -> list[Candle]: ...
-
     async def news(self, symbol: str, *, limit: int) -> list[NewsArticle]: ...
+    async def beta(self, symbol: str) -> float: ...
 
 
 class DemoMarketDataConnector:
@@ -48,7 +56,7 @@ class DemoMarketDataConnector:
         symbol = normalize_symbol(symbol)
         name, exchange = self._known[symbol]
         return InstrumentMatch(
-            id=uuid5(UUID("00000000-0000-0000-0000-000000000001"), symbol),
+            id=uuid5(INSTRUMENT_NS, symbol),
             symbol=symbol,
             name=name,
             exchange=exchange,
@@ -118,7 +126,7 @@ class DemoMarketDataConnector:
         now = datetime.now(timezone.utc)
         return [
             NewsArticle(
-                id=uuid5(UUID("00000000-0000-0000-0000-000000000002"), symbol),
+                id=uuid5(NEWS_NS, symbol),
                 headline=f"{normalize_symbol(symbol)} market data demo item",
                 publisher="WolfStreet Signal Demo",
                 published_at=now,
@@ -133,6 +141,10 @@ class DemoMarketDataConnector:
                 ),
             )
         ][:limit]
+
+    async def beta(self, symbol: str) -> float:
+        # Demo instruments have no market sensitivity data; neutral beta.
+        return 1.0
 
 
 class YFinanceMarketDataConnector:
@@ -169,7 +181,7 @@ class YFinanceMarketDataConnector:
                 continue
             results.append(
                 InstrumentMatch(
-                    id=uuid5(UUID("00000000-0000-0000-0000-000000000001"), symbol),
+                    id=uuid5(INSTRUMENT_NS, symbol),
                     symbol=symbol,
                     name=item.get("longname") or item.get("shortname") or symbol,
                     exchange=item.get("exchange"),
@@ -195,7 +207,7 @@ class YFinanceMarketDataConnector:
         raw_pe = info.get("trailingPE")
         return Quote(
             instrument=InstrumentMatch(
-                id=uuid5(UUID("00000000-0000-0000-0000-000000000001"), normalized),
+                id=uuid5(INSTRUMENT_NS, normalized),
                 symbol=normalized,
                 name=info.get("longName") or info.get("shortName") or normalized,
                 exchange=info.get("exchange"),
@@ -259,10 +271,7 @@ class YFinanceMarketDataConnector:
                 continue
             results.append(
                 NewsArticle(
-                    id=uuid5(
-                        UUID("00000000-0000-0000-0000-000000000002"),
-                        f"{normalized}:{title}",
-                    ),
+                    id=uuid5(NEWS_NS, f"{normalized}:{title}"),
                     headline=title,
                     publisher=content.get("provider", {}).get("displayName"),
                     published_at=published,
@@ -278,3 +287,14 @@ class YFinanceMarketDataConnector:
                 )
             )
         return results
+
+    async def beta(self, symbol: str) -> float:
+        """Beta vs the broad market index; falls back to 1.0 when unavailable."""
+        try:
+            info = self._yfinance.Ticker(normalize_symbol(symbol)).info
+            beta = info.get("beta")
+            if beta is not None:
+                return float(beta)
+        except Exception:
+            logger.warning("Beta fetch failed for %s, defaulting to 1.0", symbol)
+        return 1.0

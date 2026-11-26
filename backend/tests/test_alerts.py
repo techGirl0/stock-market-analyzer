@@ -10,70 +10,16 @@ from uuid import uuid4
 from app.core.database import create_engine, create_schema
 from app.models import AlertDelivery, PriceAlert, User
 from app.services.alerts import AlertService
+from tests.fakes import StubInstrumentService, fixed_quote, unavailable_quote
+from tests.support import headers, register
 
 
-def register(client, email="alerts@example.com"):
-    response = client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "Password123!"},
-    )
-    assert response.status_code == 201
-    return response.json()["access_token"]
-
-
-def headers(token):
-    return {"Authorization": f"Bearer {token}"}
-
-
-class FixedPriceInstruments:
-    """Fake instrument service: a fixed price for every symbol.
-
-    price=None simulates the provider failing with an exception, which the
-    evaluation must survive without creating notifications.
-    """
-
-    def __init__(self, price: float | None) -> None:
-        self.price = price
-        self.quote_calls = 0
-
-    async def quote(self, symbol: str):
-        self.quote_calls += 1
-        if self.price is None:
-            raise RuntimeError("provider down")
-        from app.schemas.v1 import Availability, DataMeta, Instrument, Quote
-
-        now = datetime.now(timezone.utc)
-        return Quote(
-            instrument=Instrument(id=uuid4(), symbol=symbol, name=symbol),
-            price=self.price,
-            as_of=now,
-            meta=DataMeta(source="demo", fetched_at=now, availability=Availability.available, delayed=False),
-        )
-
-
-class UnavailablePriceInstruments(FixedPriceInstruments):
-    """Price present in the response but marked unavailable (price=None on the quote)."""
-
-    async def quote(self, symbol: str):
-        self.quote_calls += 1
-        from app.schemas.v1 import Availability, DataMeta, Instrument, Quote
-
-        now = datetime.now(timezone.utc)
-        return Quote(
-            instrument=Instrument(id=uuid4(), symbol=symbol, name=symbol),
-            price=None,
-            as_of=now,
-            meta=DataMeta(source="demo", fetched_at=now, availability=Availability.unavailable, delayed=False),
-        )
-
-
-def _evaluate(api_client, instruments, **kwargs) -> int:
+def _evaluate(engine, instruments, **kwargs) -> int:
     """Run one evaluation cycle against the test engine with a fake provider."""
 
     async def _run() -> int:
         from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-        engine = api_client.app.state.test_engine
         factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
         async with factory() as session:
             service = AlertService(session, instruments)
@@ -115,7 +61,7 @@ def test_alert_crud_and_isolation(api_client):
     assert api_client.get("/api/v1/alerts", headers=auth).json() == []
 
 
-def test_evaluation_creates_exactly_one_notification(api_client):
+def test_evaluation_creates_exactly_one_notification(api_client, test_engine):
     token = register(api_client)
     auth = headers(token)
     api_client.post(
@@ -124,11 +70,11 @@ def test_evaluation_creates_exactly_one_notification(api_client):
         json={"symbol": "AAPL", "operator": "above", "threshold": 100},
     )
 
-    fake = FixedPriceInstruments(price=150.0)
+    fake = StubInstrumentService(quote=fixed_quote(price=150.0))
     fixed_clock = lambda: datetime(2026, 11, 26, 12, 0, tzinfo=timezone.utc)  # noqa: E731
 
-    first = _evaluate(api_client, fake, clock=fixed_clock, max_attempts=1, backoff_base_seconds=0)
-    second = _evaluate(api_client, fake, clock=fixed_clock, max_attempts=1, backoff_base_seconds=0)
+    first = _evaluate(test_engine, fake, clock=fixed_clock, max_attempts=1, backoff_base_seconds=0)
+    second = _evaluate(test_engine, fake, clock=fixed_clock, max_attempts=1, backoff_base_seconds=0)
     assert first == 1
     assert second == 0, "re-evaluation at the same price must not notify again"
 
@@ -151,7 +97,7 @@ def test_evaluation_creates_exactly_one_notification(api_client):
     assert api_client.get("/api/v1/alerts/notifications", headers=auth).json()[0]["read"] is True
 
 
-def test_unmet_condition_never_notifies(api_client):
+def test_unmet_condition_never_notifies(api_client, test_engine):
     token = register(api_client)
     auth = headers(token)
     api_client.post(
@@ -160,11 +106,12 @@ def test_unmet_condition_never_notifies(api_client):
         json={"symbol": "AAPL", "operator": "above", "threshold": 100},
     )
 
-    assert _evaluate(api_client, FixedPriceInstruments(price=50.0), max_attempts=1, backoff_base_seconds=0) == 0
+    unmet = StubInstrumentService(quote=fixed_quote(price=50.0))
+    assert _evaluate(test_engine, unmet, max_attempts=1, backoff_base_seconds=0) == 0
     assert api_client.get("/api/v1/alerts/notifications", headers=auth).json() == []
 
 
-def test_provider_failure_and_unavailable_price_never_notify(api_client):
+def test_provider_failure_and_unavailable_price_never_notify(api_client, test_engine):
     token = register(api_client)
     auth = headers(token)
     api_client.post(
@@ -174,13 +121,13 @@ def test_provider_failure_and_unavailable_price_never_notify(api_client):
     )
 
     # provider raises every time: bounded retries, then skipped
-    failing = FixedPriceInstruments(price=None)
-    assert _evaluate(api_client, failing, max_attempts=2, backoff_base_seconds=0) == 0
+    failing = StubInstrumentService(error=RuntimeError("provider down"))
+    assert _evaluate(test_engine, failing, max_attempts=2, backoff_base_seconds=0) == 0
     assert failing.quote_calls == 2, "must retry with bounded attempts"
 
     # quote present but price unavailable: skipped immediately
-    unavailable = UnavailablePriceInstruments(price=None)
-    assert _evaluate(api_client, unavailable, max_attempts=2, backoff_base_seconds=0) == 0
+    unavailable = StubInstrumentService(quote=unavailable_quote())
+    assert _evaluate(test_engine, unavailable, max_attempts=2, backoff_base_seconds=0) == 0
     assert unavailable.quote_calls == 1
 
     assert api_client.get("/api/v1/alerts/notifications", headers=auth).json() == []

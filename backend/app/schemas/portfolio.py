@@ -24,6 +24,19 @@ class HoldingRead(BaseModel):
     quantity: float
     created_at: datetime
 
+
+class PortfolioCreateRecord(BaseModel):
+    user_id: UUID
+    name: str
+    created_at: datetime
+
+
+class HoldingCreateRecord(BaseModel):
+    portfolio_id: UUID
+    symbol: str
+    quantity: float
+    created_at: datetime
+
 class Holding(BaseModel):
     id: UUID
     symbol: str

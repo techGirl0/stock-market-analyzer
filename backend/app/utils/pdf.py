@@ -24,25 +24,25 @@ def build_brief_pdf(
 
     def _safe(text: str) -> str:
         replacements = {
-            "’": "'",   # right single quotation mark '
-            "‘": "'",   # left single quotation mark '
-            "“": '"',   # left double quotation mark "
-            "”": '"',   # right double quotation mark "
-            "—": "-",   # em dash —
-            "–": "-",   # en dash –
-            "•": "-",   # bullet •
-            "·": "-",   # middle dot ·
-            "±": "+/-", # plus-minus ±
-            "é": "e",   # é
-            "è": "e",   # è
-            "à": "a",   # à
-            "ü": "u",   # ü
-            "ö": "o",   # ö
-            "ä": "a",   # ä
-            "ß": "ss",  # ß
-            "…": "...", # ellipsis …
-            " ": " ",   # non-breaking space
-            "′": "'",   # prime ′
+            "’": "'",
+            "‘": "'",
+            "“": '"',
+            "”": '"',
+            "—": "-",
+            "–": "-",
+            "•": "-",
+            "·": "-",
+            "±": "+/-",
+            "é": "e",
+            "è": "e",
+            "à": "a",
+            "ü": "u",
+            "ö": "o",
+            "ä": "a",
+            "ß": "ss",
+            "…": "...",
+            " ": " ",
+            "′": "'",
         }
         for src, dst in replacements.items():
             text = text.replace(src, dst)
@@ -73,11 +73,9 @@ def build_brief_pdf(
         DARK = (30, 30, 30)
 
         for i, row in enumerate(rows):
-            # Pad row to col_count
             while len(row) < col_count:
                 row.append("")
             x_start = pdf.l_margin
-            # Determine height needed (multi-line cells)
             max_lines = 1
             for cell in row:
                 words = _safe(_clean(cell))
@@ -119,22 +117,25 @@ def build_brief_pdf(
     DARK = (30, 30, 30)
 
     class BriefPDF(FPDF):
+        data_source = "market data"
+
         def footer(self) -> None:
             self.set_y(-14)
             self.set_font("Helvetica", "I", 8)
             self.set_text_color(120, 120, 120)
             self.cell(
                 0, 6,
-                "Educational only - not financial advice. Data sourced from Yahoo Finance via yfinance.",
+                f"Educational only - not financial advice. Data sourced from {self.data_source}.",
                 align="C",
             )
 
     pdf = BriefPDF()
+    if sources:
+        pdf.data_source = sources[0].get("publisher") or pdf.data_source
     pdf.set_auto_page_break(auto=True, margin=22)
     pdf.add_page()
     pdf.set_margins(18, 18, 18)
 
-    # Header bar
     pdf.set_fill_color(*BLUE)
     pdf.rect(0, 0, 210, 34, style="F")
     pdf.set_font("Helvetica", "B", 20)
@@ -147,7 +148,6 @@ def build_brief_pdf(
     pdf.set_text_color(*DARK)
     pdf.ln(12)
 
-    # Collect lines and batch table rows together
     lines = brief_text.splitlines()
     i = 0
     while i < len(lines):
@@ -155,13 +155,11 @@ def build_brief_pdf(
         stripped = raw.strip()
         cleaned = _clean(raw)
 
-        # --- Markdown table block ---
         if _is_table_row(raw):
             table_lines = []
             while i < len(lines) and _is_table_row(lines[i]):
                 table_lines.append(lines[i])
                 i += 1
-            # Build rows list, skipping separator rows
             rows = []
             for tl in table_lines:
                 if not _is_separator_row(tl):
@@ -173,7 +171,6 @@ def build_brief_pdf(
         if not cleaned:
             pdf.ln(2)
 
-        # Section heading (## or ###)
         elif re.match(r"^#{1,6}\s", raw):
             pdf.set_font("Helvetica", "B", 11)
             pdf.set_fill_color(*LIGHT_BLUE)
@@ -184,7 +181,6 @@ def build_brief_pdf(
             pdf.set_text_color(*DARK)
             pdf.ln(1)
 
-        # Bullet (- or * or numbered like "1.")
         elif re.match(r"^[-*]\s|^\d+\.\s", stripped):
             text = re.sub(r"^[-*]\s|^\d+\.\s", "", stripped)
             text = _clean(text)
@@ -198,7 +194,6 @@ def build_brief_pdf(
                 new_y=YPos.NEXT,
             )
 
-        # Bold-prefixed key-value line like "**Beta:** 1.089"
         elif re.match(r"^\*\*.*\*\*", stripped):
             rest = re.sub(r"^\*\*.*?\*\*:?\s*", "", stripped)
             rest = _clean(rest)
@@ -214,7 +209,6 @@ def build_brief_pdf(
                 pdf.set_font("Helvetica", "", 10)
                 pdf.multi_cell(0, 5.5, _safe(_clean(stripped)), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
-        # Normal paragraph
         else:
             pdf.set_font("Helvetica", "", 10)
             pdf.set_x(18)
@@ -223,7 +217,6 @@ def build_brief_pdf(
 
         i += 1
 
-    # --- Sources section ---
     if sources:
         pdf.ln(6)
         pdf.set_font("Helvetica", "B", 11)
@@ -242,7 +235,6 @@ def build_brief_pdf(
             if hasattr(published_at, "isoformat"):
                 published_at = published_at.isoformat()
             source_url = src.get("source_url") or ""
-            # Format: [n] Headline — Publisher (date)
             date_str = published_at[:10] if published_at else ""
             meta = " — ".join(filter(None, [publisher, date_str]))
             src_label: str = f"[{index}] {headline}"
@@ -271,10 +263,8 @@ def build_brief_pdf(
                 pdf.set_text_color(*DARK)
             pdf.ln(1)
 
-    # --- Glossary page ---
     pdf.add_page()
 
-    # Glossary header bar
     pdf.set_fill_color(*BLUE)
     pdf.rect(0, 0, 210, 20, style="F")
     pdf.set_font("Helvetica", "B", 14)
@@ -363,12 +353,10 @@ def build_brief_pdf(
     ]
 
     for term, definition in GLOSSARY:
-        # Term label
         pdf.set_x(18)
         pdf.set_font("Helvetica", "B", 10)
         pdf.set_text_color(*BLUE)
         pdf.cell(0, 6, _safe(term), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        # Definition
         pdf.set_x(22)
         pdf.set_font("Helvetica", "", 9)
         pdf.set_text_color(*DARK)

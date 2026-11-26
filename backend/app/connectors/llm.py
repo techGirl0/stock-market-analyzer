@@ -1,19 +1,10 @@
 import asyncio
 import logging
 import time
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.core.errors import BackendError
-from app.core.guardrails import (
-    _BLOCKED_PHRASES,
-    _FILTER_REPLACEMENT,
-    filter_llm_output,
-    sanitise_llm_output,
-)
-
-# Re-export under old private names for backward compatibility with tests
-_filter_output = filter_llm_output
-_sanitise_output = sanitise_llm_output
+from app.core.guardrails import filter_llm_output, sanitise_llm_output
 from app.schemas.research import ChatMessage
 
 logger = logging.getLogger(__name__)
@@ -80,12 +71,15 @@ class DisabledLLMConnector:
 
 
 class GroqLLMConnector:
-    def __init__(self, api_key: str, model: str) -> None:
-        try:
-            from groq import Groq
-        except ImportError as exc:
-            raise BackendError("llm_unavailable", "The Groq connector is not installed.", 503) from exc
-        self._client = Groq(api_key=api_key)
+    def __init__(self, api_key: str, model: str, client: Any | None = None) -> None:
+        if client is not None:
+            self._client = client
+        else:
+            try:
+                from groq import Groq
+            except ImportError as exc:
+                raise BackendError("llm_unavailable", "The Groq connector is not installed.", 503) from exc
+            self._client = Groq(api_key=api_key)
         self._model = model
 
     async def brief(self, ticker: str, context: str) -> str:
@@ -156,7 +150,7 @@ class GroqLLMConnector:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ], max_tokens=500)
-        results = []
+        results: list[dict] = []
         for line in raw.strip().splitlines():
             line = line.strip()
             if not line:
@@ -227,7 +221,7 @@ class GroqLLMConnector:
             try:
                 response = self._client.chat.completions.create(
                     model=self._model,
-                    messages=messages,
+                    messages=messages,  # type: ignore[arg-type]  # dict literals are valid Groq message params
                     max_tokens=max_tokens,
                     timeout=_GROQ_TIMEOUT,
                 )

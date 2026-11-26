@@ -282,8 +282,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "$ref": "#/components/schemas/NewsItem"
                   },
                   "title": "Response Get News Api V1 Instruments  Symbol  News Get"
                 }
@@ -2781,16 +2780,18 @@
         ],
         "title": "InstrumentMatch"
       },
-      "Page_InstrumentMatch_": {
+      "NewsItem": {
         "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/InstrumentMatch"
-            },
-            "type": "array",
-            "title": "Items"
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
           },
-          "next_cursor": {
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "publisher": {
             "anyOf": [
               {
                 "type": "string"
@@ -2799,7 +2800,64 @@
                 "type": "null"
               }
             ],
-            "title": "Next Cursor"
+            "title": "Publisher"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "source_url": {
+            "type": "string",
+            "minLength": 1,
+            "format": "uri",
+            "title": "Source Url"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "sentiment": {
+            "type": "string",
+            "enum": [
+              "GOOD",
+              "BAD",
+              "NEUTRAL"
+            ],
+            "title": "Sentiment",
+            "default": "NEUTRAL"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "headline",
+          "published_at",
+          "source_url"
+        ],
+        "title": "NewsItem",
+        "description": "A news article enriched with the LLM's sentiment classification."
+      },
+      "Page_InstrumentMatch_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InstrumentMatch"
+            },
+            "type": "array",
+            "title": "Items"
           },
           "meta": {
             "anyOf": [

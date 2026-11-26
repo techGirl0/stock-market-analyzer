@@ -1,14 +1,4 @@
-def register(client, email="watchlist@example.com"):
-    response = client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "Password123!"},
-    )
-    assert response.status_code == 201
-    return response.json()["access_token"]
-
-
-def headers(token):
-    return {"Authorization": f"Bearer {token}"}
+from tests.support import headers, register
 
 
 def test_watchlist_crud_and_persistence(api_client):

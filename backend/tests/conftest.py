@@ -1,34 +1,26 @@
 import asyncio
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.connectors.market import DemoMarketDataConnector
-from app.core.database import create_engine, create_schema, get_session
-from app.dependencies import get_instrument_service
-from app.main import app
-from app.services.instruments import InstrumentService
+from app.core.database import create_engine, create_schema
+from tests.support import make_test_client, sqlite_test_url
 
 
 @pytest.fixture
-def api_client(tmp_path: Path) -> Iterator[TestClient]:
-    async_engine = create_engine(f"sqlite+aiosqlite:///{tmp_path / 'async-test.db'}")
-    asyncio.run(create_schema(async_engine))
-    connector = DemoMarketDataConnector()
-    app.dependency_overrides[get_instrument_service] = lambda: InstrumentService(connector)
+def test_engine(tmp_path: Path) -> Iterator[AsyncEngine]:
+    engine = create_engine(sqlite_test_url(tmp_path))
+    asyncio.run(create_schema(engine))
+    yield engine
+    asyncio.run(engine.dispose())
 
-    async def override_session() -> AsyncIterator[object]:
-        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-        factory = async_sessionmaker(async_engine, expire_on_commit=False, class_=AsyncSession)
-        async with factory() as session:
-            yield session
-
-    app.dependency_overrides[get_session] = override_session
-    app.state.test_engine = async_engine
-    with TestClient(app) as client:
+@pytest.fixture
+def api_client(test_engine: AsyncEngine) -> Iterator[TestClient]:
+    client = make_test_client(test_engine)
+    with client:
         yield client
-    app.dependency_overrides.clear()
-    asyncio.run(async_engine.dispose())
+    client.app.dependency_overrides.clear()

@@ -867,12 +867,48 @@ export interface components {
             /** Currency */
             currency?: string | null;
         };
+        /**
+         * NewsItem
+         * @description A news article enriched with the LLM's sentiment classification.
+         */
+        NewsItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Headline */
+            headline: string;
+            /** Publisher */
+            publisher?: string | null;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /**
+             * Source Url
+             * Format: uri
+             */
+            source_url: string;
+            /** Summary */
+            summary?: string | null;
+            /**
+             * Sentiment
+             * @default NEUTRAL
+             * @enum {string}
+             */
+            sentiment: "GOOD" | "BAD" | "NEUTRAL";
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
         /** Page[InstrumentMatch] */
         Page_InstrumentMatch_: {
             /** Items */
             items: components["schemas"]["InstrumentMatch"][];
-            /** Next Cursor */
-            next_cursor?: string | null;
             meta?: components["schemas"]["DataMeta"] | null;
         };
         /** Portfolio */
@@ -1177,9 +1213,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["NewsItem"][];
                 };
             };
             /** @description Validation Error */

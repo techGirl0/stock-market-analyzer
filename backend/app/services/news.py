@@ -1,38 +1,42 @@
 from app.connectors.llm import LLMConnector
-from app.connectors.market import MarketDataConnector
-from app.core.errors import BackendError
-from app.schemas.v1 import NewsArticle
+from app.schemas.v1 import NewsArticle, NewsItem
+from app.services.instruments import InstrumentService
+
+
+async def label_articles(
+    llm: LLMConnector, symbol: str, articles: list[NewsArticle]
+) -> list[NewsItem]:
+    """Classify articles with the LLM and merge the labels back by position.
+
+    Headlines come from the articles themselves; the LLM's classification
+    list is positional (its own padding guarantees one entry per headline).
+    """
+    headlines = [a.headline for a in articles if a.headline]
+    if not headlines:
+        return []
+    labelled = await llm.news_feed(symbol.upper(), headlines)
+    return [
+        NewsItem(
+            id=article.id,
+            headline=article.headline,
+            publisher=article.publisher,
+            published_at=article.published_at,
+            source_url=article.source_url,
+            summary=article.summary,
+            sentiment=label.get("sentiment") or "NEUTRAL",
+            reason=str(label.get("reason") or ""),
+        )
+        for article, label in (
+            (a, labelled[i] if i < len(labelled) else {}) for i, a in enumerate(articles)
+        )
+    ]
 
 
 class NewsService:
-    def __init__(self, market: MarketDataConnector, llm: LLMConnector) -> None:
-        self.market = market
+    def __init__(self, instruments: InstrumentService, llm: LLMConnector) -> None:
+        self.instruments = instruments
         self.llm = llm
 
-    async def get_news(self, symbol: str, limit: int = 10) -> list[dict]:
-        if not await self.market.validate(symbol):
-            raise BackendError("ticker_not_found", "The requested instrument was not recognised.", 404)
-
-        articles: list[NewsArticle] = await self.market.news(symbol, limit=limit)
-        headlines = [a.headline for a in articles if a.headline]
-
-        if not headlines:
-            return []
-
-        labelled = await self.llm.news_feed(symbol.upper(), headlines)
-
-        # Merge sentiment labels back onto the article objects
-        result = []
-        for i, article in enumerate(articles):
-            label_data = labelled[i] if i < len(labelled) else {"sentiment": "NEUTRAL", "reason": ""}
-            result.append({
-                "id": str(article.id),
-                "headline": article.headline,
-                "publisher": article.publisher,
-                "published_at": article.published_at.isoformat() if article.published_at else None,
-                "source_url": str(article.source_url) if article.source_url else None,
-                "summary": article.summary,
-                "sentiment": label_data.get("sentiment", "NEUTRAL"),
-                "reason": label_data.get("reason", ""),
-            })
-        return result
+    async def get_news(self, symbol: str, limit: int = 10) -> list[NewsItem]:
+        articles = (await self.instruments.news(symbol, limit=limit)).items
+        return await label_articles(self.llm, symbol, articles)

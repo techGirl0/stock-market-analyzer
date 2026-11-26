@@ -23,7 +23,7 @@ Feature: Manage Portfolio
 
   Scenario: Market data provider unavailable for portfolio (Unhappy Path)
     Given I am on the "portfolio" page
-    And the market data provider is temporarily unavailable
-    When I add a holding "MSFT" with quantity "5"
+    And I add a holding "MSFT" with quantity "5"
+    And the market data provider becomes temporarily unavailable
     Then the holding "MSFT" is saved in my portfolio
     And I should see an "unavailable-data" message for its calculated value

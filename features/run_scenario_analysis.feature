@@ -4,7 +4,8 @@ Feature: Run Long-Term Scenario Analysis
   In order to understand what could happen to the price over 1, 3, and 5 years
 
   Background:
-    Given I am on the homepage
+    Given I am signed in with username "USER" and password "PASSWORD"
+    And I am on the homepage
 
   Scenario: Successfully view scenario analysis (Happy Path)
     Given I am on the "stock dashboard" page for "MSFT"

@@ -1,13 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.core.database import get_session
 from app.core.errors import BackendError
 from app.core.security import (
     create_access_token,
@@ -94,11 +92,3 @@ class AuthService:
             raise BackendError("resource_not_found", "Account was not found.", 404)
         await self.session.delete(user)
         await self.session.commit()
-
-
-async def get_auth_service(
-    session: AsyncSession = Depends(get_session),
-) -> AuthService:
-    from app.core.config import get_settings
-
-    return AuthService(session, get_settings())

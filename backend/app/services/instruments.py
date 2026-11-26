@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from time import monotonic
+from typing import Any
 
 from app.connectors.market import ConnectorUnavailable, MarketDataConnector
 from app.core.errors import BackendError
@@ -50,6 +51,41 @@ class InstrumentService:
             )
         self._budget_used += 1
 
+    def _stale_or_raise(self, key: tuple[str, str], cached_type: type, exc: Exception, message: str) -> Any:
+        """Serve the cached copy marked stale when fresh enough, else translate the error."""
+        entry = self._cache.get(key)
+        if (
+            entry is not None
+            and isinstance(entry[1], cached_type)
+            and self.clock() - entry[0] <= self._setting("provider_max_stale_seconds", 300)
+        ):
+            stale: Any = entry[1]
+            return stale.model_copy(
+                update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
+            )
+        raise BackendError("provider_unavailable", message, 503) from exc
+
+    async def verify_symbol(self, symbol: str) -> str:
+        """Normalize a symbol and confirm the provider recognises it."""
+        normalized = symbol.strip().upper()
+        try:
+            await self.quote(normalized)
+        except BackendError as exc:
+            if exc.code == "ticker_not_found":
+                raise BackendError("ticker_not_found", f'Ticker "{normalized}" was not found.', 404) from exc
+            raise
+        return normalized
+
+    async def beta(self, symbol: str) -> float:
+        key = ("beta", symbol.strip().upper())
+        cached, fresh = self._cached(key)
+        if fresh and isinstance(cached, float):
+            return cached
+        self._budget()
+        result = await self.connector.beta(symbol)
+        self._store(key, result)
+        return result
+
     async def search(self, query: str, limit: int) -> Page[InstrumentMatch]:
         if not query.strip():
             return Page(items=[])
@@ -78,31 +114,9 @@ class InstrumentService:
         except BackendError:
             raise
         except ConnectorUnavailable as exc:
-            stale, _ = self._cached(key)
-            if (
-                isinstance(stale, Quote)
-                and self.clock() - self._cache[key][0]
-                <= self._setting("provider_max_stale_seconds", 300)
-            ):
-                return stale.model_copy(
-                    update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
-                )
-            raise BackendError("provider_unavailable", str(exc), 503) from exc
+            return self._stale_or_raise(key, Quote, exc, str(exc))
         except Exception as exc:
-            stale, _ = self._cached(key)
-            if (
-                isinstance(stale, Quote)
-                and self.clock() - self._cache[key][0]
-                <= self._setting("provider_max_stale_seconds", 300)
-            ):
-                return stale.model_copy(
-                    update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
-                )
-            raise BackendError(
-                "provider_unavailable",
-                "Market data is temporarily unavailable.",
-                503,
-            ) from exc
+            return self._stale_or_raise(key, Quote, exc, "Market data is temporarily unavailable.")
 
     async def candles(
         self,
@@ -154,33 +168,9 @@ class InstrumentService:
         except BackendError:
             raise
         except ConnectorUnavailable as exc:
-            stale, _ = self._cached(key)
-            if (
-                isinstance(stale, Page)
-                and stale.meta is not None
-                and self.clock() - self._cache[key][0]
-                <= self._setting("provider_max_stale_seconds", 300)
-            ):
-                return stale.model_copy(
-                    update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
-                )
-            raise BackendError("provider_unavailable", str(exc), 503) from exc
+            return self._stale_or_raise(key, Page, exc, str(exc))
         except Exception as exc:
-            stale, _ = self._cached(key)
-            if (
-                isinstance(stale, Page)
-                and stale.meta is not None
-                and self.clock() - self._cache[key][0]
-                <= self._setting("provider_max_stale_seconds", 300)
-            ):
-                return stale.model_copy(
-                    update={"meta": stale.meta.model_copy(update={"availability": Availability.stale})}
-                )
-            raise BackendError(
-                "provider_unavailable",
-                "Historical market data is temporarily unavailable.",
-                503,
-            ) from exc
+            return self._stale_or_raise(key, Page, exc, "Historical market data is temporarily unavailable.")
 
     async def news(self, symbol: str, limit: int) -> Page[NewsArticle]:
         try:

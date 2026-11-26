@@ -14,33 +14,8 @@ from app.core.database import create_engine, create_schema
 from app.dependencies import get_instrument_service
 from app.main import app
 from app.models import Portfolio, PortfolioHolding, User
-from app.schemas.v1 import Availability, DataMeta, Instrument, Quote
-
-
-def register(client, email="portfolio@example.com"):
-    response = client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "Password123!"},
-    )
-    assert response.status_code == 201
-    return response.json()["access_token"]
-
-
-def headers(token):
-    return {"Authorization": f"Bearer {token}"}
-
-
-class UnavailablePriceInstruments:
-    """Fake instrument service: symbols validate, but prices are unavailable."""
-
-    async def quote(self, symbol: str) -> Quote:
-        now = datetime.now(timezone.utc)
-        return Quote(
-            instrument=Instrument(id=uuid4(), symbol=symbol, name=symbol),
-            price=None,
-            as_of=now,
-            meta=DataMeta(source="demo", fetched_at=now, availability=Availability.unavailable, delayed=False),
-        )
+from tests.fakes import StubInstrumentService, unavailable_quote
+from tests.support import headers, register
 
 
 def test_portfolio_crud_and_valuation(api_client):
@@ -93,7 +68,7 @@ def test_portfolio_crud_and_valuation(api_client):
 def test_portfolio_unavailable_price_is_reported_not_defaulted(api_client):
     token = register(api_client, "unavailable@example.com")
     auth = headers(token)
-    app.dependency_overrides[get_instrument_service] = lambda: UnavailablePriceInstruments()
+    app.dependency_overrides[get_instrument_service] = lambda: StubInstrumentService(quote=unavailable_quote())
     try:
         portfolio_id = api_client.post("/api/v1/portfolios", headers=auth, json={"name": "Flat"}).json()["id"]
         added = api_client.post(

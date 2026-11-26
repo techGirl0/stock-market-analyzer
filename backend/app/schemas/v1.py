@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Generic, Literal, TypeVar
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, field_validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
 
 
 class Availability(str, Enum):
@@ -73,14 +73,20 @@ class NewsArticle(BaseModel):
     source_url: AnyHttpUrl
     summary: str | None = None
     sentiment: Literal["positive", "negative", "neutral", "unavailable"]
-    sentiment_confidence: Decimal | None = None
     meta: DataMeta
 
 
-class InstrumentDetail(BaseModel):
-    instrument: Instrument
-    quote: Quote
-    meta: DataMeta
+class NewsItem(BaseModel):
+    """A news article enriched with the LLM's sentiment classification."""
+
+    id: UUID
+    headline: str
+    publisher: str | None = None
+    published_at: datetime
+    source_url: AnyHttpUrl
+    summary: str | None = None
+    sentiment: Literal["GOOD", "BAD", "NEUTRAL"] = "NEUTRAL"
+    reason: str = ""
 
 
 T = TypeVar("T")
@@ -88,7 +94,6 @@ T = TypeVar("T")
 
 class Page(BaseModel, Generic[T]):
     items: list[T]
-    next_cursor: str | None = None
     meta: DataMeta | None = None
 
 
@@ -118,11 +123,3 @@ def normalize_symbol(value: str) -> str:
         raise ValueError("symbol must contain between 1 and 20 characters")
     return symbol
 
-
-class SymbolPath(BaseModel):
-    symbol: str
-
-    @field_validator("symbol")
-    @classmethod
-    def validate_symbol(cls, value: str) -> str:
-        return normalize_symbol(value)

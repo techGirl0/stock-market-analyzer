@@ -14,6 +14,7 @@ from app.core.security import decode_access_token
 from app.models.user import User
 from app.services.alerts import AlertService
 from app.services.analysis import AnalysisService
+from app.services.auth import AuthService
 from app.services.instruments import InstrumentService
 from app.services.news import NewsService
 from app.services.portfolio import PortfolioService
@@ -63,12 +64,16 @@ async def get_watchlist_service(
     return WatchlistService(session, instruments)
 
 
-def get_analysis_service() -> AnalysisService:
-    return AnalysisService(get_market_connector(), get_llm_connector())
+def get_analysis_service(
+    instruments: InstrumentService = Depends(get_instrument_service),
+) -> AnalysisService:
+    return AnalysisService(instruments, get_llm_connector())
 
 
-def get_research_service() -> ResearchService:
-    return ResearchService(get_market_connector(), get_llm_connector())
+def get_research_service(
+    instruments: InstrumentService = Depends(get_instrument_service),
+) -> ResearchService:
+    return ResearchService(instruments, get_llm_connector())
 
 
 async def get_portfolio_service(
@@ -85,5 +90,13 @@ async def get_alert_service(
     return AlertService(session, instruments)
 
 
-def get_news_service() -> NewsService:
-    return NewsService(get_market_connector(), get_llm_connector())
+def get_news_service(
+    instruments: InstrumentService = Depends(get_instrument_service),
+) -> NewsService:
+    return NewsService(instruments, get_llm_connector())
+
+
+async def get_auth_service(
+    session: AsyncSession = Depends(get_session),
+) -> AuthService:
+    return AuthService(session, get_settings())

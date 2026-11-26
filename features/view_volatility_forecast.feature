@@ -4,7 +4,8 @@ Feature: View Volatility Forecast
   In order to understand how much the price might move in the coming days
 
   Background:
-    Given I am on the homepage
+    Given I am signed in with username "USER" and password "PASSWORD"
+    And I am on the homepage
 
   Scenario: Successfully view volatility forecast (Happy Path)
     Given I am on the "stock dashboard" page for "TSLA"

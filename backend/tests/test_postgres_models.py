@@ -24,8 +24,8 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.mark.asyncio
-async def test_postgres_schema_and_user_cascade() -> None:
+async def _migrated_postgres_session():
+    """Run alembic migrations against TEST_DATABASE_URL and yield a session factory."""
     database_url = os.environ["TEST_DATABASE_URL"]
     environment = {**os.environ, "DATABASE_URL": database_url}
     result = subprocess.run(
@@ -36,9 +36,14 @@ async def test_postgres_schema_and_user_cascade() -> None:
         text=True,
     )
     assert result.returncode == 0, result.stderr
-
     engine = create_async_engine(database_url)
     factory = async_sessionmaker(engine, expire_on_commit=False)
+    return engine, factory
+
+
+@pytest.mark.asyncio
+async def test_postgres_schema_and_user_cascade() -> None:
+    engine, factory = await _migrated_postgres_session()
     user_id = uuid4()
     async with factory() as session:
         user = User(
@@ -67,19 +72,7 @@ async def test_postgres_portfolio_and_alert_cascade() -> None:
     """Migrations 0002/0003 create the financial-domain tables on PostgreSQL
     and account deletion cascades through portfolios, holdings, alerts and
     deliveries."""
-    database_url = os.environ["TEST_DATABASE_URL"]
-    environment = {**os.environ, "DATABASE_URL": database_url}
-    result = subprocess.run(
-        [sys.executable, "-m", "alembic", "-c", "backend/alembic.ini", "upgrade", "head"],
-        check=False,
-        env=environment,
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, result.stderr
-
-    engine = create_async_engine(database_url)
-    factory = async_sessionmaker(engine, expire_on_commit=False)
+    engine, factory = await _migrated_postgres_session()
     user_id = uuid4()
     async with factory() as session:
         user = User(

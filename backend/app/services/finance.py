@@ -1,9 +1,12 @@
-import logging
 from math import exp, sqrt
 
-logger = logging.getLogger(__name__)
+from app.schemas.analysis import Scenario
 
 MU = 0.07  # assumed annual drift (lognormal model)
+
+# The complete set of horizons the API accepts; the controller's validation
+# regex is derived from this list.
+HORIZONS = ("1w", "1m", "3m", "5d", "10d", "20d", "1y", "3y", "5y")
 
 _HORIZON_DAYS = {
     "1w": 5,
@@ -23,7 +26,7 @@ def resolve_horizon_days(horizon: str) -> int:
             return int(horizon[:-1])
         except ValueError:
             pass
-    return 20
+    raise ValueError(f"unknown horizon: {horizon!r}")
 
 
 def compute_risk_score(
@@ -31,7 +34,7 @@ def compute_risk_score(
     beta: float,
     pos_52w: float,
     news_sentiment: float | None,
-) -> tuple[int, dict]:
+) -> tuple[int, dict[str, str | float | None]]:
     vol_score = min(10.0, annual_vol / 5.0)
     beta_score = min(10.0, max(0.0, (beta - 0.5) * (10.0 / 1.5)))
     pos_score = pos_52w * 10.0
@@ -45,7 +48,7 @@ def compute_risk_score(
             + pos_score * weights["position_52w"]
             + news_score * weights["news_sentiment"]
         )
-        components: dict = {
+        components: dict[str, str | float | None] = {
             "Annualized Volatility": f"{round(annual_vol, 2)}%",
             "Beta vs Market": round(beta, 3),
             "52-Week Position": f"{round(pos_52w * 100, 1)}%",
@@ -101,11 +104,10 @@ def compute_scenarios(
     current_price: float,
     annual_vol: float,
     horizon_labels: list[str],
-    days_override: int | None = None,
-) -> list[dict]:
+) -> list[Scenario]:
     results = []
     for label in horizon_labels:
-        days = days_override if days_override is not None else resolve_horizon_days(label)
+        days = resolve_horizon_days(label)
         t = days / 252.0
         mu_t = (MU - 0.5 * annual_vol ** 2) * t
         sigma_t = annual_vol * sqrt(t)
@@ -114,26 +116,35 @@ def compute_scenarios(
         base = current_price * exp(_norm_ppf(0.50) * sigma_t + mu_t)
         bull = current_price * exp(_norm_ppf(0.95) * sigma_t + mu_t)
 
-        results.append({
-            "label": label,
-            "bear": round(max(0.0, bear), 2),
-            "base": round(base, 2),
-            "bull": round(bull, 2),
-        })
+        results.append(Scenario(
+            label=label,
+            bear=round(max(0.0, bear), 2),
+            base=round(base, 2),
+            bull=round(bull, 2),
+        ))
     return results
 
 
-async def fetch_beta(symbol: str) -> float:
-    """Try to get beta from yfinance; fall back to 1.0 if unavailable."""
-    try:
-        import yfinance  # type: ignore
-        info = yfinance.Ticker(symbol).info
-        beta = info.get("beta")
-        if beta is not None:
-            return float(beta)
-    except Exception:
-        logger.warning("Beta fetch failed for %s, defaulting to 1.0", symbol)
-    return 1.0
+def realized_volatility(closes: list[float]) -> tuple[float, float] | None:
+    """Sample (daily_vol, annual_vol) from daily closes, as fractions.
+
+    Returns None when there are fewer than three closes: the sample
+    variance needs at least two returns (n - 1 denominator).
+    """
+    if len(closes) < 3:
+        return None
+    returns = [closes[i] / closes[i - 1] - 1 for i in range(1, len(closes))]
+    mean = sum(returns) / len(returns)
+    variance = sum((v - mean) ** 2 for v in returns) / (len(returns) - 1)
+    daily_vol = sqrt(variance)
+    return daily_vol, daily_vol * sqrt(252)
+
+
+def position_52w(prices: list[float]) -> tuple[float, float, float]:
+    """(low, high, position of the last price within that range, 0..1)."""
+    low, high = min(prices), max(prices)
+    pos = (prices[-1] - low) / (high - low) if high > low else 0.5
+    return low, high, pos
 
 
 def compute_max_drawdown(prices: list[float]) -> float:

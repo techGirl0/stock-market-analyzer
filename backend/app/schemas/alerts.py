@@ -47,3 +47,12 @@ class DeliveryCreateRecord(BaseModel):
     message: str
     read: bool
     delivered_at: datetime
+
+
+class AlertCreateRecord(BaseModel):
+    user_id: UUID
+    symbol: str
+    operator: str
+    threshold: float
+    active: bool
+    created_at: datetime

@@ -89,14 +89,16 @@ The key architectural elements are the **Provider Adapter pattern** (all externa
 
 ## 2. Architectural Representation: MVC type
 
-Wolf Street Signal has two code bases today. The project as a whole is moving
-from the first to the second:
+Wolf Street Signal has one active code base:
 
-1. **`ai_module/`**: a Streamlit prototype of the AI features (research brief,
-   risk score, volatility forecast, scenarios, AI chat).
-2. **`backend/`**: the FastAPI backend we are building as the real product. Its
+1. **`backend/`**: the FastAPI backend we are building as the real product. Its
    first use case, *Manage Watchlist* (CRUD), runs on PostgreSQL. A Next.js
    frontend for it is planned.
+
+An earlier **`ai_module/`** Streamlit prototype (research brief, risk score,
+volatility forecast, scenarios, AI chat) was removed on 2026-11-26 after the
+backend implemented every core feature it provided. The sections below
+describe it in the past tense for architectural context.
 
 ### 2.1 Current state: the Streamlit prototype is *not* a clean MVC
 
@@ -418,9 +420,9 @@ Key schema groups:
 
 ---
 
-#### `ai_module/` — Standalone AI Prototype
+#### `ai_module/` — Standalone AI Prototype (removed)
 
-A self-contained Python module (`ai_engine.py`, `stock_data.py`, `app.py`) developed independently from the main backend. It provides early AI analysis capabilities and has its own `requirements.txt` and test suite. Integration with the main backend is pending.
+A self-contained Python module (`ai_engine.py`, `stock_data.py`, `app.py`) developed independently from the main backend. It provided early AI analysis capabilities and was removed on 2026-11-26 once the backend's AI services (`backend/app/services/research.py`, `backend/app/connectors/llm.py`) superseded all of its features.
 
 ---
 
