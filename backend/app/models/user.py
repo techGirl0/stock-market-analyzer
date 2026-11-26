@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 if TYPE_CHECKING:
+    from app.models.portfolio import Portfolio
     from app.models.refresh_token import RefreshToken
     from app.models.watchlist import Watchlist
 
@@ -25,5 +26,8 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
     watchlists: Mapped[list["Watchlist"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
+    portfolios: Mapped[list["Portfolio"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )

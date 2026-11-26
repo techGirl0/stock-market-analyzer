@@ -77,8 +77,11 @@ def get_research_service() -> ResearchService:
     return ResearchService(get_market_connector(), get_llm_connector())
 
 
-def get_portfolio_service() -> PortfolioService:
-    return PortfolioService(get_database(), get_market_connector())
+async def get_portfolio_service(
+    session: AsyncSession = Depends(get_session),
+    instruments: InstrumentService = Depends(get_instrument_service),
+) -> PortfolioService:
+    return PortfolioService(session, instruments)
 
 
 def get_alert_service() -> AlertService:

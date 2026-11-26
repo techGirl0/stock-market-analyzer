@@ -1,75 +1,181 @@
 import logging
 from datetime import datetime, timezone
-from uuid import UUID, uuid4
+from typing import Any
+from uuid import UUID
 
-from app.connectors.market import MarketDataConnector
-from app.core.db import Database
+from fastcrud import FastCRUD
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.errors import BackendError
-from app.schemas.portfolio import Holding, Portfolio
+from app.models.portfolio import Portfolio as PortfolioModel
+from app.models.portfolio import PortfolioHolding as PortfolioHoldingModel
+from app.schemas.portfolio import (
+    Holding,
+    HoldingRead,
+    Portfolio,
+    PortfolioRead,
+)
+from app.services.instruments import InstrumentService
 
 logger = logging.getLogger(__name__)
 
 
-def _uid(user_id: UUID) -> str:
-    # SQLAlchemy stores UUID as hex without dashes; raw sqlite3 must match.
-    return user_id.hex
+class PortfolioCreateRecord(BaseModel):
+    user_id: UUID
+    name: str
+    created_at: datetime
+
+
+class HoldingCreateRecord(BaseModel):
+    portfolio_id: UUID
+    symbol: str
+    quantity: float
+    created_at: datetime
 
 
 class PortfolioService:
-    def __init__(self, database: Database, market: MarketDataConnector) -> None:
-        self.database, self.market = database, market
+    def __init__(self, session: AsyncSession, instruments: InstrumentService) -> None:
+        self.session = session
+        self.instruments = instruments
+        self.portfolios: FastCRUD[Any, Any, Any, Any, Any, Any] = FastCRUD(PortfolioModel)
+        self.holdings: FastCRUD[Any, Any, Any, Any, Any, Any] = FastCRUD(PortfolioHoldingModel)
 
     async def list(self, user_id: UUID) -> list[Portfolio]:
-        with self.database.connection() as c:
-            rows = c.execute("SELECT * FROM portfolios WHERE user_id=? ORDER BY created_at", (_uid(user_id),)).fetchall()
-            return [await self._read(c, row) for row in rows]
+        result = await self.portfolios.get_multi(
+            db=self.session,
+            schema_to_select=PortfolioRead,
+            user_id=user_id,
+            sort_columns="created_at",
+            sort_orders="asc",
+            limit=100,
+        )
+        return [await self._read(item) for item in result["data"]]
 
     async def create(self, user_id: UUID, name: str) -> Portfolio:
-        pid, now = uuid4(), datetime.now(timezone.utc)
-        with self.database.connection() as c:
-            c.execute("INSERT INTO portfolios VALUES (?,?,?,?)", (str(pid), _uid(user_id), name, now.isoformat()))
-        return Portfolio(id=pid, name=name, holdings=[], total_value=0, created_at=now)
+        record = await self.portfolios.create(
+            db=self.session,
+            object=PortfolioCreateRecord(
+                user_id=user_id,
+                name=name,
+                created_at=datetime.now(timezone.utc),
+            ),
+            schema_to_select=PortfolioRead,
+        )
+        await self.session.commit()
+        if record is None:
+            raise BackendError("internal_error", "Portfolio could not be created.", 500)
+        return await self._read(record)
 
     async def get(self, user_id: UUID, portfolio_id: UUID) -> Portfolio:
-        with self.database.connection() as c:
-            row = c.execute(
-                "SELECT * FROM portfolios WHERE id=? AND user_id=?",
-                (str(portfolio_id), _uid(user_id)),
-            ).fetchone()
-            if row is None:
-                raise BackendError("resource_not_found", "Portfolio was not found.", 404)
-            return await self._read(c, row)
+        return await self._read(await self._owned(user_id, portfolio_id))
+
+    async def delete(self, user_id: UUID, portfolio_id: UUID) -> None:
+        await self._owned(user_id, portfolio_id)
+        await self.portfolios.delete(
+            db=self.session,
+            where=PortfolioModel.id == portfolio_id,
+            user_id=user_id,
+        )
+        await self.session.commit()
 
     async def add(self, user_id: UUID, portfolio_id: UUID, symbol: str, quantity: float) -> Holding:
-        symbol = symbol.strip().upper()
-        if not await self.market.validate(symbol):
-            raise BackendError("ticker_not_found", "The requested instrument was not recognised.", 404)
-        hid, now = uuid4(), datetime.now(timezone.utc)
-        with self.database.connection() as c:
-            owned = c.execute("SELECT 1 FROM portfolios WHERE id=? AND user_id=?", (str(portfolio_id), _uid(user_id))).fetchone()
-            if not owned:
-                raise BackendError("resource_not_found", "Portfolio was not found.", 404)
-            try:
-                c.execute("INSERT INTO portfolio_holdings VALUES (?,?,?,?,?)", (str(hid), str(portfolio_id), symbol, quantity, now.isoformat()))
-            except Exception as exc:
-                if "UNIQUE constraint failed" in str(exc):
-                    raise BackendError("resource_conflict", "This instrument is already in the portfolio.", 409) from exc
-                raise
-        return await self._holding(hid, symbol, quantity, now)
-
-    async def _holding(self, hid, symbol, quantity, created_at) -> Holding:
+        await self._owned(user_id, portfolio_id)
+        normalized = symbol.strip().upper()
         try:
-            quote = await self.market.quote(symbol)
-            price = float(quote.price) if quote.price is not None else None
-        except Exception:
-            logger.warning("Price fetch failed for %s; value will be unavailable", symbol)
-            price = None
-        return Holding(id=hid, symbol=symbol, quantity=quantity, current_price=price,
-                       current_value=price * quantity if price is not None else None, created_at=created_at)
+            await self.instruments.quote(normalized)
+        except BackendError as exc:
+            if exc.code == "ticker_not_found":
+                raise BackendError("ticker_not_found", f'Ticker "{normalized}" was not found.', 404) from exc
+            raise
+        try:
+            record = await self.holdings.create(
+                db=self.session,
+                object=HoldingCreateRecord(
+                    portfolio_id=portfolio_id,
+                    symbol=normalized,
+                    quantity=quantity,
+                    created_at=datetime.now(timezone.utc),
+                ),
+                schema_to_select=HoldingRead,
+            )
+            await self.session.commit()
+        except Exception as exc:
+            await self.session.rollback()
+            if "uq_portfolio_holdings_portfolio_symbol" in str(exc) or "UNIQUE constraint" in str(exc):
+                raise BackendError("resource_conflict", "This instrument is already in the portfolio.", 409) from exc
+            raise
+        if record is None:
+            raise BackendError("internal_error", "Holding could not be created.", 500)
+        return await self._valued_holding(HoldingRead.model_validate(record))
 
-    async def _read(self, c, row) -> Portfolio:
-        items = c.execute("SELECT * FROM portfolio_holdings WHERE portfolio_id=? ORDER BY created_at", (row["id"],)).fetchall()
-        holdings = [await self._holding(UUID(x["id"]), x["symbol"], x["quantity"], datetime.fromisoformat(x["created_at"])) for x in items]
-        total = sum(x.current_value or 0 for x in holdings) if all(x.current_value is not None for x in holdings) else None
-        return Portfolio(id=UUID(row["id"]), name=row["name"], holdings=holdings, total_value=total,
-                         created_at=datetime.fromisoformat(row["created_at"]))
+    async def remove(self, user_id: UUID, portfolio_id: UUID, holding_id: UUID) -> None:
+        await self._owned(user_id, portfolio_id)
+        record = await self.holdings.get(
+            db=self.session,
+            schema_to_select=HoldingRead,
+            id=holding_id,
+            portfolio_id=portfolio_id,
+        )
+        if record is None:
+            raise BackendError("resource_not_found", "Holding was not found.", 404)
+        await self.holdings.delete(db=self.session, where=PortfolioHoldingModel.id == holding_id)
+        await self.session.commit()
+
+    async def _owned(self, user_id: UUID, portfolio_id: UUID) -> PortfolioRead:
+        record = await self.portfolios.get(
+            db=self.session,
+            schema_to_select=PortfolioRead,
+            id=portfolio_id,
+            user_id=user_id,
+        )
+        if record is None:
+            raise BackendError("resource_not_found", "Portfolio was not found.", 404)
+        return PortfolioRead.model_validate(record)
+
+    async def _valued_holding(self, holding: HoldingRead) -> Holding:
+        """Value a holding from the latest available price; unavailable is reported, never defaulted."""
+        price = source = as_of = None
+        try:
+            quote = await self.instruments.quote(holding.symbol)
+            if quote.price is not None:
+                price = float(quote.price)
+                source = quote.meta.source
+                as_of = quote.as_of or quote.meta.fetched_at
+        except Exception:
+            logger.warning("Price fetch failed for %s; value will be unavailable", holding.symbol)
+        return Holding(
+            id=holding.id,
+            symbol=holding.symbol,
+            quantity=holding.quantity,
+            current_price=price,
+            current_value=price * holding.quantity if price is not None else None,
+            price_source=source,
+            price_as_of=as_of,
+            created_at=holding.created_at,
+        )
+
+    async def _read(self, record: PortfolioRead | dict[str, object]) -> Portfolio:
+        portfolio = PortfolioRead.model_validate(record)
+        result = await self.holdings.get_multi(
+            db=self.session,
+            schema_to_select=HoldingRead,
+            portfolio_id=portfolio.id,
+            sort_columns="created_at",
+            sort_orders="asc",
+            limit=1000,
+        )
+        holdings = [await self._valued_holding(HoldingRead.model_validate(item)) for item in result["data"]]
+        total_value: float | None = None
+        value_as_of = None
+        if holdings and all(h.current_value is not None for h in holdings):
+            total_value = sum(h.current_value or 0.0 for h in holdings)
+            value_as_of = max(h.price_as_of for h in holdings if h.price_as_of is not None)
+        return Portfolio(
+            id=portfolio.id,
+            name=portfolio.name,
+            holdings=holdings,
+            total_value=total_value,
+            value_as_of=value_as_of,
+            created_at=portfolio.created_at,
+        )

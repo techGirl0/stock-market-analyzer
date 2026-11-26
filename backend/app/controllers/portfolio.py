@@ -1,17 +1,28 @@
 from uuid import UUID
+
 from fastapi import APIRouter, Depends
+
 from app.dependencies import get_current_user, get_portfolio_service
-from app.schemas.portfolio import Portfolio, PortfolioCreate, Holding, HoldingCreate
+from app.schemas.portfolio import Holding, HoldingCreate, Portfolio, PortfolioCreate
 from app.services.portfolio import PortfolioService
 
 router = APIRouter(prefix="/portfolios", tags=["portfolios"])
 
+
 @router.get("", response_model=list[Portfolio])
-async def list_portfolios(user_id: UUID = Depends(get_current_user), service: PortfolioService = Depends(get_portfolio_service)):
+async def list_portfolios(
+    user_id: UUID = Depends(get_current_user),
+    service: PortfolioService = Depends(get_portfolio_service),
+):
     return await service.list(user_id)
 
+
 @router.post("", response_model=Portfolio, status_code=201)
-async def create_portfolio(payload: PortfolioCreate, user_id: UUID = Depends(get_current_user), service: PortfolioService = Depends(get_portfolio_service)):
+async def create_portfolio(
+    payload: PortfolioCreate,
+    user_id: UUID = Depends(get_current_user),
+    service: PortfolioService = Depends(get_portfolio_service),
+):
     return await service.create(user_id, payload.name)
 
 
@@ -23,6 +34,31 @@ async def get_portfolio(
 ):
     return await service.get(user_id, portfolio_id)
 
+
+@router.delete("/{portfolio_id}", status_code=204)
+async def delete_portfolio(
+    portfolio_id: UUID,
+    user_id: UUID = Depends(get_current_user),
+    service: PortfolioService = Depends(get_portfolio_service),
+):
+    await service.delete(user_id, portfolio_id)
+
+
 @router.post("/{portfolio_id}/holdings", response_model=Holding, status_code=201)
-async def add_holding(portfolio_id: UUID, payload: HoldingCreate, user_id: UUID = Depends(get_current_user), service: PortfolioService = Depends(get_portfolio_service)):
+async def add_holding(
+    portfolio_id: UUID,
+    payload: HoldingCreate,
+    user_id: UUID = Depends(get_current_user),
+    service: PortfolioService = Depends(get_portfolio_service),
+):
     return await service.add(user_id, portfolio_id, payload.symbol, payload.quantity)
+
+
+@router.delete("/{portfolio_id}/holdings/{holding_id}", status_code=204)
+async def remove_holding(
+    portfolio_id: UUID,
+    holding_id: UUID,
+    user_id: UUID = Depends(get_current_user),
+    service: PortfolioService = Depends(get_portfolio_service),
+):
+    await service.remove(user_id, portfolio_id, holding_id)
