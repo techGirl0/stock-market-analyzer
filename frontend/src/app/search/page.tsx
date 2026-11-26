@@ -1,9 +1,13 @@
+import { Suspense } from "react";
+import { LoadingState } from "@/components/feedback/LoadingState";
+import { SearchView } from "./SearchView";
+
+// SearchView reads the ?q= query from the URL, which Next.js requires
+// to be wrapped in a Suspense boundary.
 export default function SearchPage() {
   return (
-    <div>
-      <h1>Search for a stock</h1>
-      <p>Find a stock by ticker symbol or company name.</p>
-      {/* SCRUM-104: Stock Search — implement search UI here */}
-    </div>
+    <Suspense fallback={<LoadingState label="Loading search…" />}>
+      <SearchView />
+    </Suspense>
   );
 }
