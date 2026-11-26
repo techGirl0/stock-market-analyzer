@@ -1,9 +1,16 @@
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
+
+from app.connectors.market import MarketDataConnector
 from app.core.db import Database
 from app.core.errors import BackendError
 from app.schemas.alerts import Alert
-from app.connectors.market import MarketDataConnector
+
+
+def _uid(user_id: UUID) -> str:
+    # SQLAlchemy stores UUID as hex without dashes; raw sqlite3 must match.
+    return user_id.hex
+
 
 class AlertService:
     def __init__(self, database: Database, market: MarketDataConnector) -> None:
@@ -11,7 +18,7 @@ class AlertService:
 
     def list(self, user_id: UUID) -> list[Alert]:
         with self.database.connection() as c:
-            rows = c.execute("SELECT * FROM price_alerts WHERE user_id=? ORDER BY created_at", (str(user_id),)).fetchall()
+            rows = c.execute("SELECT * FROM price_alerts WHERE user_id=? ORDER BY created_at", (_uid(user_id),)).fetchall()
             return [self._model(x) for x in rows]
 
     async def create(self, user_id: UUID, symbol: str, operator: str, threshold: float) -> Alert:
@@ -20,12 +27,12 @@ class AlertService:
             raise BackendError("ticker_not_found", "The requested instrument was not recognised.", 404)
         aid, now = uuid4(), datetime.now(timezone.utc)
         with self.database.connection() as c:
-            c.execute("INSERT INTO price_alerts VALUES (?,?,?,?,?,?,?)", (str(aid), str(user_id), symbol, operator, threshold, 1, now.isoformat()))
+            c.execute("INSERT INTO price_alerts VALUES (?,?,?,?,?,?,?)", (str(aid), _uid(user_id), symbol, operator, threshold, 1, now.isoformat()))
         return Alert(id=aid, symbol=symbol, operator=operator, threshold=threshold, active=True, created_at=now)
 
     def delete(self, user_id: UUID, alert_id: UUID) -> None:
         with self.database.connection() as c:
-            result = c.execute("DELETE FROM price_alerts WHERE id=? AND user_id=?", (str(alert_id), str(user_id)))
+            result = c.execute("DELETE FROM price_alerts WHERE id=? AND user_id=?", (str(alert_id), _uid(user_id)))
             if not result.rowcount:
                 raise BackendError("resource_not_found", "Alert was not found.", 404)
 

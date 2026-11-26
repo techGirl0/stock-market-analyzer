@@ -1,12 +1,19 @@
 import logging
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
+
+from app.connectors.market import MarketDataConnector
 from app.core.db import Database
 from app.core.errors import BackendError
-from app.connectors.market import MarketDataConnector
+from app.schemas.portfolio import Holding, Portfolio
 
 logger = logging.getLogger(__name__)
-from app.schemas.portfolio import Holding, Portfolio
+
+
+def _uid(user_id: UUID) -> str:
+    # SQLAlchemy stores UUID as hex without dashes; raw sqlite3 must match.
+    return user_id.hex
+
 
 class PortfolioService:
     def __init__(self, database: Database, market: MarketDataConnector) -> None:
@@ -14,20 +21,20 @@ class PortfolioService:
 
     async def list(self, user_id: UUID) -> list[Portfolio]:
         with self.database.connection() as c:
-            rows = c.execute("SELECT * FROM portfolios WHERE user_id=? ORDER BY created_at", (str(user_id),)).fetchall()
+            rows = c.execute("SELECT * FROM portfolios WHERE user_id=? ORDER BY created_at", (_uid(user_id),)).fetchall()
             return [await self._read(c, row) for row in rows]
 
     async def create(self, user_id: UUID, name: str) -> Portfolio:
         pid, now = uuid4(), datetime.now(timezone.utc)
         with self.database.connection() as c:
-            c.execute("INSERT INTO portfolios VALUES (?,?,?,?)", (str(pid), str(user_id), name, now.isoformat()))
+            c.execute("INSERT INTO portfolios VALUES (?,?,?,?)", (str(pid), _uid(user_id), name, now.isoformat()))
         return Portfolio(id=pid, name=name, holdings=[], total_value=0, created_at=now)
 
     async def get(self, user_id: UUID, portfolio_id: UUID) -> Portfolio:
         with self.database.connection() as c:
             row = c.execute(
                 "SELECT * FROM portfolios WHERE id=? AND user_id=?",
-                (str(portfolio_id), str(user_id)),
+                (str(portfolio_id), _uid(user_id)),
             ).fetchone()
             if row is None:
                 raise BackendError("resource_not_found", "Portfolio was not found.", 404)
@@ -39,7 +46,7 @@ class PortfolioService:
             raise BackendError("ticker_not_found", "The requested instrument was not recognised.", 404)
         hid, now = uuid4(), datetime.now(timezone.utc)
         with self.database.connection() as c:
-            owned = c.execute("SELECT 1 FROM portfolios WHERE id=? AND user_id=?", (str(portfolio_id), str(user_id))).fetchone()
+            owned = c.execute("SELECT 1 FROM portfolios WHERE id=? AND user_id=?", (str(portfolio_id), _uid(user_id))).fetchone()
             if not owned:
                 raise BackendError("resource_not_found", "Portfolio was not found.", 404)
             try:
