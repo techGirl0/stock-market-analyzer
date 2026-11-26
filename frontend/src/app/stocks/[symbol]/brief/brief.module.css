@@ -1,0 +1,185 @@
+/* Research brief page, following mockups B2–B4 */
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  font-weight: 600;
+  color: #555;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: #111;
+  text-decoration: underline;
+}
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+.subtitle {
+  margin-bottom: 1.5rem;
+  color: #555;
+}
+
+.fixtureNote {
+  font-weight: 600;
+  color: #6b4a00;
+}
+
+.partialBanner {
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1.25rem;
+  font-weight: 600;
+  background: #d9d9d9;
+  border: 2px solid #1a1a1a;
+  border-radius: 6px;
+}
+
+/* B2: generating */
+
+.generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 3rem 1rem;
+  text-align: center;
+  background: #f2f2f2;
+  border: 2px dashed #333;
+  border-radius: 6px;
+}
+
+.generatingTitle {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.dots {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.dots span {
+  width: 0.75rem;
+  height: 0.75rem;
+  background: #555;
+  border-radius: 50%;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dots span {
+    animation: none;
+  }
+}
+
+.steps {
+  display: grid;
+  gap: 0.5rem;
+  color: #555;
+  list-style: none;
+}
+
+/* B3: brief */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.card {
+  padding: 1.25rem;
+  border: 2px solid #999;
+  border-radius: 6px;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown h2 {
+  font-size: 1.125rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.markdown h3 {
+  font-size: 1rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.markdown ul {
+  margin-left: 1.25rem;
+}
+
+.markdown p {
+  margin: 0.5rem 0;
+}
+
+.sources {
+  display: grid;
+  gap: 0.25rem;
+  list-style: none;
+  color: #444;
+}
+
+.twoLists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.listTitle {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.bullets {
+  margin-left: 1.25rem;
+  color: #444;
+}
+
+.muted {
+  color: #777;
+}
+
+.disclaimer {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+  background: #f2f2f2;
+  border: 1px solid #999;
+  border-radius: 6px;
+}
+
+@media (max-width: 700px) {
+  .grid,
+  .twoLists {
+    grid-template-columns: 1fr;
+  }
+}

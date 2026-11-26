@@ -244,6 +244,10 @@
   border-radius: 4px;
 }
 
+.briefButton {
+  margin-bottom: 1.25rem;
+}
+
 .watchlistButton:hover {
   background: #333;
 }

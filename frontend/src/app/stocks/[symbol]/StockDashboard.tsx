@@ -95,6 +95,14 @@ export function StockDashboard({ symbol }: { symbol: string }) {
 
       {quote && (
         <>
+          {/* Mockup B1: the research brief starts from the dashboard. */}
+          <Link
+            href={`/stocks/${encodeURIComponent(symbol)}/brief`}
+            className={`${styles.watchlistButton} ${styles.briefButton}`}
+          >
+            Generate research brief
+          </Link>
+
           {quote.meta && <DataSourceNote meta={quote.meta} />}
 
           <PriceChart symbol={symbol} currency={quote.instrument.currency} />
