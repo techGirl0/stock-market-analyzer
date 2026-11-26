@@ -1,0 +1,2911 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WolfStreet Signal API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/health/live": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Live",
+        "operationId": "live_api_v1_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Ready",
+        "operationId": "ready_api_v1_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/search": {
+      "get": {
+        "tags": [
+          "instruments"
+        ],
+        "summary": "Search Instruments",
+        "operationId": "search_instruments_api_v1_instruments_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_InstrumentMatch_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/quote": {
+      "get": {
+        "tags": [
+          "instruments"
+        ],
+        "summary": "Get Quote",
+        "operationId": "get_quote_api_v1_instruments__symbol__quote_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/history": {
+      "get": {
+        "tags": [
+          "instruments"
+        ],
+        "summary": "Get History",
+        "operationId": "get_history_api_v1_instruments__symbol__history_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(1m|5m|15m|1h|1d)$",
+              "default": "1d",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/news": {
+      "get": {
+        "tags": [
+          "instruments"
+        ],
+        "summary": "Get News",
+        "operationId": "get_news_api_v1_instruments__symbol__news_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Get News Api V1 Instruments  Symbol  News Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh",
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Delete Account",
+        "operationId": "delete_account_api_v1_auth_me_delete",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists": {
+      "get": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "List Watchlists",
+        "operationId": "list_watchlists_api_v1_watchlists_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Watchlist"
+                  },
+                  "title": "Response List Watchlists Api V1 Watchlists Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Create Watchlist",
+        "operationId": "create_watchlist_api_v1_watchlists_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Watchlist"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists/{watchlist_id}": {
+      "get": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Get Watchlist",
+        "operationId": "get_watchlist_api_v1_watchlists__watchlist_id__get",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Watchlist"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Delete Watchlist",
+        "operationId": "delete_watchlist_api_v1_watchlists__watchlist_id__delete",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists/{watchlist_id}/items": {
+      "post": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Add Watchlist Item",
+        "operationId": "add_watchlist_item_api_v1_watchlists__watchlist_id__items_post",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlists/{watchlist_id}/items/{item_id}": {
+      "delete": {
+        "tags": [
+          "watchlists"
+        ],
+        "summary": "Remove Watchlist Item",
+        "operationId": "remove_watchlist_item_api_v1_watchlists__watchlist_id__items__item_id__delete",
+        "parameters": [
+          {
+            "name": "watchlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Watchlist Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/risk": {
+      "get": {
+        "tags": [
+          "analysis"
+        ],
+        "summary": "Risk",
+        "operationId": "risk_api_v1_instruments__symbol__risk_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskProfile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/forecast": {
+      "get": {
+        "tags": [
+          "analysis"
+        ],
+        "summary": "Forecast",
+        "operationId": "forecast_api_v1_instruments__symbol__forecast_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "horizon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(5d|10d|20d|1y|3y|5y)$",
+              "default": "20d",
+              "title": "Horizon"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/brief": {
+      "post": {
+        "tags": [
+          "research"
+        ],
+        "summary": "Brief",
+        "operationId": "brief_api_v1_instruments__symbol__brief_post",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiBriefResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/chat": {
+      "post": {
+        "tags": [
+          "research"
+        ],
+        "summary": "Chat",
+        "operationId": "chat_api_v1_instruments__symbol__chat_post",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/brief/pdf": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "Brief Pdf",
+        "operationId": "brief_pdf_api_v1_instruments__symbol__brief_pdf_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/explain/risk": {
+      "post": {
+        "tags": [
+          "research"
+        ],
+        "summary": "Explain Risk",
+        "operationId": "explain_risk_api_v1_instruments__symbol__explain_risk_post",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/explain/volatility": {
+      "post": {
+        "tags": [
+          "research"
+        ],
+        "summary": "Explain Volatility",
+        "operationId": "explain_volatility_api_v1_instruments__symbol__explain_volatility_post",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments/{symbol}/explain/scenarios": {
+      "post": {
+        "tags": [
+          "research"
+        ],
+        "summary": "Explain Scenarios",
+        "operationId": "explain_scenarios_api_v1_instruments__symbol__explain_scenarios_post",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios": {
+      "get": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "List Portfolios",
+        "operationId": "list_portfolios_api_v1_portfolios_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Portfolio"
+                  },
+                  "title": "Response List Portfolios Api V1 Portfolios Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "Create Portfolio",
+        "operationId": "create_portfolio_api_v1_portfolios_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Portfolio"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios/{portfolio_id}": {
+      "get": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "Get Portfolio",
+        "operationId": "get_portfolio_api_v1_portfolios__portfolio_id__get",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Portfolio"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolios/{portfolio_id}/holdings": {
+      "post": {
+        "tags": [
+          "portfolios"
+        ],
+        "summary": "Add Holding",
+        "operationId": "add_holding_api_v1_portfolios__portfolio_id__holdings_post",
+        "parameters": [
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Portfolio Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldingCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Holding"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "List Alerts",
+        "operationId": "list_alerts_api_v1_alerts_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Alert"
+                  },
+                  "title": "Response List Alerts Api V1 Alerts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Create Alert",
+        "operationId": "create_alert_api_v1_alerts_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Alert"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{alert_id}": {
+      "delete": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Delete Alert",
+        "operationId": "delete_alert_api_v1_alerts__alert_id__delete",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AiBriefResponse": {
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "title": "Ticker"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "brief_text": {
+            "type": "string",
+            "title": "Brief Text",
+            "description": "Markdown narrative. Figures cite sources as [n]."
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/BriefSource"
+            },
+            "type": "array",
+            "title": "Sources",
+            "description": "Evidence items referenced in brief_text."
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of",
+            "description": "UTC timestamp of the underlying market data."
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions",
+            "description": "Modelling assumptions used (e.g. drift rate for scenarios)."
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations",
+            "description": "Data gaps or approximations present in this brief."
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer",
+            "default": "Statistical estimates only. Not personalized investment advice."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticker",
+          "company_name",
+          "brief_text",
+          "as_of",
+          "generated_at"
+        ],
+        "title": "AiBriefResponse",
+        "description": "Full AI-generated research brief for a single symbol.",
+        "examples": [
+          {
+            "as_of": "2026-11-23T11:34:25Z",
+            "assumptions": [
+              "Scenario model: lognormal with 7% annual drift",
+              "Volatility held constant at trailing 30-day figure"
+            ],
+            "brief_text": "## 1. Market Snapshot\nAAPL trades at **$342.56** (-1.90% today) [1].\n## 2. News and Sentiment\nSentiment is neutral (score -0.2). XLK sold $71.4M of AAPL [2].\n## 3. Risk Indicators\nComposite risk: **6/10** (moderate).\n## 4. Forecast Scenarios\n1-year base: $356, bear: $236, bull: $537.\n## 5. Limitations\nP/E and market cap sourced from delayed feed.",
+            "company_name": "Apple Inc.",
+            "disclaimer": "Statistical estimates only. Not personalized investment advice.",
+            "generated_at": "2026-11-23T11:34:30Z",
+            "limitations": [
+              "Market cap and P/E from delayed feed",
+              "News sentiment based on headlines only, not full articles"
+            ],
+            "sources": [
+              {
+                "headline": "AAPL price",
+                "index": 1,
+                "published_at": "2026-11-23T11:34:25Z",
+                "publisher": "yfinance"
+              },
+              {
+                "headline": "State Street XLK sold $71.4M of AAPL",
+                "index": 2,
+                "published_at": "2026-11-19T09:00:00Z",
+                "publisher": "Reuters",
+                "source_url": "https://example.com/xlk-aapl"
+              }
+            ],
+            "ticker": "AAPL"
+          }
+        ]
+      },
+      "Alert": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "above",
+              "below"
+            ],
+            "title": "Operator"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "symbol",
+          "operator",
+          "threshold",
+          "active",
+          "created_at"
+        ],
+        "title": "Alert"
+      },
+      "AlertCreate": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Symbol"
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "above",
+              "below"
+            ],
+            "title": "Operator"
+          },
+          "threshold": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Threshold"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "operator",
+          "threshold"
+        ],
+        "title": "AlertCreate"
+      },
+      "AnalysisMeta": {
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "calculated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Calculated At"
+          },
+          "calculation_version": {
+            "type": "string",
+            "title": "Calculation Version"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "availability",
+          "calculated_at",
+          "calculation_version",
+          "assumptions",
+          "disclaimer"
+        ],
+        "title": "AnalysisMeta"
+      },
+      "AuthResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token"
+        ],
+        "title": "AuthResponse"
+      },
+      "Availability": {
+        "type": "string",
+        "enum": [
+          "available",
+          "stale",
+          "partial",
+          "unavailable"
+        ],
+        "title": "Availability"
+      },
+      "BriefSource": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index",
+            "description": "Reference number used in the brief text, e.g. [1]"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "publisher": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publisher"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "index",
+          "headline"
+        ],
+        "title": "BriefSource",
+        "description": "One cited evidence item inside a brief."
+      },
+      "Candle": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "open": {
+            "type": "string",
+            "title": "Open"
+          },
+          "high": {
+            "type": "string",
+            "title": "High"
+          },
+          "low": {
+            "type": "string",
+            "title": "Low"
+          },
+          "close": {
+            "type": "string",
+            "title": "Close"
+          },
+          "volume": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "open",
+          "high",
+          "low",
+          "close"
+        ],
+        "title": "Candle"
+      },
+      "ChatMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "pattern": "^(user|assistant)$",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage"
+      },
+      "ChatRequest": {
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Messages"
+          },
+          "user_message": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "User Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_message"
+        ],
+        "title": "ChatRequest"
+      },
+      "ChatResponse": {
+        "properties": {
+          "reply": {
+            "type": "string",
+            "title": "Reply"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reply",
+          "messages",
+          "generated_at",
+          "disclaimer"
+        ],
+        "title": "ChatResponse"
+      },
+      "Credentials": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "Credentials"
+      },
+      "DataMeta": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "delayed": {
+            "type": "boolean",
+            "title": "Delayed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "fetched_at",
+          "availability",
+          "delayed"
+        ],
+        "title": "DataMeta"
+      },
+      "ExplainResponse": {
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "title": "Ticker"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticker",
+          "text",
+          "generated_at",
+          "disclaimer"
+        ],
+        "title": "ExplainResponse"
+      },
+      "ForecastResponse": {
+        "properties": {
+          "horizon": {
+            "type": "string",
+            "title": "Horizon"
+          },
+          "scenarios": {
+            "items": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/AnalysisMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "horizon",
+          "scenarios",
+          "meta"
+        ],
+        "title": "ForecastResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse"
+      },
+      "HistoryResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Candle"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "delayed": {
+            "type": "boolean",
+            "title": "Delayed"
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "source",
+          "delayed",
+          "availability",
+          "fetched_at"
+        ],
+        "title": "HistoryResponse"
+      },
+      "Holding": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "current_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Price"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "symbol",
+          "quantity",
+          "created_at"
+        ],
+        "title": "Holding"
+      },
+      "HoldingCreate": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Symbol"
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "quantity"
+        ],
+        "title": "HoldingCreate"
+      },
+      "Instrument": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "symbol",
+          "name"
+        ],
+        "title": "Instrument"
+      },
+      "InstrumentMatch": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "symbol",
+          "name"
+        ],
+        "title": "InstrumentMatch"
+      },
+      "Page_InstrumentMatch_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InstrumentMatch"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "Page[InstrumentMatch]"
+      },
+      "Portfolio": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/Holding"
+            },
+            "type": "array",
+            "title": "Holdings"
+          },
+          "total_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Value"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "holdings",
+          "created_at"
+        ],
+        "title": "Portfolio"
+      },
+      "PortfolioCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "default": "My Portfolio"
+          }
+        },
+        "type": "object",
+        "title": "PortfolioCreate"
+      },
+      "Quote": {
+        "properties": {
+          "instrument": {
+            "$ref": "#/components/schemas/Instrument"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "previous_close": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Close"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change"
+          },
+          "change_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Percent"
+          },
+          "volume": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "market_cap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Cap"
+          },
+          "pe_ratio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pe Ratio"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/DataMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instrument",
+          "meta"
+        ],
+        "title": "Quote"
+      },
+      "ReadinessResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "not_ready"
+            ],
+            "title": "Status"
+          },
+          "checks": {
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "failed"
+              ]
+            },
+            "type": "object",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "checks"
+        ],
+        "title": "ReadinessResponse"
+      },
+      "RefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "minLength": 20,
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshRequest"
+      },
+      "RiskProfile": {
+        "properties": {
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "components": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Components"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/AnalysisMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "components",
+          "meta"
+        ],
+        "title": "RiskProfile"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Watchlist": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WatchlistItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "items",
+          "created_at"
+        ],
+        "title": "Watchlist"
+      },
+      "WatchlistCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "default": "My Watchlist"
+          }
+        },
+        "type": "object",
+        "title": "WatchlistCreate"
+      },
+      "WatchlistItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "symbol",
+          "created_at"
+        ],
+        "title": "WatchlistItem"
+      },
+      "WatchlistItemCreate": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Symbol"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol"
+        ],
+        "title": "WatchlistItemCreate"
+      }
+    }
+  }
+}
