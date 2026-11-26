@@ -361,6 +361,28 @@ Defines five async methods: `search`, `validate`, `quote`, `candles`, `news`. Tw
 | `DemoMarketDataConnector` | Deterministic local connector. Returns hard-coded data for 5 tickers (AAPL, MSFT, TSLA, AMZN, GOOGL). Active when `MARKET_DATA_PROVIDER=demo`. |
 | `YFinanceMarketDataConnector` | Wraps the `yfinance` library. Provides live Yahoo Finance data. Active when `MARKET_DATA_PROVIDER=yfinance`. |
 
+**Provider terms and operational limits (SCRUM-119):**
+
+- `YFinanceMarketDataConnector` uses Yahoo Finance's public, keyless endpoints
+  (instrument search via `query2.finance.yahoo.com`, quotes/history/news via the
+  `yfinance` library). No API key is required, so no request or recorded
+  response can contain credentials.
+- Quotes are **delayed** (Yahoo serves delayed data for many exchanges). Every
+  response carries `DataMeta` with `source: "yfinance"` and `delayed: true`,
+  so the API surfaces the delayed/real-time status to clients on every payload.
+- The endpoints are unofficial and undocumented; Yahoo publishes no rate limits,
+  so the backend throttles with its own per-IP API limiter and the per-user
+  research budget (`core/rate_limit.py`) rather than provider quotas.
+- Missing or invalid provider data is **rejected or flagged, never silently
+  defaulted**: an unknown instrument raises `ConnectorUnavailable` (mapped by
+  `InstrumentService` to a clear 503 or stale-cache response), a quote without
+  a price is flagged `availability: "partial"`, and news items lacking a title,
+  URL or date are skipped. The single fallback — beta defaulting to 1.0 — is a
+  disclosed modelling assumption, listed in the analysis `assumptions` output.
+- The connector contract is pinned by recorded-response contract tests
+  (`backend/tests/test_yfinance_connector.py`), which replay captured Yahoo
+  payloads through the adapter without network access.
+
 **`LLMConnector` (Protocol)**
 
 Defines `brief(ticker, context)` and `chat(ticker, context, messages)`. Two implementations:
