@@ -146,3 +146,10 @@ acceptance scenarios.
 Run the backend from the repository root with `py -m pytest backend/tests -q`,
 or from `backend/` with `py -m pytest tests -q`. `docker compose up --build` starts the
 backend with a named SQLite volume; there is no frontend service.
+
+The Next.js frontend lives in `frontend/`. Run it with `npm install` and
+`npm run dev` inside that folder (it proxies `/api` to the backend on port
+8000). Price charts on the stock dashboard use
+[Lightweight Charts](https://github.com/tradingview/lightweight-charts)
+(Apache 2.0): it is small, made for financial time series, and works on
+phone-sized screens.
