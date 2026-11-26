@@ -1,6 +1,9 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
+from app.core.rate_limit import research_limiter
 from app.dependencies import get_current_user, get_research_service
 from app.schemas.ai import AiBriefResponse
 from app.schemas.research import ChatRequest, ChatResponse, ExplainResponse
@@ -13,9 +16,10 @@ router = APIRouter(prefix="/instruments", tags=["research"])
 @router.post("/{symbol}/brief", response_model=AiBriefResponse)
 async def brief(
     symbol: str,
-    _: object = Depends(get_current_user),
+    user_id: UUID = Depends(get_current_user),
     service: ResearchService = Depends(get_research_service),
 ):
+    research_limiter.check(f"brief:{user_id}")
     return await service.brief(symbol)
 
 
@@ -23,9 +27,10 @@ async def brief(
 async def chat(
     symbol: str,
     payload: ChatRequest,
-    _: object = Depends(get_current_user),
+    user_id: UUID = Depends(get_current_user),
     service: ResearchService = Depends(get_research_service),
 ):
+    research_limiter.check(f"chat:{user_id}")
     return await service.chat(symbol, payload.messages, payload.user_message)
 
 

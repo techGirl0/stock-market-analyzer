@@ -29,3 +29,8 @@ class FixedWindowLimiter:
 
 
 auth_limiter = FixedWindowLimiter(limit=30, window_seconds=60)
+
+# Per-user budget for the LLM-backed research endpoints (SCRUM-69). LLM calls
+# are the most expensive requests in the API, so authenticated users get a
+# stricter limit than the global per-IP API limiter.
+research_limiter = FixedWindowLimiter(limit=10, window_seconds=60)

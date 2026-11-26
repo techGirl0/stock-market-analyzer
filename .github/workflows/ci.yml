@@ -38,6 +38,10 @@ jobs:
       - run: ruff check backend/app backend/tests
       - run: mypy --config-file backend/pyproject.toml backend/app
       - run: python -m pytest backend/tests -q
+      - name: Check OpenAPI spec freshness
+        run: |
+          PYTHONPATH=backend python -c "from app.main import app; import json; json.dump(app.openapi(), open('openapi.current.json', 'w'), indent=2)"
+          diff frontend/openapi.json openapi.current.json
       - run: python -m behave features/manage_watchlist.feature
         env:
           PYTHONPATH: backend
