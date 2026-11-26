@@ -1,4 +1,7 @@
-from math import exp, log, sqrt
+import logging
+from math import exp, sqrt
+
+logger = logging.getLogger(__name__)
 
 MU = 0.07  # assumed annual drift (lognormal model)
 
@@ -7,9 +10,6 @@ _HORIZON_DAYS = {
     "3y": 756,
     "5y": 1260,
 }
-
-import logging
-logger = logging.getLogger(__name__)
 
 
 def resolve_horizon_days(horizon: str) -> int:
