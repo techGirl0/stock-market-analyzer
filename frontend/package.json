@@ -1,0 +1,28 @@
+{
+  "name": "wolfstreet-signal-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "generate-api": "bash scripts/generate-api.sh"
+  },
+  "dependencies": {
+    "next": "15.5.29",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "openapi-fetch": "^0.13.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "openapi-typescript": "^7.4.4",
+    "typescript": "^5.7.2",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "15.5.29"
+  }
+}
