@@ -8,8 +8,6 @@ exclude = [
     "app/controllers/alerts.py",
     "app/controllers/analysis.py",
     "app/controllers/portfolio.py",
-    "app/dependencies_analysis.py",
-    "app/dependencies_extra.py",
     "app/schemas/alerts.py",
     "app/schemas/analysis.py",
     "app/schemas/portfolio.py",
@@ -23,7 +21,7 @@ exclude = [
 python_version = "3.13"
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = "(?x)(^|[\\\\/])(connectors/llm|controllers/(alerts|analysis|portfolio)|dependencies_(analysis|extra)|schemas/(alerts|analysis|portfolio)|services/(alerts|analysis|portfolio)|workers)(\\.py|[\\\\/])"
+exclude = "(?x)(^|[\\\\/])(connectors/llm|controllers/(alerts|analysis|portfolio)|schemas/(alerts|analysis|portfolio)|services/(alerts|analysis|portfolio)|workers)(\\.py|[\\\\/])"
 
 [[tool.mypy.overrides]]
 module = [
@@ -31,8 +29,6 @@ module = [
     "app.controllers.alerts",
     "app.controllers.analysis",
     "app.controllers.portfolio",
-    "app.dependencies_analysis",
-    "app.dependencies_extra",
     "app.schemas.alerts",
     "app.schemas.analysis",
     "app.schemas.portfolio",
@@ -43,8 +39,6 @@ module = [
     "controllers.alerts",
     "controllers.analysis",
     "controllers.portfolio",
-    "dependencies_analysis",
-    "dependencies_extra",
     "schemas.alerts",
     "schemas.analysis",
     "schemas.portfolio",
