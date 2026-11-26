@@ -488,41 +488,7 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * AiBriefResponse
-         * @description Full AI-generated research brief for a single symbol.
-         * @example {
-         *       "as_of": "2026-11-23T11:34:25Z",
-         *       "assumptions": [
-         *         "Scenario model: lognormal with 7% annual drift",
-         *         "Volatility held constant at trailing 30-day figure"
-         *       ],
-         *       "brief_text": "## 1. Market Snapshot\nAAPL trades at **$342.56** (-1.90% today) [1].\n## 2. News and Sentiment\nSentiment is neutral (score -0.2). XLK sold $71.4M of AAPL [2].\n## 3. Risk Indicators\nComposite risk: **6/10** (moderate).\n## 4. Forecast Scenarios\n1-year base: $356, bear: $236, bull: $537.\n## 5. Limitations\nP/E and market cap sourced from delayed feed.",
-         *       "company_name": "Apple Inc.",
-         *       "disclaimer": "Statistical estimates only. Not personalized investment advice.",
-         *       "generated_at": "2026-11-23T11:34:30Z",
-         *       "limitations": [
-         *         "Market cap and P/E from delayed feed",
-         *         "News sentiment based on headlines only, not full articles"
-         *       ],
-         *       "sources": [
-         *         {
-         *           "headline": "AAPL price",
-         *           "index": 1,
-         *           "published_at": "2026-11-23T11:34:25Z",
-         *           "publisher": "yfinance"
-         *         },
-         *         {
-         *           "headline": "State Street XLK sold $71.4M of AAPL",
-         *           "index": 2,
-         *           "published_at": "2026-11-19T09:00:00Z",
-         *           "publisher": "Reuters",
-         *           "source_url": "https://example.com/xlk-aapl"
-         *         }
-         *       ],
-         *       "ticker": "AAPL"
-         *     }
-         */
+        /** AiBriefResponse */
         AiBriefResponse: {
             /** Ticker */
             ticker: string;
@@ -533,10 +499,7 @@ export interface components {
              * @description Markdown narrative. Figures cite sources as [n].
              */
             brief_text: string;
-            /**
-             * Sources
-             * @description Evidence items referenced in brief_text.
-             */
+            /** Sources */
             sources?: components["schemas"]["BriefSource"][];
             /**
              * As Of
@@ -549,15 +512,9 @@ export interface components {
              * Format: date-time
              */
             generated_at: string;
-            /**
-             * Assumptions
-             * @description Modelling assumptions used (e.g. drift rate for scenarios).
-             */
+            /** Assumptions */
             assumptions?: string[];
-            /**
-             * Limitations
-             * @description Data gaps or approximations present in this brief.
-             */
+            /** Limitations */
             limitations?: string[];
             /**
              * Disclaimer
@@ -633,10 +590,7 @@ export interface components {
          * @enum {string}
          */
         Availability: "available" | "stale" | "partial" | "unavailable";
-        /**
-         * BriefSource
-         * @description One cited evidence item inside a brief.
-         */
+        /** BriefSource */
         BriefSource: {
             /**
              * Index
@@ -912,7 +866,7 @@ export interface components {
             score: number | null;
             /** Components */
             components: {
-                [key: string]: number | null;
+                [key: string]: string | number | null;
             };
             meta: components["schemas"]["AnalysisMeta"];
         };
@@ -1523,7 +1477,9 @@ export interface operations {
     risk_api_v1_instruments__symbol__risk_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 symbol: string;
             };
@@ -1556,7 +1512,9 @@ export interface operations {
             query?: {
                 horizon?: string;
             };
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 symbol: string;
             };
