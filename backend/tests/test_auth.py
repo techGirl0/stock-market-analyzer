@@ -41,8 +41,14 @@ def test_invalid_login_does_not_reveal_account_state() -> None:
 def test_production_configuration_rejects_development_defaults() -> None:
     from app.core.config import Settings
 
+    # Construct with explicit defaults, bypassing any .env file on disk.
+    dev_settings = Settings(
+        jwt_secret="development-only-change-me",
+        market_data_provider="demo",
+        _env_file=None,  # type: ignore[call-arg]
+    )
     try:
-        Settings().validate_production()
+        dev_settings.validate_production()
     except ValueError as exc:
         assert "JWT_SECRET" in str(exc)
     else:

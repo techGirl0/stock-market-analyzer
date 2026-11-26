@@ -2,8 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
-from app.dependencies import get_instrument_service
-from app.dependencies_extra import get_news_service
+from app.dependencies import get_instrument_service, get_news_service
 from app.schemas.v1 import HistoryResponse, InstrumentMatch, Page, Quote
 from app.services.instruments import InstrumentService
 from app.services.news import NewsService

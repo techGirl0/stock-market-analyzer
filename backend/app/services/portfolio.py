@@ -1,8 +1,11 @@
+import logging
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 from app.core.db import Database
 from app.core.errors import BackendError
 from app.connectors.market import MarketDataConnector
+
+logger = logging.getLogger(__name__)
 from app.schemas.portfolio import Holding, Portfolio
 
 class PortfolioService:
@@ -52,6 +55,7 @@ class PortfolioService:
             quote = await self.market.quote(symbol)
             price = float(quote.price) if quote.price is not None else None
         except Exception:
+            logger.warning("Price fetch failed for %s; value will be unavailable", symbol)
             price = None
         return Holding(id=hid, symbol=symbol, quantity=quantity, current_price=price,
                        current_value=price * quantity if price is not None else None, created_at=created_at)

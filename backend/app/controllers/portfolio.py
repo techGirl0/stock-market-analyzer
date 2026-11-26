@@ -1,7 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
-from app.dependencies import get_current_user
-from app.dependencies_extra import get_portfolio_service
+from app.dependencies import get_current_user, get_portfolio_service
 from app.schemas.portfolio import Portfolio, PortfolioCreate, Holding, HoldingCreate
 from app.services.portfolio import PortfolioService
 

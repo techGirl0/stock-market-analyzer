@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from app.dependencies_analysis import get_analysis_service
+from app.dependencies import get_analysis_service
 from app.schemas.analysis import ForecastResponse, RiskProfile
 from app.services.analysis import AnalysisService
 

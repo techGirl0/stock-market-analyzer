@@ -3,14 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-class BriefResponse(BaseModel):
-    ticker: str
-    company_name: str
-    brief_text: str
-    generated_at: datetime
-    fetched_at: str
-    disclaimer: str
-
 class ChatMessage(BaseModel):
     role: str = Field(pattern="^(user|assistant)$")
     content: str = Field(min_length=1, max_length=4000)

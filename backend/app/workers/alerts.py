@@ -1,6 +1,6 @@
 import asyncio
 
-from app.dependencies_extra import get_alert_service
+from app.dependencies import get_alert_service
 
 
 async def evaluate_alerts_once() -> int:

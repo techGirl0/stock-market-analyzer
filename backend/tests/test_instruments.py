@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -39,10 +41,21 @@ def test_invalid_candle_range_is_rejected() -> None:
 
 
 def test_history_is_bounded_and_includes_data_metadata() -> None:
-    response = client.get(
-        "/api/v1/instruments/AAPL/history",
-        params={"limit": 2, "interval": "1d"},
-    )
+    from app.connectors.market import DemoMarketDataConnector
+    from app.core.config import Settings
+    from app.dependencies import get_instrument_service
+    from app.services.instruments import InstrumentService
+
+    demo_settings = Settings(market_data_provider="demo", _env_file=None)  # type: ignore[call-arg]
+    demo_service = InstrumentService(DemoMarketDataConnector(), demo_settings)
+    app.dependency_overrides[get_instrument_service] = lambda: demo_service
+    try:
+        response = client.get(
+            "/api/v1/instruments/AAPL/history",
+            params={"limit": 2, "interval": "1d"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_instrument_service, None)
     assert response.status_code == 200
     body = response.json()
     assert len(body["items"]) == 2

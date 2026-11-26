@@ -1,7 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, Response
-from app.dependencies import get_current_user
-from app.dependencies_extra import get_alert_service
+from app.dependencies import get_current_user, get_alert_service
 from app.schemas.alerts import Alert, AlertCreate
 from app.services.alerts import AlertService
 

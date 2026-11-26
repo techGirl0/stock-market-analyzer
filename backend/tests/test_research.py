@@ -372,9 +372,9 @@ def test_missing_groq_key_returns_503():
     """get_research_service raises BackendError 503 when provider=groq and key is absent."""
     from unittest.mock import patch
 
-    import app.dependencies_research as dep_module
+    import app.dependencies as dep_module
     from app.core.config import Settings
-    from app.dependencies_research import get_research_service
+    from app.dependencies import get_research_service
 
     fake_settings = Settings(
         llm_provider="groq",

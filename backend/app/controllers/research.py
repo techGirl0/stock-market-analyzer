@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from app.dependencies import get_current_user
-from app.dependencies_research import get_research_service
+from app.dependencies import get_current_user, get_research_service
 from app.schemas.ai import AiBriefResponse
 from app.schemas.research import ChatRequest, ChatResponse, ExplainResponse
 from app.services.research import ResearchService

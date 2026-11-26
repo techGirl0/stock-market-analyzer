@@ -12,7 +12,7 @@ class AnalysisMeta(BaseModel):
 
 class RiskProfile(BaseModel):
     score: int | None
-    components: dict[str, float | None]
+    components: dict[str, str | float | None]
     meta: AnalysisMeta
 
 class ForecastResponse(BaseModel):

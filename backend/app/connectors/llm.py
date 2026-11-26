@@ -1,10 +1,19 @@
 import asyncio
 import logging
-import re
 import time
 from typing import Protocol
 
 from app.core.errors import BackendError
+from app.core.guardrails import (
+    _BLOCKED_PHRASES,
+    _FILTER_REPLACEMENT,
+    filter_llm_output,
+    sanitise_llm_output,
+)
+
+# Re-export under old private names for backward compatibility with tests
+_filter_output = filter_llm_output
+_sanitise_output = sanitise_llm_output
 from app.schemas.research import ChatMessage
 
 logger = logging.getLogger(__name__)
@@ -30,60 +39,6 @@ CHAT_CAPABILITY_PREAMBLE = (
     "When you use a figure, state which data item it comes from (e.g. 'According to the market data...'). "
     "When data is marked unavailable, say it is unavailable instead of estimating."
 )
-
-_BLOCKED_PHRASES = (
-    "you should buy",
-    "you should sell",
-    "you should hold",
-    "i recommend buy",
-    "i recommend sell",
-    "i would buy",
-    "i would sell",
-    "consider buying",
-    "consider selling",
-    "is a buy",
-    "is a sell",
-    "price target of",
-    "price target is",
-    "guaranteed",
-    "will definitely",
-    "will certainly",
-    "will reach $",
-)
-
-_FILTER_REPLACEMENT = (
-    "This platform provides factual data only and does not give buy, sell or hold recommendations."
-)
-
-
-def _sanitise_output(text: str) -> str:
-    """Strip bare URLs and HTML tags from LLM output."""
-    text = re.sub(r"https?://\S+", "", text)
-    text = re.sub(r"<[^>]+>", "", text)
-    return text.strip()
-
-
-def _filter_output(text: str) -> str:
-    """Replace any sentence containing a blocked advice phrase with a neutral substitute."""
-    lower = text.lower()
-    if not any(phrase in lower for phrase in _BLOCKED_PHRASES):
-        return text
-    # Split on newlines first, then on sentence boundaries within each line
-    result_lines: list[str] = []
-    for line in text.splitlines():
-        # Split on ". " to catch mid-paragraph sentences; keep delimiter
-        parts = re.split(r"(?<=\.)\s+", line)
-        cleaned_parts: list[str] = []
-        replaced = False
-        for part in parts:
-            if any(phrase in part.lower() for phrase in _BLOCKED_PHRASES):
-                if not replaced:
-                    cleaned_parts.append(_FILTER_REPLACEMENT)
-                    replaced = True
-            else:
-                cleaned_parts.append(part)
-        result_lines.append(" ".join(cleaned_parts))
-    return "\n".join(result_lines)
 
 
 class LLMConnector(Protocol):
@@ -206,7 +161,6 @@ class GroqLLMConnector:
             line = line.strip()
             if not line:
                 continue
-            # strip leading "1. " numbering
             if line and line[0].isdigit():
                 line = line.split(".", 1)[-1].strip()
             sentiment, reason = _parse_sentiment(line)
@@ -214,7 +168,6 @@ class GroqLLMConnector:
             idx = len(results)
             headline = headlines[idx] if idx < len(headlines) else line
             results.append({"headline": headline, "sentiment": sentiment, "reason": reason})
-        # fill any missing entries
         for i in range(len(results), len(headlines)):
             results.append({"headline": headlines[i], "sentiment": "NEUTRAL", "reason": "No classification returned."})
         return results
@@ -285,10 +238,8 @@ class GroqLLMConnector:
                 exc_type = type(exc).__name__
                 is_rate_limit = "ratelimit" in exc_type.lower() or "429" in str(exc)
                 logger.error(
-                    "LLM provider error (attempt %d/%d) request_id=%s type=%s: %s",
+                    "LLM provider error (attempt %d/%d) request_id=%s type=%s",
                     attempt + 1, 1 + _GROQ_MAX_RETRIES, request_id, exc_type,
-                    # never log the full repr — may contain key fragments
-                    exc_type,
                 )
                 if is_rate_limit:
                     raise BackendError(
@@ -312,8 +263,8 @@ class GroqLLMConnector:
             ) from last_exc
         if not text:
             raise BackendError("llm_output_invalid", "The language model returned an empty response.", 502)
-        text = _sanitise_output(text)
-        text = _filter_output(text)
+        text = sanitise_llm_output(text)
+        text = filter_llm_output(text)
         return text.strip()
 
     async def _acomplete(self, messages: list[dict[str, str]], max_tokens: int = 900) -> str:

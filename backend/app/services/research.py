@@ -1,63 +1,25 @@
-import re
 from datetime import datetime, timezone
 from math import sqrt
 
 from app.connectors.llm import LLMConnector
 from app.connectors.market import MarketDataConnector
+from app.core.constants import DISCLAIMER
 from app.core.errors import BackendError
+from app.core.guardrails import ADVICE_REFUSAL, is_advice_request, sanitise_user_input
 from app.schemas.ai import AiBriefResponse, BriefSource
 from app.schemas.research import ChatMessage, ChatResponse, ExplainResponse
-from app.services.analysis import _compute_risk_score, _compute_scenarios, _fetch_beta
+from app.services.finance import compute_risk_score, compute_scenarios, fetch_beta
 
-DISCLAIMER = "General, evidence-based information only; not personalized investment advice."
-
-_CHAT_HISTORY_MAX_CHARS = 12_000  # server-side total character budget for history
-
-_ADVICE_REQUEST_PATTERNS = (
-    "should i buy",
-    "should i sell",
-    "should i invest",
-    "should i hold",
-    "is it a good time to buy",
-    "is it worth buying",
-    "what should i do",
-    "would you recommend",
-    "do you recommend",
-    "tell me to buy",
-    "tell me to sell",
-)
-
-ADVICE_REFUSAL = (
-    "This platform does not give personalised buy, sell or hold advice. "
-    "What it can help with: reviewing the composite risk score, understanding "
-    "the bear/base/bull forecast scenarios, checking volatility and beta relative "
-    "to the market, and reading the news sentiment summary. "
-    "These are inputs you can weigh — the decision is yours."
-)
+_CHAT_HISTORY_MAX_CHARS = 12_000
 
 
 def _trim_history(messages: list[ChatMessage], max_chars: int) -> list[ChatMessage]:
-    """Drop oldest turns (pairs) until total content fits within max_chars."""
     total = sum(len(m.content) for m in messages)
     trimmed = list(messages)
     while total > max_chars and len(trimmed) >= 2:
         removed = trimmed.pop(0)
         total -= len(removed.content)
     return trimmed
-
-
-def _is_advice_request(text: str) -> bool:
-    """Return True if the user message is asking for personalised buy/sell/hold advice."""
-    lower = text.lower()
-    return any(pattern in lower for pattern in _ADVICE_REQUEST_PATTERNS)
-
-
-def _sanitise_user_input(text: str) -> str:
-    """Strip URLs, HTML tags and markdown images from user-supplied text."""
-    text = re.sub(r"https?://\S+", "[link removed]", text)
-    text = re.sub(r"<[^>]+>", "", text)
-    text = re.sub(r"!\[.*?\]\(.*?\)", "", text)
-    return text.strip()
 
 
 class ResearchService:
@@ -118,7 +80,6 @@ class ResearchService:
             limitations.append("Market cap unavailable from provider")
         if pipeline.get("pe_ratio") is None:
             limitations.append("P/E ratio unavailable from provider")
-        # AC 4: flag low-confidence sentiment
         low_conf_items = [
             item for item in pipeline.get("news_items", [])
             if item.get("sentiment_confidence") is not None and item["sentiment_confidence"] < 0.5
@@ -147,7 +108,6 @@ class ResearchService:
     async def chat(self, symbol: str, messages: list[ChatMessage], user_message: str) -> ChatResponse:
         pipeline = await self._build_pipeline(symbol)
 
-        # AC 2: if no price data at all, don't call LLM — return a canned unavailable reply
         if pipeline.get("current_price") is None:
             unavailable_reply = (
                 f"Market price data for {symbol.upper()} is currently unavailable. "
@@ -164,9 +124,8 @@ class ResearchService:
 
         context = _format_pipeline_for_prompt(pipeline)
 
-        # AC 2: fixed refusal for personalised advice requests
-        sanitised_message = _sanitise_user_input(user_message)
-        if _is_advice_request(sanitised_message):
+        sanitised_message = sanitise_user_input(user_message)
+        if is_advice_request(sanitised_message):
             updated = [*messages, ChatMessage(role="user", content=user_message),
                        ChatMessage(role="assistant", content=ADVICE_REFUSAL)]
             return ChatResponse(
@@ -176,7 +135,6 @@ class ResearchService:
                 disclaimer=DISCLAIMER,
             )
 
-        # AC 3: trim history server-side before passing to LLM
         trimmed = _trim_history(messages, _CHAT_HISTORY_MAX_CHARS)
         updated = [*trimmed, ChatMessage(role="user", content=sanitised_message)]
         reply = await self.llm.chat(symbol.upper(), context, updated)
@@ -222,7 +180,6 @@ class ResearchService:
         )
 
     async def _build_pipeline(self, symbol: str) -> dict:
-        """Assemble the full data pipeline mirroring ai_module/stock_data.py:run_pipeline()."""
         normalized = symbol.upper()
         if not await self.market.validate(normalized):
             raise BackendError("ticker_not_found", "The requested instrument was not recognised.", 404)
@@ -230,7 +187,6 @@ class ResearchService:
         quote = await self.market.quote(normalized)
         now = datetime.now(timezone.utc)
 
-        # --- price history ---
         candles = await self.market.candles(
             normalized,
             start=now.replace(year=now.year - 1),
@@ -239,7 +195,6 @@ class ResearchService:
         )
         prices = [float(c.close) for c in candles] if candles else []
 
-        # --- volatility ---
         annual_vol: float | None = None
         daily_vol: float | None = None
         if len(prices) >= 21:
@@ -249,7 +204,6 @@ class ResearchService:
             daily_vol = sqrt(variance)
             annual_vol = daily_vol * sqrt(252)
 
-        # --- 52w position ---
         pos_52w: float | None = None
         low_52w: float | None = None
         high_52w: float | None = None
@@ -259,17 +213,14 @@ class ResearchService:
             current = prices[-1]
             pos_52w = (current - low_52w) / (high_52w - low_52w) if high_52w > low_52w else 0.5
 
-        # --- beta ---
-        beta = await _fetch_beta(normalized)
+        beta = await fetch_beta(normalized)
 
-        # --- news & sentiment ---
         articles = await self.market.news(normalized, limit=10)
         headlines = [a.headline for a in articles if a.headline]
         news_items: list[dict] = []
         news_sentiment: float | None = None
         if headlines:
             raw_feed = await self.llm.news_feed(normalized, headlines)
-            # Normalise to consistent keys; preserve provenance fields for sources
             news_items = [
                 {
                     "headline": llm_item.get("headline", llm_item.get("title", "")),
@@ -284,22 +235,19 @@ class ResearchService:
                 for idx, llm_item in enumerate(raw_feed)
             ]
             news_sentiment = await self.llm.sentiment_score(normalized, headlines)
-
-        # --- risk score ---
         risk_score: int | None = None
         risk_components: dict = {}
         if annual_vol is not None and pos_52w is not None:
-            risk_score, risk_components = _compute_risk_score(
+            risk_score, risk_components = compute_risk_score(
                 annual_vol=annual_vol * 100,
                 beta=beta,
                 pos_52w=pos_52w,
                 news_sentiment=news_sentiment,
             )
 
-        # --- scenarios ---
         scenarios: list[dict] = []
         if annual_vol is not None and prices:
-            scenarios = _compute_scenarios(prices[-1], annual_vol, ["1y", "3y", "5y"])
+            scenarios = compute_scenarios(prices[-1], annual_vol, ["1y", "3y", "5y"])
 
         current_price = float(quote.price) if quote.price is not None else (prices[-1] if prices else None)
 
@@ -349,7 +297,6 @@ def _format_pipeline_for_prompt(p: dict) -> str:
         f"## {p['name']} ({p['ticker']})",
     ]
 
-    # AC 3: real-time/delayed flag and as_of timestamp on the price line
     price_line = f"- Current price: ${p['current_price']}" if p.get("current_price") else "- Current price: unavailable"
     if p.get("availability") == "stale":
         price_line = price_line.replace("Current price", "Last known price (STALE — may not reflect current market)")
@@ -366,7 +313,6 @@ def _format_pipeline_for_prompt(p: dict) -> str:
         "",
     ]
 
-    # Volatility
     if p.get("annual_vol_pct") is not None:
         vol_label = (
             "LOW" if p["annual_vol_pct"] < 20
