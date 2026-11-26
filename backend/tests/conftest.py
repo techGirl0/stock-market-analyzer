@@ -7,19 +7,16 @@ from fastapi.testclient import TestClient
 
 from app.connectors.market import DemoMarketDataConnector
 from app.core.database import create_engine, create_schema, get_session
-from app.core.db import Database
-from app.dependencies import get_database, get_instrument_service
+from app.dependencies import get_instrument_service
 from app.main import app
 from app.services.instruments import InstrumentService
 
 
 @pytest.fixture
 def api_client(tmp_path: Path) -> Iterator[TestClient]:
-    database = Database(str(tmp_path / "test.db"))
     async_engine = create_engine(f"sqlite+aiosqlite:///{tmp_path / 'async-test.db'}")
     asyncio.run(create_schema(async_engine))
     connector = DemoMarketDataConnector()
-    app.dependency_overrides[get_database] = lambda: database
     app.dependency_overrides[get_instrument_service] = lambda: InstrumentService(connector)
 
     async def override_session() -> AsyncIterator[object]:
@@ -30,6 +27,7 @@ def api_client(tmp_path: Path) -> Iterator[TestClient]:
             yield session
 
     app.dependency_overrides[get_session] = override_session
+    app.state.test_engine = async_engine
     with TestClient(app) as client:
         yield client
     app.dependency_overrides.clear()

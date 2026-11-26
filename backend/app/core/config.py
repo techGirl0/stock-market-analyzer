@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     market_data_provider: str = "demo"
     cors_origins: str = "http://localhost:3000"
     jwt_secret: str = "development-only-change-me"
-    database_path: str = "backend/data/app.db"
     database_url: str = "sqlite+aiosqlite:///backend/data/app.db"
     llm_provider: str = "disabled"
     groq_api_key: str | None = None

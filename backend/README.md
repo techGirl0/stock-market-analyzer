@@ -54,7 +54,7 @@ The service reads settings from environment variables or a local `.env` file:
 | `GROQ_API_KEY` | unset | Required when `LLM_PROVIDER=groq` |
 | `GROQ_MODEL` | `qwen/qwen3-27b` | Groq model identifier |
 | `JWT_SECRET` | development value | Must be changed outside development |
-| `DATABASE_PATH` | `backend/data/app.db` | Local SQLite path |
+| `DATABASE_URL` | `sqlite+aiosqlite:///backend/data/app.db` | SQLAlchemy async engine target (PostgreSQL via Docker Compose) |
 | `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed origins |
 
 Never commit `.env` files, API keys, passwords, or production secrets.
