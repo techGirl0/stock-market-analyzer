@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "./Feedback.module.css";
 
 interface MessageBoxProps {
@@ -7,6 +8,9 @@ interface MessageBoxProps {
   variant?: "empty" | "error";
   actionLabel?: string;
   onAction?: () => void;
+  /** Optional second, outlined button that navigates somewhere (e.g. "Back to search"). */
+  secondaryLabel?: string;
+  secondaryHref?: string;
 }
 
 /**
@@ -18,6 +22,8 @@ export function MessageBox({
   variant = "empty",
   actionLabel,
   onAction,
+  secondaryLabel,
+  secondaryHref,
 }: MessageBoxProps) {
   const isError = variant === "error";
   return (
@@ -27,11 +33,18 @@ export function MessageBox({
     >
       <p className={styles.title}>! {title}</p>
       <p className={styles.message}>{message}</p>
-      {actionLabel && onAction && (
-        <button type="button" className={styles.button} onClick={onAction}>
-          {actionLabel}
-        </button>
-      )}
+      <div className={styles.actions}>
+        {actionLabel && onAction && (
+          <button type="button" className={styles.button} onClick={onAction}>
+            {actionLabel}
+          </button>
+        )}
+        {secondaryLabel && secondaryHref && (
+          <Link href={secondaryHref} className={styles.secondaryButton}>
+            {secondaryLabel}
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

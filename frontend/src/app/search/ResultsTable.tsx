@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { components } from "@/lib/api/generated/schema";
-import { formatChange, formatPrice } from "./format";
+import { formatChange, formatPrice } from "@/lib/format";
 import styles from "./search.module.css";
 
 type InstrumentMatch = components["schemas"]["InstrumentMatch"];

@@ -11,18 +11,19 @@
     "generate-api": "bash scripts/generate-api.sh"
   },
   "dependencies": {
+    "lightweight-charts": "5.0.9",
     "next": "15.5.29",
+    "openapi-fetch": "^0.13.5",
     "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "openapi-fetch": "^0.13.5"
+    "react-dom": "19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "openapi-typescript": "^7.4.4",
-    "typescript": "^5.7.2",
     "eslint": "^9.0.0",
-    "eslint-config-next": "15.5.29"
+    "eslint-config-next": "15.5.29",
+    "openapi-typescript": "^7.4.4",
+    "typescript": "^5.7.2"
   }
 }
