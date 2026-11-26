@@ -81,9 +81,9 @@ The Next.js + React + TypeScript frontend is **planned** and is documented here 
 
 ### 1.5 Overview
 
-This document describes the layered backend architecture (FastAPI REST, service layer, connector abstractions, dual-database persistence) and the planned Next.js frontend. Visual and conceptual breakdowns are provided for each view: logical, process, deployment, implementation, and data.
+This document describes the layered backend architecture (FastAPI REST, service layer, connector abstractions, consolidated PostgreSQL persistence) and the planned Next.js frontend. Visual and conceptual breakdowns are provided for each view: logical, process, deployment, implementation, and data.
 
-The key architectural elements are the **Provider Adapter pattern** (all external data sources and LLM providers are swappable via Protocol interfaces), the **dual-database strategy** (SQLAlchemy ORM for identity, raw SQLite for financial domain), and the **layered MVC decomposition** shared by both backend and planned frontend.
+The key architectural elements are the **Provider Adapter pattern** (all external data sources and LLM providers are swappable via Protocol interfaces), the **single persistence strategy** (SQLAlchemy 2.0 ORM models on PostgreSQL, versioned by Alembic migrations — the interim raw-SQLite layer for the financial domain is being retired by SCRUM-84, SCRUM-67 and SCRUM-68), and the **layered MVC decomposition** shared by both backend and planned frontend.
 
 ---
 
@@ -185,10 +185,10 @@ The full technology stack is documented in [SRS Section 2.3](SoftwareRequirement
 | Layer | Technology | Role |
 |---|---|---|
 | **Backend framework** | Python 3.13 · FastAPI · Uvicorn · Pydantic | REST API, request routing, data validation |
-| **ORM / migrations** | SQLAlchemy 2.0 (async) · Alembic | Identity-domain persistence and schema versioning |
+| **ORM / migrations** | SQLAlchemy 2.0 (async) · Alembic | Persistence and schema versioning for all domains |
 | **Frontend (planned)** | Next.js · React · TypeScript | SPA client consuming the REST API |
 | **AI prototype** | Python · Streamlit | Standalone AI analysis and chat interface |
-| **Databases** | SQLite (dev) · PostgreSQL (prod) | Persistence for identity and financial data |
+| **Databases** | PostgreSQL (all environments) | Persistence for identity and financial data; the interim raw-SQLite layer is deprecated and being removed |
 | **Containerisation** | Docker · Docker Compose | Local development and production deployment |
 | **CI** | GitHub Actions | Automated lint, type-check, test, and audit |
 
@@ -199,12 +199,12 @@ The full technology stack is documented in [SRS Section 2.3](SoftwareRequirement
 - Ensure stateless REST API design with JWT authentication so the backend can scale horizontally.
 - Provide transparent, non-advisory financial analysis — all computed values carry explicit uncertainty metadata and disclaimers.
 - Deliver a full-stack product: a Next.js frontend consumes the FastAPI backend over REST and WebSocket.
-- Support incremental delivery: identity and watchlist features are fully persistent (PostgreSQL via ORM); financial features (portfolios, alerts) are functional on SQLite and can migrate to PostgreSQL without service changes.
+- Support incremental delivery: identity and watchlist features are fully persistent (PostgreSQL via ORM); the remaining financial features (portfolios, alerts) are being moved onto the same SQLAlchemy layer (SCRUM-67, SCRUM-68), after which the interim raw-SQLite layer is deleted (SCRUM-84) and PostgreSQL is the single persistence engine.
 
 ### Constraints
 
 - Python 3.13 with FastAPI (backend); Next.js + React + TypeScript (frontend, planned).
-- SQLite is the primary local persistence engine; PostgreSQL is the production target.
+- PostgreSQL is the only persistence engine, in local development (Docker Compose) and production; the SRS requirement SUP-8 (versioned migrations) is satisfied exclusively by the Alembic-managed SQLAlchemy layer.
 - No real-money trading, personalized investment recommendations, or financial advice output — enforced at both the LLM connector level and the application layer.
 - Target environments: local development with Docker Compose; production deployment with Docker + Nginx.
 - Team size is small; frameworks and tooling are chosen to minimize operational overhead.
@@ -252,7 +252,7 @@ backend/app/
 ├── controllers/    # HTTP layer — FastAPI routers
 ├── services/       # Business logic layer
 ├── connectors/     # Provider abstraction layer (Protocol interfaces + implementations)
-├── models/         # SQLAlchemy ORM models (identity domain)
+├── models/         # SQLAlchemy ORM models (identity domain today; financial-domain models arrive with SCRUM-67/68)
 ├── schemas/        # Pydantic request/response contracts
 ├── core/           # Cross-cutting: config, security, DB sessions, error handling, rate limiting
 ├── dependencies.py # FastAPI dependency injection wiring
@@ -327,7 +327,7 @@ Owns configuration, security primitives, persistence bootstrapping, error catalo
 | `config.py` | `Settings` (Pydantic `BaseSettings`); reads environment variables or `.env`. Single-instance via `@lru_cache`. |
 | `security.py` | Argon2 password hashing, JWT creation/validation (`HS256`), refresh token generation (UUID hex). |
 | `database.py` | SQLAlchemy async engine + `AsyncSession` factory; used by identity services via DI. |
-| `db.py` | `Database` class — raw `sqlite3` connection factory with thread safety (`threading.Lock`). Creates and owns all 8 SQLite tables via `initialize()`. |
+| `db.py` | `Database` class — raw `sqlite3` connection factory with thread safety (`threading.Lock`). Creates and owns all 8 SQLite tables via `initialize()`. **Deprecated:** transitional only; removed once auth, portfolio and alerts services move to the SQLAlchemy layer (SCRUM-84, SCRUM-67, SCRUM-68). |
 | `errors.py` | `BackendError` (single typed exception class with `code`, `message`, `status_code`, `details`); FastAPI exception handlers. |
 | `rate_limit.py` | `FixedWindowLimiter` — in-memory, per-IP rate limiting. Global API limiter (120 req/min), stricter auth limiter (30 req/min). |
 
@@ -378,8 +378,8 @@ Each service class owns a single functional domain. Services accept injected dep
 |---|---|---|
 | `AuthService` | `AsyncSession`, `Settings` | User registration/login, JWT + refresh token lifecycle, account deletion. |
 | `WatchlistService` | `AsyncSession` | Watchlist CRUD; enforces per-user ownership; validates via ORM. |
-| `PortfolioService` | `Database`, `MarketDataConnector` | Portfolio and holding CRUD with live price enrichment. Uses raw SQLite. |
-| `AlertService` | `Database`, `MarketDataConnector` | Price alert creation/deletion; idempotent evaluation via UNIQUE constraint on `(alert_id, observed_price)`. |
+| `PortfolioService` | `Database`, `MarketDataConnector` | Portfolio and holding CRUD with live price enrichment. Still uses raw SQLite; migrating to the SQLAlchemy layer in SCRUM-67. |
+| `AlertService` | `Database`, `MarketDataConnector` | Price alert creation/deletion; idempotent evaluation via UNIQUE constraint on `(alert_id, observed_price)`. Still uses raw SQLite; migrating to the SQLAlchemy layer in SCRUM-68. |
 | `InstrumentService` | `MarketDataConnector` | Search, quote, and history with provider caching and stale-data fallback. |
 | `AnalysisService` | `MarketDataConnector` | Annualized volatility (`risk-v1`), geometric Brownian motion scenario forecast (`forecast-v1`). All results carry `AnalysisMeta` with disclaimer and assumptions. |
 | `ResearchService` | `MarketDataConnector`, `LLMConnector` | Assembles market context and delegates to the LLM. Never surfaces personalized advice. |
@@ -443,12 +443,12 @@ Client Browser
   Backend Container (port 8000)
   FastAPI + Uvicorn
       │
-      └── SQLite database file (backend/data/app.db)
+      └── SQLite database file (backend/data/app.db)   [transitional]
               · 4 ORM-managed tables (users, tokens, watchlists, watchlist_items)
               · 4 raw SQLite tables (portfolios, holdings, alerts, deliveries)
 ```
 
-The current setup requires no additional infrastructure: the backend runs as a single container and uses a local SQLite file. No Redis, no PostgreSQL, no worker containers.
+The current setup requires no additional infrastructure: the backend runs as a single container and uses a local SQLite file. No Redis, no PostgreSQL, no worker containers. **This is a transitional state:** the target is the planned deployment below, with PostgreSQL as the single persistence engine; the SQLite file disappears once SCRUM-84, SCRUM-67 and SCRUM-68 land.
 
 ### 7.2 Planned Production Deployment
 
@@ -464,7 +464,7 @@ Client Browser
                       └── PostgreSQL (port 5432)
 ```
 
-PostgreSQL replaces SQLite for all 8 tables. The SQLAlchemy ORM tables are migrated via Alembic; the raw SQLite tables are migrated through a planned migration step. Nginx handles TLS termination and path-based routing.
+PostgreSQL replaces SQLite for all 8 tables. The SQLAlchemy ORM tables are migrated via Alembic; the raw SQLite tables are re-modelled as SQLAlchemy entities and Alembic migrations as part of SCRUM-67 and SCRUM-68. Nginx handles TLS termination and path-based routing.
 
 ### 7.3 Components
 
@@ -473,7 +473,7 @@ PostgreSQL replaces SQLite for all 8 tables. The SQLAlchemy ORM tables are migra
 | Backend | Python 3.13 · FastAPI · Uvicorn | Implemented |
 | AI module | Python · Streamlit (standalone) | Implemented |
 | Frontend | Next.js · React · TypeScript | Planned |
-| Database (dev) | SQLite (aiosqlite) | Implemented |
+| Database (dev) | PostgreSQL 17+ via Docker Compose | Implemented (identity domain); full consolidation in progress (SCRUM-84, SCRUM-67, SCRUM-68) |
 | Database (prod) | PostgreSQL 17+ | Planned |
 | Reverse proxy | Nginx | Planned |
 | Container runtime | Docker + Docker Compose | Implemented |
@@ -494,7 +494,8 @@ Alembic upgrade head   ← applies pending migrations
 uvicorn app.main:app   ← starts FastAPI on 0.0.0.0:8000
     │
     ▼
-Database.initialize()  ← idempotently creates SQLite tables (financial domain)
+Database.initialize()  ← [transitional] idempotently creates SQLite tables
+                          (financial domain); removed once SCRUM-67/68 land
 ```
 
 ### 7.5 Configuration (Environment-Driven)
@@ -503,8 +504,8 @@ Database.initialize()  ← idempotently creates SQLite tables (financial domain)
 |---|---|---|
 | `MARKET_DATA_PROVIDER` | `demo` | Selects connector implementation (`demo` or `yfinance`) |
 | `LLM_PROVIDER` | `disabled` | Selects LLM connector (`disabled` or `groq`) |
-| `DATABASE_URL` | SQLite path | SQLAlchemy async engine target |
-| `DATABASE_PATH` | `backend/data/app.db` | Raw SQLite path for `Database` class |
+| `DATABASE_URL` | PostgreSQL URL (Docker Compose) | SQLAlchemy async engine target |
+| `DATABASE_PATH` | `backend/data/app.db` | Raw SQLite path for the transitional `Database` class (removed with SCRUM-84) |
 | `JWT_SECRET` | *(dev placeholder)* | HS256 signing key — must be overridden in production |
 | `GROQ_API_KEY` | `None` | Required only when `LLM_PROVIDER=groq` |
 
@@ -518,10 +519,10 @@ Database.initialize()  ← idempotently creates SQLite tables (financial domain)
 
 ## 9. Data View
 
-The backend uses two persistence engines:
+The backend is consolidating on a **single persistence engine** (PostgreSQL via the SQLAlchemy ORM, schema versioned by Alembic), which is the target state required by SRS SUP-8 (versioned migrations) and REL-6 (UTC timestamps):
 
-- **SQLAlchemy ORM** manages the identity domain (users, tokens, watchlists) where schema migrations, type safety, and relational integrity are critical.
-- **Raw SQLite** via the `Database` class manages the financial domain (portfolios, holdings, alerts, deliveries) where the simpler API is sufficient. Migration to PostgreSQL is a planned next step.
+- **SQLAlchemy ORM** manages the identity domain (users, tokens, watchlists) today.
+- **Raw SQLite** via the `Database` class still manages the financial domain (portfolios, holdings, alerts, deliveries) — a transitional arrangement being removed: the financial-domain entities move to SQLAlchemy in SCRUM-67 and SCRUM-68, and the auth service and the `Database` class itself are retired in SCRUM-84.
 
 All foreign keys use `ON DELETE CASCADE`. All timestamps are stored in UTC.
 
@@ -533,8 +534,8 @@ The ERD covers all 8 tables. Tables in the same color group are owned by the sam
 |---|---|---|
 | Identity | `users`, `refresh_tokens` | SQLAlchemy ORM |
 | Watchlists | `watchlists`, `watchlist_items` | SQLAlchemy ORM |
-| Portfolios | `portfolios`, `portfolio_holdings` | Raw SQLite (`Database`) |
-| Alerts | `price_alerts`, `alert_deliveries` | Raw SQLite (`Database`) |
+| Portfolios | `portfolios`, `portfolio_holdings` | Raw SQLite (`Database`) — migrating to SQLAlchemy (SCRUM-67) |
+| Alerts | `price_alerts`, `alert_deliveries` | Raw SQLite (`Database`) — migrating to SQLAlchemy (SCRUM-68) |
 
 ### 9.2 DB Model Overview
 
