@@ -7,8 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.connectors.market import DemoMarketDataConnector
 from app.core.database import create_engine, create_schema, get_session
-from app.core.db import Database
-from app.dependencies import get_database, get_instrument_service
+from app.dependencies import get_instrument_service
 from app.main import app
 from app.services.instruments import InstrumentService
 
@@ -24,7 +23,6 @@ def before_all(context):
     path = Path(context.temp_dir.name)
     context.async_engine = create_engine(f"sqlite+aiosqlite:///{path / 'async.db'}")
     asyncio.run(create_schema(context.async_engine))
-    app.dependency_overrides[get_database] = lambda: Database(str(path / "legacy.db"))
     app.dependency_overrides[get_instrument_service] = lambda: InstrumentService(DemoMarketDataConnector())
 
     async def override_session():
